@@ -10,7 +10,7 @@
 
 import re
 
-find_memlock = re.compile('@audio - memlock (\d{6})')
+find_memlock = re.compile('@audio - memlock (\d)')
 limits_conf = open('/etc/security/limits.conf', 'r+')
 limits_conf_append = open('/etc/security/limits.conf', 'a+')
 oldlines = limits_conf.read()
@@ -25,7 +25,6 @@ def ch_memlock(new_memlock):
     limits_conf.close()
     _append(line_replacement)
     limits_conf_append.close()
-
 
 def _update(line_replacement):
   newlines = find_memlock.sub(line_replacement, oldlines)
