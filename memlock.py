@@ -10,7 +10,7 @@
 
 import re
 
-find_memlock = re.compile('@audio - memlock (\d)')
+find_memlock = re.compile('@audio - memlock \d*')
 limits_conf = open('/etc/security/limits.conf', 'r+')
 limits_conf_append = open('/etc/security/limits.conf', 'a+')
 oldlines = limits_conf.read()
