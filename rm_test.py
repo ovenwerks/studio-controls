@@ -1,5 +1,9 @@
 #!/usr/bin/python
 
-import memlock
+#Example for removing the memlock line from limits.conf
 
-memlock.rm_memlock()
+import changesettings
+
+memlock = changesettings.ChangeSettings('/etc/security/limits.conf', '@audio - memlock (\d*)', '@audio - memlock')
+
+memlock.rm_setting()
