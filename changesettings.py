@@ -43,8 +43,7 @@ class ChangeSettings:
     """
     Adds or updates the replacement string
     """
-    self.exists_check = self.regex.search(self.current_open_file)
-    if self.exists_check:
+    if self.line_check:
       self._update()
     else:
       self._append()
