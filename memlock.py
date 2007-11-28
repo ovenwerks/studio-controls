@@ -12,8 +12,7 @@ import re
 
 find_memlock = re.compile('@audio - memlock \d*')
 limits_conf = open('/etc/security/limits.conf', 'r+')
-limits_conf_read = open('/etc/security/limits.conf', 'r+')
-limits_conf_append = open('/etc/security/limits.conf', 'a+')
+limits_conf_read = open('/etc/security/limits.conf', 'r')
 oldlines = limits_conf_read.read()
 
 def ch_memlock(new_memlock):
@@ -24,9 +23,8 @@ def ch_memlock(new_memlock):
     _update(line_replacement)
     limits_conf.close()
   else:
-    limits_conf.close()
     _append(line_replacement)
-    limits_conf_append.close()
+    limits_conf.close()
 
 def _update(line_replacement):
   newlines = []
@@ -40,7 +38,9 @@ def _update(line_replacement):
   limits_conf.seek(0)
   limits_conf.writelines(newlines)
 
-def _append(line_replacement): #FIXME: Does not respect #End of file.
-  limits_conf_append.seek(-14, 2)
-  limits_conf_append.write('\n' + line_replacement + '\n')
+def _append(line_replacement):
+  append_list = limits_conf.readlines()
+  append_list[-1] = line_replacement + '\n\n#End of file' #Assumes that #End of file is the last line
+  limits_conf.seek(0)
+  limits_conf.writelines(append_list)
 
