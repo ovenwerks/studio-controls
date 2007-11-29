@@ -71,7 +71,6 @@ class ChangeSettings:
   def rm_setting(self):
     if self.line_check:
       self.remove_string = self.line_check.group() + '\n'
-      print self.remove_string
       self.rm_list = self.open_file.readlines()
       self.rm_list.remove(self.remove_string)
       self._seek_write(self.rm_list)
