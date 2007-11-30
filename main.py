@@ -5,19 +5,6 @@ pygtk.require('2.0')
 import gtk
 
 class Uscontrols:
-	def hello(self, widget, data=None):
-		print "Hello World"
-
-	def memlock_radio_clck(self, widget, data=None):
-		print "memlock_radio_clck"
-
-	def delete_event(self, widget, event, data=None):
-		print "delete event occurred"
-		return False
-
-	def destroy(self, widget, data=None):
-		gtk.main_quit()
-
 	def __init__(self):
 		self.window = gtk.Window(gtk.WINDOW_TOPLEVEL)
 		self.window.set_title("Ubuntu Studio Controls")
@@ -90,6 +77,19 @@ class Uscontrols:
 		self.hbox2.show()
 		self.vbox1.show()
 		self.window.show()
+
+	def hello(self, widget, data=None):
+		print "Hello World"
+
+	def memlock_radio_clck(self, widget, data=None):
+		print "memlock_radio_clck"
+
+	def delete_event(self, widget, event, data=None):
+		print "delete event occurred"
+		return False
+
+	def destroy(self, widget, data=None):
+		gtk.main_quit()
 
 	def main(self):
 		gtk.main()
