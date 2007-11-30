@@ -27,6 +27,9 @@ class Uscontrols:
 
 		self.window.set_border_width(10)
 
+		self.windowIcon = self.window.render_icon(gtk.STOCK_PREFERENCES, gtk.ICON_SIZE_BUTTON)
+		self.window.set_icon(self.windowIcon)
+
 		# First row
 		self.hbox1 = gtk.HBox(False, 10)
 
@@ -52,17 +55,17 @@ class Uscontrols:
 		self.hbox2 = gtk.HBox(False, 0)
 
 		# Credits
-		self.credits = gtk.Button("Credits")
+		self.credits = gtk.Button("Credits", gtk.STOCK_ABOUT)
 		self.credits.connect_object("clicked", self.hello, None)
 		self.hbox2.pack_start(self.credits, True, True, 0)
 
 		# Apply
-		self.apply = gtk.Button("Apply")
+		self.apply = gtk.Button("Apply", gtk.STOCK_APPLY)
 		self.apply.connect_object("clicked", self.hello, None)
 		self.hbox2.pack_start(self.apply, True, True, 0)
 
 		# OK
-		self.close = gtk.Button("Close")
+		self.close = gtk.Button("Close", gtk.STOCK_CLOSE)
 		self.close.connect_object("clicked", self.destroy, None)
 		self.hbox2.pack_start(self.close, True, True, 0)
 
