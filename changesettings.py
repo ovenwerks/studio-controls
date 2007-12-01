@@ -37,16 +37,12 @@ class ChangeSettings:
     self.open_file_read = open(self.file, 'r')
     self.current_open_file = self.open_file_read.read()
     self.line_check = self.regex.search(self.current_open_file)
-    
 
-  def ch_setting(self):
-    """
-    Adds or updates the replacement string
-    """
-    if self.line_check:
-      self._update()
-    else:
-      self._append()
+  def _append(self):
+    self.append_list = self.open_file.readlines()
+    self.to_add = self.line_replacement + '\n'
+    self.append_list.insert(-1, self.to_add)
+    self._seek_write(self.append_list)
 
   def _update(self):
     self.newlines = []
@@ -63,10 +59,14 @@ class ChangeSettings:
     self.open_file.truncate()
     self.open_file.flush()
 
-  def _append(self):
-    self.append_list = self.open_file.readlines()
-    self.append_list[-1] = self.line_replacement + '\n\n#End of file' #Assumes that #End of file is the last line
-    self._seek_write(self.append_list)
+  def ch_setting(self):
+    """
+    Adds or updates the replacement string
+    """
+    if self.line_check:
+      self._update()
+    else:
+      self._append()
 
   def rm_setting(self):
     if self.line_check:
