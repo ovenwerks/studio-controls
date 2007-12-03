@@ -1,9 +1,26 @@
-#!/usr/bin/python
+#!/usr/bin/env python
 
-#Example for removing the memlock line from limits.conf
+import gtk
+from gtk import glade
 
-import changesettings
+class Uscontrols:
+  def __init__(self):
+    #Set the Glade file
+    self.gladefile = "gui.glade"
+    self.wTree = gtk.glade.XML(self.gladefile)
 
-memlock = changesettings.ChangeSettings('/etc/security/limits.conf', '@audio - memlock (\d*)', '@audio - memlock')
+    #Get the Main Window, and connect the "destroy" event
+    self.window = self.wTree.get_widget("mainWindow")
 
-memlock.rm_setting()
+    #Create our dictionay and connect it
+    dic = { "on_closeButton_clicked" : self.closeButton_clicked,
+      "on_mainWindow_destroy" : gtk.main_quit }
+    self.wTree.signal_autoconnect(dic)
+
+  def closeButton_clicked(self, widget):
+	gtk.main_quit()
+
+print __name__
+if __name__ == "__main__":
+  uscontrols = Uscontrols()
+  gtk.main()
