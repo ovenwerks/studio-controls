@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-import gtk
+import gtk, changesettings
 from gtk import glade
 
 class Uscontrols:
@@ -14,12 +14,27 @@ class Uscontrols:
 
     #Create our dictionay and connect it
     dic = { "on_closeButton_clicked" : self.closeButton_clicked,
-      "on_mainWindow_destroy" : gtk.main_quit }
+      "on_mainWindow_destroy" : gtk.main_quit,
+      "on_apply_button_clicked" : self.apply_settings 
+      "on_memlock_spinbutton_value_changed" : self.update_memlock_amount}
     self.wTree.signal_autoconnect(dic)
 
-  def closeButton_clicked(self, widget):
-	gtk.main_quit()
+    #For each setting to change, create an instance
+    memlock = changesettings('/etc/security/limits.conf', '@audio - memlock (\d*)', '')
 
+  def closeButton_clicked(self, widget):
+    gtk.main_quit()
+
+  def apply_settings():
+    if memlock_enable:
+      memlock.ch_setting()
+    else:
+      memlock.rm_setting()
+
+  def update_memlock_amount(): #FIXME: Find out how to get amount from label
+    memlock_entry_amount = int(self.wTree.get_widget("memlock_spinbutton").get_value()) #Check to make sure that the value entered is an interger
+    global memlock.line_replacement = '@audio - memlock ' + memlock_entry_amount 
+     
 print __name__
 if __name__ == "__main__":
   uscontrols = Uscontrols()

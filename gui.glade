@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8" standalone="no"?>
 <!DOCTYPE glade-interface SYSTEM "glade-2.0.dtd">
-<!--Generated with glade3 3.4.0 on Mon Dec  3 21:56:08 2007 -->
+<!--Generated with glade3 3.4.0 on Wed Dec  5 15:29:40 2007 -->
 <glade-interface>
   <widget class="GtkWindow" id="mainWindow">
     <property name="visible">True</property>
@@ -43,16 +43,19 @@
               </packing>
             </child>
             <child>
-              <widget class="GtkEntry" id="memlock_entry">
+              <placeholder/>
+            </child>
+            <child>
+              <widget class="GtkSpinButton" id="memlock_spinbutton">
                 <property name="visible">True</property>
                 <property name="can_focus">True</property>
                 <property name="events">GDK_POINTER_MOTION_MASK | GDK_POINTER_MOTION_HINT_MASK | GDK_BUTTON_PRESS_MASK | GDK_BUTTON_RELEASE_MASK</property>
-                <property name="text" translatable="yes">512</property>
-                <property name="xalign">0.93000000715255737</property>
+                <property name="adjustment">0 0 10000 1 10 10</property>
+                <property name="numeric">True</property>
+                <signal name="value_changed" handler="on_memlock_spinbutton_value_changed"/>
               </widget>
               <packing>
-                <property name="expand">False</property>
-                <property name="position">2</property>
+                <property name="position">4</property>
               </packing>
             </child>
             <child>
