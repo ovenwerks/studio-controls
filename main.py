@@ -20,22 +20,21 @@ class Uscontrols:
     self.wTree.signal_autoconnect(dic)
 
     #For each setting to change, create an instance
-    memlock = changesettings('/etc/security/limits.conf', '@audio - memlock (\d*)', '')
+    memlock = changesettings.ChangeSettings('/etc/security/limits.conf', '@audio - memlock (\d*)', '')
 
   def closeButton_clicked(self, widget):
     gtk.main_quit()
 
   def apply_settings():
     if memlock_enable:
-      memlock.ch_setting()
+      self.memlock.ch_setting()
     else:
-      memlock.rm_setting()
+      self.memlock.rm_setting()
 
-  def update_memlock_amount():
+  def update_memlock_amount(): #FIXME: Needs to take two arguments as supplied by gtk... 
     #Check to make sure that the value entered is an interger, then conver it to a string
     memlock_entry_amount = str(int(self.wTree.get_widget("memlock_spinbutton").get_value()))
-
-    global memlock.line_replacement = '@audio - memlock ' + memlock_entry_amount 
+    self.memlock.line_replacement = '@audio - memlock ' + memlock_entry_amount 
      
 print __name__
 if __name__ == "__main__":
