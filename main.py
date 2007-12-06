@@ -31,8 +31,10 @@ class Uscontrols:
     else:
       memlock.rm_setting()
 
-  def update_memlock_amount(): #FIXME: Find out how to get amount from label
-    memlock_entry_amount = int(self.wTree.get_widget("memlock_spinbutton").get_value()) #Check to make sure that the value entered is an interger
+  def update_memlock_amount():
+    #Check to make sure that the value entered is an interger, then conver it to a string
+    memlock_entry_amount = str(int(self.wTree.get_widget("memlock_spinbutton").get_value()))
+
     global memlock.line_replacement = '@audio - memlock ' + memlock_entry_amount 
      
 print __name__
