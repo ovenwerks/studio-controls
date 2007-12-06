@@ -15,7 +15,7 @@ class Uscontrols:
     #Create our dictionay and connect it
     dic = { "on_closeButton_clicked" : self.closeButton_clicked,
       "on_mainWindow_destroy" : gtk.main_quit,
-      "on_apply_button_clicked" : self.apply_settings 
+      "on_apply_button_clicked" : self.apply_settings,
       "on_memlock_spinbutton_value_changed" : self.update_memlock_amount}
     self.wTree.signal_autoconnect(dic)
 
