@@ -48,7 +48,7 @@ class ChangeSettings:
     self.newlines = []
     for item in self.open_file:
       if self.line_check:
-        self.newlines.append(find_memlock.sub(self.line_replacement, item))
+        self.newlines.append(self.regex.sub(self.line_replacement, item))
       else:
         self.newlines.append(item)
     self._seek_write(self.newlines)
