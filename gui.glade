@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8" standalone="no"?>
 <!DOCTYPE glade-interface SYSTEM "glade-2.0.dtd">
-<!--Generated with glade3 3.4.0 on Fri Dec 14 11:38:52 2007 -->
+<!--Generated with glade3 3.4.0 on Fri Dec 14 11:54:44 2007 -->
 <glade-interface>
   <widget class="GtkWindow" id="mainWindow">
     <property name="visible">True</property>
@@ -119,6 +119,7 @@
                 <child>
                   <widget class="GtkButton" id="apply_button">
                     <property name="visible">True</property>
+                    <property name="sensitive">False</property>
                     <property name="can_focus">True</property>
                     <property name="receives_default">True</property>
                     <property name="events">GDK_BUTTON_PRESS_MASK</property>

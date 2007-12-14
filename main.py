@@ -39,9 +39,11 @@ class Uscontrols:
     gtk.main_quit()
 
   def apply_settings(self, apply_button):
-    print self.memlock.line_replacement
-    if self.set_memlock_enable.memlock_enabled:
+    memlock_checkbutton = self.wTree.get_widget('memlock_checkButton') 
+    if memlock_checkbutton.get_active():
       self.memlock.ch_setting()
+      apply_button.set_sensitive(False)
+      print self.memlock.line_replacement
     elif self.set_memlock_enable.memlock_enabled == False:
       self.memlock.rm_setting()
 
@@ -50,11 +52,13 @@ class Uscontrols:
     memlock_entry_amount = str(spin_object.get_value_as_int())
     self.memlock.line_replacement = "@audio - memlock " + memlock_entry_amount + "000"
     print self.memlock.line_replacement
+    apply_button = self.wTree.get_widget('apply_button')
+    apply_button.set_sensitive(True)
 
   def set_memlock_enable(self, memlock_checkButton): #FIXME: Use dispatcher funtion instead
     memlock_enabled = memlock_checkButton.get_active()
-    widget = self.wTree.get_widget('memlock_spinbutton')
-    widget.set_sensitive(memlock_checkButton.get_active())
+    memlock_spinbutton = self.wTree.get_widget('memlock_spinbutton')
+    memlock_spinbutton.set_sensitive(memlock_checkButton.get_active())
     print memlock_enabled
     return memlock_enabled
 
