@@ -53,6 +53,8 @@ class Uscontrols:
 
   def set_memlock_enable(self, memlock_checkButton): #FIXME: Use dispatcher funtion instead
     memlock_enabled = memlock_checkButton.get_active()
+    widget = self.wTree.get_widget('memlock_spinbutton')
+    widget.set_sensitive(memlock_checkButton.get_active())
     print memlock_enabled
     return memlock_enabled
 
