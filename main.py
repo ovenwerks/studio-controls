@@ -52,7 +52,7 @@ class Uscontrols:
 
   def update_memlock_amount(self, spin_object):   
     #Check to make sure that the value entered is an interger, then convert it to a string
-    memlock_entry_amount = str(self.memtotal/spin_object.get_value_as_int()) #FIXME: Handel the error when 0% is used
+    memlock_entry_amount = str(int(self.memtotal*(spin_object.get_value()/100))) #FIXME: Handel the error when 0% is used
     self.memlock.line_replacement = "@audio - memlock " + memlock_entry_amount
     print self.memlock.line_replacement
     apply_button = self.wTree.get_widget('apply_button')
