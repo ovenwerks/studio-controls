@@ -12,7 +12,7 @@
 #   FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for 
 #   more details.
 
-import gtk, changesettings
+import gtk, changesettings, memtotal_info
 from gtk import glade
 
 class Uscontrols:
@@ -32,6 +32,9 @@ class Uscontrols:
       "on_memlock_checkButton_toggled" : self.set_memlock_enable}
     self.wTree.signal_autoconnect(dic)
 
+  #Determine how much memory is on the system
+  memtotal = memtotal_info.memtotal_info()
+  
   #For each setting to change, create an instance
   memlock = changesettings.ChangeSettings("/etc/security/limits.conf", "@audio - memlock (\d*)", "")
 
@@ -49,8 +52,8 @@ class Uscontrols:
 
   def update_memlock_amount(self, spin_object):   
     #Check to make sure that the value entered is an interger, then convert it to a string
-    memlock_entry_amount = str(spin_object.get_value_as_int())
-    self.memlock.line_replacement = "@audio - memlock " + memlock_entry_amount + "000"
+    memlock_entry_amount = str(self.memtotal/spin_object.get_value_as_int()) #FIXME: Handel the error when 0% is used
+    self.memlock.line_replacement = "@audio - memlock " + memlock_entry_amount
     print self.memlock.line_replacement
     apply_button = self.wTree.get_widget('apply_button')
     apply_button.set_sensitive(True)
