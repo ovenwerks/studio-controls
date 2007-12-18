@@ -47,7 +47,7 @@ class Uscontrols:
       self.memlock.ch_setting()
       apply_button.set_sensitive(False)
       print self.memlock.line_replacement
-    elif self.set_memlock_enable.memlock_enabled == False:
+    elif memlock_checkbutton.get_active() == False:
       self.memlock.rm_setting()
 
   def update_memlock_amount(self, spin_object):   

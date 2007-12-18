@@ -33,18 +33,26 @@ class ChangeSettings:
     self.regex_string = regex_string
     self.line_replacement = line_replacement
     self.regex = re.compile(self.regex_string)
-    self.open_file = open(self.file, 'r+')
+
+  def regex_search(self):
     self.open_file_read = open(self.file, 'r')
     self.current_open_file = self.open_file_read.read()
     self.line_check = self.regex.search(self.current_open_file)
+    return self.line_check
+
+  def _open_file(self):
+    self.open_file = open(self.file, 'r+')
+    return self.open_file
 
   def _append(self):
+    self.open_file = self._open_file()
     self.append_list = self.open_file.readlines()
     self.to_add = self.line_replacement + '\n'
     self.append_list.insert(-1, self.to_add)
     self._seek_write(self.append_list)
 
   def _update(self):
+    self.open_file = self._open_file()
     self.newlines = []
     for item in self.open_file:
       if self.line_check:
@@ -63,16 +71,21 @@ class ChangeSettings:
     """
     Adds or updates the replacement string
     """
+    self.line_check = self.regex_search()
     if self.line_check:
       self._update()
     else:
       self._append()
 
   def rm_setting(self):
+    self.open_file = self._open_file()
+    self.line_check = self.regex_search()
     if self.line_check:
       self.remove_string = self.line_check.group() + '\n'
+      print self.remove_string
       self.rm_list = self.open_file.readlines()
       self.rm_list.remove(self.remove_string)
       self._seek_write(self.rm_list)
     else:
-      print "No string to remove"
+      print "No matches in file"
+
