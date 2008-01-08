@@ -9,5 +9,6 @@ setup(name = 'ubuntustudio-controls',
   url = 'https://wiki.ubuntu.com/UbuntuStudio/SettingsApp',
   package_dir = {'':'src'},
   py_modules = ['changesettings', 'memtotal_info'],
-  scripts = ['main'],)
+  scripts = ['src/ubuntustudio-controls.py'],
+  classifiers = ['License :: OSI Approved :: GNU General Public License (GPL)'])
 

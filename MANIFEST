@@ -2,7 +2,7 @@ AUTHORS
 COPYING
 ChangeLog
 README
-main
 setup.py
 src/changesettings.py
 src/memtotal_info.py
+src/ubuntustudio-controls.py
