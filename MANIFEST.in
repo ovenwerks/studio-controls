@@ -1,0 +1,2 @@
+include AUTHORS COPYING ChangeLog
+exclude .bzr
