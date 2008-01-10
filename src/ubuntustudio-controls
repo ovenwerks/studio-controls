@@ -1,6 +1,6 @@
 #!/usr/bin/python
 #
-#  Copyright Andrew Hunter, Luis de Bethencourt Guimera 2007
+#  Copyright Andrew Hunter, Luis de Bethencourt Guimera 2008
 #
 #   This program is free software; you may redistribute it and/or modify it
 #   under the terms of the GNU General Public License as published by the Free 
@@ -12,7 +12,7 @@
 #   FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for 
 #   more details.
 
-import gtk, changesettings, memtotal_info
+import gtk, changesettings, meminfo_total
 from gtk import glade
 
 class Uscontrols:
@@ -33,7 +33,7 @@ class Uscontrols:
     self.wTree.signal_autoconnect(dic)
 
   #Determine how much memory is on the system
-  memtotal = memtotal_info.memtotal_info()
+  memtotal = meminfo_total.meminfo_total()
   
   #For each setting to change, create an instance
   memlock = changesettings.ChangeSettings("/etc/security/limits.conf", "@audio - memlock (\d*)", "")
