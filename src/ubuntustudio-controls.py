@@ -18,7 +18,7 @@ from gtk import glade
 class Uscontrols:
   def __init__(self):
     #Set the Glade file
-    self.gladefile = "gui.glade"
+    self.gladefile = "/usr/share/ubuntustudio-controls/glade/gui.glade"
     self.wTree = gtk.glade.XML(self.gladefile)
 
     #Get the Main Window, and connect the "destroy" event
@@ -52,13 +52,13 @@ class Uscontrols:
 
   def update_memlock_amount(self, spin_object):   
     #Check to make sure that the value entered is an interger, then convert it to a string
-    memlock_entry_amount = str(int(self.memtotal*(spin_object.get_value()/100))) #FIXME: Handel the error when 0% is used
+    memlock_entry_amount = str(int(self.memtotal*(spin_object.get_value()/100)))
     self.memlock.line_replacement = "@audio - memlock " + memlock_entry_amount
     print self.memlock.line_replacement
     apply_button = self.wTree.get_widget('apply_button')
     apply_button.set_sensitive(True)
 
-  def set_memlock_enable(self, memlock_checkButton): #FIXME: Use dispatcher funtion instead
+  def set_memlock_enable(self, memlock_checkButton):
     memlock_enabled = memlock_checkButton.get_active()
     memlock_spinbutton = self.wTree.get_widget('memlock_spinbutton')
     memlock_spinbutton.set_sensitive(memlock_checkButton.get_active())

@@ -1,8 +1,9 @@
 AUTHORS
 COPYING
-ChangeLog
 README
 setup.py
 src/changesettings.py
+src/gui.glade
 src/memtotal_info.py
 src/ubuntustudio-controls.py
+src/ubuntustudio-controls.svg
