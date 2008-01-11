@@ -14,12 +14,11 @@
 
 #Error message dialoge lifted from Terminator. http://launchpad.net/terminator
 try:
-  import gtk, changesettings, meminfo_total, sys
+  import gtk, changesettings, meminfo_total, sys, os
   from gtk import glade
 except:
-  error = gtk.MessageDialog (None, gtk.DIALOG_MODAL, gtk.MESSAGE_ERROR, gtk.BUTTONS_OK,
-    _('You need to install python bindings for gtk and/or glade ("python-gtk2 & python-glade2" in debian/ubuntu)'))
-  error.run()
+  import_error = gtk.MessageDialog (None, gtk.DIALOG_MODAL, gtk.MESSAGE_ERROR, gtk.BUTTONS_OK, ('You need to install python bindings for gtk and/or glade ("python-gtk2 & python-glade2" in debian/ubuntu)'))
+  import_error.run()
   sys.exit(1)
 
 class Uscontrols:
@@ -74,5 +73,13 @@ class Uscontrols:
 
 print __name__
 if __name__ == "__main__":
-  uscontrols = Uscontrols()
-  gtk.main()
+
+  # Bring up error if not root.
+  if not os.geteuid()==0:
+    root_error = gtk.MessageDialog (None, gtk.DIALOG_MODAL, gtk.MESSAGE_ERROR, gtk.BUTTONS_OK, ('You need to have admistrator privilages to run Ubuntu Studio Controls'))
+    root_error.run()
+    sys.exit(1)
+
+  else:
+    uscontrols = Uscontrols()
+    gtk.main()
