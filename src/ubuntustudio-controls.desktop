@@ -1,5 +1,4 @@
 [Desktop Entry]
-Encoding=UTF-8
 Name=Ubuntu Studio Controls
 Name[ar]=
 Name[az]=
@@ -145,9 +144,7 @@ Comment[zh_CN]=
 Comment[zh_HK]=
 Comment[zh_TW]=
 Exec=gksu ubuntustudio-controls
-Icon=ubuntustudio-controls.svg
-StartupNotify=true
+Icon=/usr/share/ubuntustudio-controls/glade/ubuntustudio-controls.svg
 Terminal=false
 Type=Application
-NoDisplay=true
-Categories=GNOME;GTK;Applications;GTK;System;Settings
+Categories=GNOME;GTK;System;Settings;

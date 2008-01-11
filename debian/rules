@@ -5,4 +5,5 @@ DEB_PYTHON_SYSTEM=pycentral
 include /usr/share/cdbs/1/rules/debhelper.mk
 include /usr/share/cdbs/1/class/python-distutils.mk
 
-# Add here any variable or target overrides you need.
+install/ubuntustudio-controls::
+	dh_desktop
