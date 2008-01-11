@@ -2,3 +2,4 @@ include AUTHORS COPYING ChangeLog
 include src/ubuntustudio-controls.svg
 include src/gui.glade
 exclude .bzr
+exclude debian
