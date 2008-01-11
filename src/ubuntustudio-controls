@@ -12,8 +12,15 @@
 #   FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for 
 #   more details.
 
-import gtk, changesettings, meminfo_total
-from gtk import glade
+#Error message dialoge lifted from Terminator. http://launchpad.net/terminator
+try:
+  import gtk, changesettings, meminfo_total, sys
+  from gtk import glade
+except:
+  error = gtk.MessageDialog (None, gtk.DIALOG_MODAL, gtk.MESSAGE_ERROR, gtk.BUTTONS_OK,
+    _('You need to install python bindings for gtk and/or glade ("python-gtk2 & python-glade2" in debian/ubuntu)'))
+  error.run()
+  sys.exit(1)
 
 class Uscontrols:
   def __init__(self):
