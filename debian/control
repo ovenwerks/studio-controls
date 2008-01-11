@@ -6,6 +6,7 @@ Maintainer: Ubuntu Studio Development Team <ubuntu-studio-devel@lists.ubuntu.com
 XSCB-Original-Maintainer: Andrew Hunter <andrew@aehunter.net>
 Build-Depends: cdbs, debhelper (>= 5.0.38), python-all, python-central (>= 0.5.6)
 Standards-Version: 3.7.3
+Vcs-Bzr: https://code.launchpad.net/~ubuntustudio-dev/ubuntustudio-controls/ubuntustudio-controls
 
 Package: ubuntustudio-controls
 XB-Python-Version: ${python:Versions}
