@@ -73,9 +73,8 @@ class Uscontrols:
 
 print __name__
 if __name__ == "__main__":
-
   # Bring up error if not root.
-  if not os.geteuid()==0:
+  if not os.geteuid()==0:  
     root_error = gtk.MessageDialog (None, gtk.DIALOG_MODAL, gtk.MESSAGE_ERROR, gtk.BUTTONS_OK, ('You need to have admistrator privilages to run Ubuntu Studio Controls'))
     root_error.run()
     sys.exit(1)
