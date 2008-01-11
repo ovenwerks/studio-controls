@@ -11,7 +11,7 @@ Package: ubuntustudio-controls
 XB-Python-Version: ${python:Versions}
 Architecture: all
 Section: admin
-Depends: ${python:Depends}, python-changesettings, python-meminfo-total, pygtk(>= 2.0)
+Depends: ${python:Depends}, python-changesettings, python-meminfo-total, python-gtk2 (>= 2.0)
 Description: Access to settings on a A/V production system.
  Ubuntu Studio Controls is a small app that provides users access to 
  commonly hand-edited settings on a A/V production system.
