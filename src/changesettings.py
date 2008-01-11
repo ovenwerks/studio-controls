@@ -2,7 +2,7 @@
 #  ChangeSettings.py
 # 
 #
-#  Copyright Andrew Hunter, 2007
+#  Copyright Andrew Hunter, 2008
 #
 #   This program is free software; you may redistribute it and/or modify it
 #   under the terms of the GNU General Public License as published by the Free 
@@ -16,7 +16,6 @@
 #
 # TODO: Backup conf file before overwriting :P
 # TODO: Come up with better varriable names
-# TODO: Find a way to read files multiple times.
 
 import re
 
