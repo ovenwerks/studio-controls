@@ -51,13 +51,7 @@ class ChangeSettings:
     self._seek_write(self.append_list)
 
   def _update(self):
-    self.open_file = self._open_file()
-    self.newlines = []
-    for item in self.open_file:
-      if self.line_check:
-        self.newlines.append(self.regex.sub(self.line_replacement, item))
-      else:
-        self.newlines.append(item)
+    self.newlines = [self.regex.sub(self.line_replacement, item) for item in self._open_file()]
     self._seek_write(self.newlines)
 
   def _seek_write(self, open_list):

@@ -24,7 +24,7 @@ except:
 class Uscontrols:
   def __init__(self):
     #Set the Glade file
-    self.gladefile = "/usr/share/ubuntustudio-controls/gui.glade"
+    self.gladefile = "/usr/share/ubuntustudio-controls/gui.glade" 
     self.wTree = gtk.glade.XML(self.gladefile)
 
     #Get the Main Window, and connect the "destroy" event
