@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8" standalone="no"?>
 <!DOCTYPE glade-interface SYSTEM "glade-2.0.dtd">
-<!--Generated with glade3 3.4.1 on Wed Jan 16 17:42:35 2008 -->
+<!--Generated with glade3 3.4.1 on Wed Jan 16 18:27:11 2008 -->
 <glade-interface>
   <widget class="GtkWindow" id="mainWindow">
     <property name="visible">True</property>
@@ -96,6 +96,7 @@
                 <property name="events">GDK_BUTTON_PRESS_MASK</property>
                 <property name="label" translatable="yes"> About </property>
                 <property name="response_id">0</property>
+                <signal name="clicked" handler="on_about_button_clicked"/>
               </widget>
               <packing>
                 <property name="expand">False</property>
@@ -190,8 +191,9 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
 02111-1307  USA</property>
     <property name="authors">Andrew Hunter, Luis de Bethencourt, Cory Kontros</property>
     <property name="documenters"></property>
-    <property name="artists">Huw Wilkins </property>
+    <property name="artists">Huw Wilkins &lt;hushimi@gmail.com&gt;</property>
     <property name="logo">ubuntustudio-controls.svg</property>
+    <signal name="close" handler="on_about_close"/>
     <child internal-child="vbox">
       <widget class="GtkVBox" id="dialog-vbox1">
         <property name="visible">True</property>
