@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8" standalone="no"?>
 <!DOCTYPE glade-interface SYSTEM "glade-2.0.dtd">
-<!--Generated with glade3 3.4.1 on Sat Jan 19 15:54:01 2008 -->
+<!--Generated with glade3 3.4.1 on Sat Jan 19 16:27:57 2008 -->
 <glade-interface>
   <widget class="GtkWindow" id="mainWindow">
     <property name="visible">True</property>
@@ -172,7 +172,7 @@
     <property name="program_name">Ubuntu Studio Controls</property>
     <property name="version">0.1</property>
     <property name="copyright" translatable="yes">Copyright © 2008 Andrew Hunter, Luis de Bethencourt</property>
-    <property name="comments" translatable="yes">Ubuntu Studio Controls is the official ubuntu studio application to handle your system audio specific controls. </property>
+    <property name="comments" translatable="yes">Ubuntu Studio Controls is the official Ubuntu Studio application to handle your system audio specific controls. </property>
     <property name="website">http://www.ubuntustudio.org</property>
     <property name="website_label" translatable="yes">http://www.ubuntustudio.org</property>
     <property name="license" translatable="yes">Ubuntu Studio Controls is free software; you can redistribute it and/or modify it
