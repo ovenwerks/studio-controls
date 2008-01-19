@@ -23,6 +23,13 @@ except:
   import_error.run()
   sys.exit(1)
 
+if not os.path.exists('/var/lock/ubuntustudio-controls'):
+  lockFile = open('/var/lock/ubuntustudio-controls', 'w')
+else:
+  lock_error = gtk.MessageDialog (None, gtk.DIALOG_MODAL, gtk.MESSAGE_ERROR, gtk.BUTTONS_OK, ('Only one instance of Ubuntu Studio Controls can be run at a time'))
+  lock_error.run()
+  sys.exit(1) 
+
 class Uscontrols:
   def __init__(self):
     #Set the Glade file
@@ -95,3 +102,4 @@ if __name__ == "__main__":
   else:
     uscontrols = Uscontrols()
     gtk.main()
+    os.remove('/var/lock/ubuntustudio-controls')
