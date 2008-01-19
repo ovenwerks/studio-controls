@@ -26,14 +26,12 @@ except:
 class Uscontrols:
   def __init__(self):
     #Set the Glade file
-    self.gladefile = "/home/d33p/Desktop/development/ubuntustudio-controls/src/gui.glade" #Remove /usr/share/ubuntustudio-controls/ to run from src dir
+    self.gladefile = "/usr/share/ubuntustudio-controls/gui.glade" #Remove /usr/share/ubuntustudio-controls/ to run from src dir
     self.wTree = gtk.glade.XML(self.gladefile)
 
     #Get the Main Window, and connect the "destroy" event
     self.window = self.wTree.get_widget("mainWindow")
     self.aboutWidget = self.wTree.get_widget("about")
-    self.aboutWidget.run()
-    self.aboutWidget.destroy()
 
     #Create our dictionay and connect it
     dic = { "on_closeButton_clicked" : self.closeButton_clicked,
@@ -41,9 +39,7 @@ class Uscontrols:
       "on_about_button_clicked" : self.about,
       "on_apply_button_clicked" : self.apply_settings,
       "on_memlock_spinbutton_value_changed" : self.update_memlock_amount,
-      "on_memlock_checkButton_toggled" : self.set_memlock_enable,
-      "about_close_cb" : self.about_close,
-      "on_about_button_press_event" : self.about_close}
+      "on_memlock_checkButton_toggled" : self.set_memlock_enable,}
     self.wTree.signal_autoconnect(dic)
 
   #Determine how much memory is on the system
@@ -56,12 +52,9 @@ class Uscontrols:
     gtk.main_quit()
 
   def about(self, widget):
-    self.aboutWidget.show()
-
-  def about_close(self, widget):
-    print 'wola'
-    #self.aboutWidget.close()
-    print 'hola'
+    print 'showing widget'
+    self.aboutWidget.run()
+    self.aboutWidget.hide()
 
   def apply_settings(self, apply_button):
     #Get all the widgets and add those widgets to a diction in the format {widget : self.instance}
