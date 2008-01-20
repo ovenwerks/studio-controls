@@ -9,6 +9,7 @@ install/ubuntustudio-controls::
 	dh_desktop
 	dh_icons
 	dh_installman src/ubuntustudio-controls.1
+	dh_installmenu src/ubuntustudio-controls.menu
 
 get-orig-source::
 	(cd ../; bzr branch lp:ubuntustudio-controls ubuntustudio-controls.orig; cd ubuntustudio-controls.orig; python setup.py sdist)

@@ -1,7 +1,7 @@
 Source: ubuntustudio-controls
 XS-Python-Version: all
 Section: admin
-Priority: extra
+Priority: optional
 Maintainer: Ubuntu Studio Development Team <ubuntu-studio-devel@lists.ubuntu.com>
 XSCB-Original-Maintainer: Andrew Hunter <andrew@aehunter.net>
 Build-Depends: cdbs, debhelper (>= 5.0.38), python-all, python-central (>= 0.5.6)

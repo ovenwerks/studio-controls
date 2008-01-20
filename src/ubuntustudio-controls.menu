@@ -1,0 +1,6 @@
+?package(ubuntustudio-controls):\
+ needs="X11"\
+ section="System/Administration"\
+ title="Ubuntu Studio Controls"\
+ command="ubuntustudio-controls"
+
