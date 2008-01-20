@@ -2,15 +2,18 @@
 #
 #  Copyright Andrew Hunter, Luis de Bethencourt Guimera 2008
 #
-#   This program is free software; you may redistribute it and/or modify it
-#   under the terms of the GNU General Public License as published by the Free 
-#   Software Foundation; either version 2 of the License, or (at your option) 
-#   any later version.
+#    This program is free software; you may redistribute it and/or modify it
+#    under the terms of the GNU General Public License as published by the Free 
+#    Software Foundation; either version 2 of the License, or (at your option) 
+#    any later version.
 #
-#   This program is distributed in the hope that it will be useful, but WITHOUT
-#   ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or 
-#   FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for 
-#   more details.
+#    This program is distributed in the hope that it will be useful, but WITHOUT
+#    ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or 
+#    FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for 
+#    more details.
+#
+#    You should have received a copy of the GNU General Public License
+#    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 #FIXME: Get the close button to close the about window.
 
@@ -22,13 +25,6 @@ except:
   import_error = gtk.MessageDialog (None, gtk.DIALOG_MODAL, gtk.MESSAGE_ERROR, gtk.BUTTONS_OK, ('You need to install python bindings for gtk and/or glade ("python-gtk2 & python-glade2" in debian/ubuntu)'))
   import_error.run()
   sys.exit(1)
-
-if not os.path.exists('/var/lock/ubuntustudio-controls'):
-  lockFile = open('/var/lock/ubuntustudio-controls', 'w')
-else:
-  lock_error = gtk.MessageDialog (None, gtk.DIALOG_MODAL, gtk.MESSAGE_ERROR, gtk.BUTTONS_OK, ('Only one instance of Ubuntu Studio Controls can be run at a time'))
-  lock_error.run()
-  sys.exit(1) 
 
 class Uscontrols:
   def __init__(self):
@@ -93,6 +89,14 @@ class Uscontrols:
 
 print __name__
 if __name__ == "__main__":
+  #Make sure two instances are not running!
+  if not os.path.exists('/var/lock/ubuntustudio-controls'):
+    lockFile = open('/var/lock/ubuntustudio-controls', 'w')
+  else:
+    lock_error = gtk.MessageDialog (None, gtk.DIALOG_MODAL, gtk.MESSAGE_ERROR, gtk.BUTTONS_OK, ('Only one instance of Ubuntu Studio Controls can be run at a time'))
+    lock_error.run()
+    sys.exit(1)
+ 
   # Bring up error if not root.
   if not os.geteuid()==0:  
     root_error = gtk.MessageDialog (None, gtk.DIALOG_MODAL, gtk.MESSAGE_ERROR, gtk.BUTTONS_OK, ('You need to have admistrator privilages to run Ubuntu Studio Controls'))

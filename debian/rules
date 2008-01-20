@@ -7,3 +7,8 @@ include /usr/share/cdbs/1/class/python-distutils.mk
 
 install/ubuntustudio-controls::
 	dh_desktop
+	dh_icons
+
+get-orig-source::
+	(cd ../; bzr branch lp:ubuntustudio-controls ubuntustudio-controls.orig; cd ubuntustudio-controls.orig; python setup.py sdist)
+

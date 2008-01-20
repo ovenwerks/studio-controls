@@ -14,12 +14,9 @@ XB-Python-Version: ${python:Versions}
 Architecture: all
 Section: admin
 Depends: ${python:Depends}, python-changesettings, python-meminfo-total, python-gtk2 (>= 2.0), python-glade2 (>= 2.0)
-Description: Access to settings on a A/V production system.
+Description: Ubuntu Studio Controls is a small app that changes A/V settings.
  Ubuntu Studio Controls is a small app that provides users access to 
- commonly hand-edited settings on a A/V production system.
- . 
- Please see https://wiki.ubuntu.com/UbuntuStudio/SettingsApp for more
- information.
+ commonly hand-edited settings on an A/V production system.
 
 Package: python-changesettings
 XB-Python-Version: ${python:Versions}

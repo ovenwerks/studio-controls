@@ -19,15 +19,15 @@ License:
  
     This package is distributed in the hope that it will be useful,
     but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU General Public License for more details.
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General 
+    Public License for more details.
  
     You should have received a copy of the GNU General Public License
-    along with this package; if not, write to the Free Software
-    Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301 USA
+    along with Ubuntu Studio Controls.  If not, see 
+    <http://www.gnu.org/licenses/>.
 
 On Debian systems, the complete text of the GNU General
 Public License can be found in `/usr/share/common-licenses/GPL-2'.
 
 The Debian packaging is (C) 2008, Andrew Hunter <andrew@aehunter.net> and
-is licensed under the GPL, see above.
+is licensed under the GPL, see above.al
