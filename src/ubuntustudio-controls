@@ -15,8 +15,6 @@
 #    You should have received a copy of the GNU General Public License
 #    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-#FIXME: Get the close button to close the about window.
-
 #Error message dialoge lifted from Terminator. http://launchpad.net/terminator
 try:
   import gtk, changesettings, meminfo_total, sys, os
@@ -47,9 +45,18 @@ class Uscontrols:
 
   #Determine how much memory is on the system
   memtotal = meminfo_total.meminfo_total()
+
+  #Subclass ChangeSettings so that it reverts instead of removes
+  class ChangeRaw1394(ChangeSettings):
+    def rm_settings(self):
+      self.line_check = self.regex_search()
+      if self.line_check:
+        self.newlines = [self.regex.sub('KERNEL==\"raw1394\"\t\tGROUP==\"disk\"', item) for item in self._open_file()]
+        self._seek_write(self.newlines)
   
   #For each setting to change, create an instance
   memlock = changesettings.ChangeSettings("/etc/security/limits.conf", "@audio - memlock (\d*)", "")
+  raw1394 = ChangeRaw1394("/etc/udev/40-permissions.rules", "KERNEL==\"raw1394\"\s*GROUP==\"*\"", "")
 
   def closeButton_clicked(self, widget):
     gtk.main_quit()
@@ -61,7 +68,7 @@ class Uscontrols:
 
   def apply_settings(self, apply_button):
     #Get all the widgets and add those widgets to a diction in the format {widget : self.instance}
-    active_settings = {self.wTree.get_widget('memlock_checkButton') : self.memlock}
+    active_settings = {self.wTree.get_widget('memlock_checkButton') : self.memlock, self.wTree.get_widget('raw1394_button') : self.raw1394}
     #Apply those settings
     for widget, instanceName in active_settings.items():
       if widget.get_active():
