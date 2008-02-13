@@ -102,6 +102,9 @@ class Uscontrols:
       print 'Showing warning'
       self.raw1394Warning.run()
       self.raw1394Warning.hide()
+      apply_button = self.wTree.get_widget('apply_button')
+      apply_button.set_sensitive(True)
+
     else:
       print 'Not showing warning'
       pass
