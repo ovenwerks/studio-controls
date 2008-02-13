@@ -42,7 +42,7 @@ class Uscontrols:
       "on_apply_button_clicked" : self.apply_settings,
       "on_memlock_spinbutton_value_changed" : self.update_memlock_amount,
       "on_memlock_checkButton_toggled" : self.set_memlock_enable,
-      "on_raw1394_checkbutton_clicked" : self.show_raw1394_warning,}
+      "on_raw1394_checkbutton_toggled" : self.show_raw1394_warning,}
     self.wTree.signal_autoconnect(dic)
 
   #Determine how much memory is on the system
