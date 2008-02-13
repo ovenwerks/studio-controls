@@ -27,12 +27,13 @@ except:
 class Uscontrols:
   def __init__(self):
     #Set the Glade file
-    self.gladefile = "gui.glade" #Remove /usr/share/ubuntustudio-controls/ to run from src dir
+    self.gladefile = "/usr/share/ubuntustudio-controls/gui.glade" #Remove /usr/share/ubuntustudio-controls/ to run from src dir
     self.wTree = gtk.glade.XML(self.gladefile)
 
     #Get the Main Window, and connect the "destroy" event
     self.window = self.wTree.get_widget("mainWindow")
     self.aboutWidget = self.wTree.get_widget("about")
+    self.raw1394Warning = self.wTree.get_widget("raw_dialog")
 
     #Create our dictionay and connect it
     dic = { "on_closeButton_clicked" : self.closeButton_clicked,
@@ -40,7 +41,8 @@ class Uscontrols:
       "on_about_button_clicked" : self.about,
       "on_apply_button_clicked" : self.apply_settings,
       "on_memlock_spinbutton_value_changed" : self.update_memlock_amount,
-      "on_memlock_checkButton_toggled" : self.set_memlock_enable,}
+      "on_memlock_checkButton_toggled" : self.set_memlock_enable,
+      "on_raw1394_checkbutton_clicked" : self.show_raw1394_warning,}
     self.wTree.signal_autoconnect(dic)
 
   #Determine how much memory is on the system
@@ -48,15 +50,16 @@ class Uscontrols:
 
   #Subclass ChangeSettings so that it reverts instead of removes
   class ChangeRaw1394(changesettings.ChangeSettings):
-    def rm_settings(self):
+    def rm_setting(self):
       self.line_check = self.regex_search()
       if self.line_check:
-        self.newlines = [self.regex.sub('KERNEL==\"raw1394\"\t\tGROUP==\"disk\"', item) for item in self._open_file()]
+        print 'Match found, returning to \"disk\"'
+        self.newlines = [self.regex.sub('KERNEL==\"raw1394\",\t\t\tGROUP=\"disk\"', item) for item in self._open_file()]
         self._seek_write(self.newlines)
   
   #For each setting to change, create an instance
   memlock = changesettings.ChangeSettings("/etc/security/limits.conf", "@audio - memlock (\d*)", "")
-  raw1394 = ChangeRaw1394("/etc/udev/40-permissions.rules", "KERNEL==\"raw1394\"\s*GROUP==\"*\"", "")
+  raw1394 = ChangeRaw1394("/etc/udev/rules.d/40-permissions.rules", "KERNEL==\"raw1394\",\s*GROUP=\".*\"", "KERNEL==\"raw1394\",\t\t\tGROUP=\"video\"")
 
   def closeButton_clicked(self, widget):
     gtk.main_quit()
@@ -68,7 +71,7 @@ class Uscontrols:
 
   def apply_settings(self, apply_button):
     #Get all the widgets and add those widgets to a diction in the format {widget : self.instance}
-    self.active_settings = {self.wTree.get_widget('memlock_checkButton') : self.memlock, self.wTree.get_widget('raw1394_button') : self.raw1394}
+    self.active_settings = {self.wTree.get_widget('memlock_checkButton') : self.memlock, self.wTree.get_widget('raw1394_checkbutton') : self.raw1394}
     #Apply those settings
     for widget, instanceName in self.active_settings.items():
       if widget.get_active():
@@ -94,9 +97,19 @@ class Uscontrols:
     memlock_spinbutton.set_sensitive(memlock_checkButton.get_active())
     print self.memlock_enabled
 
+  def show_raw1394_warning(self, toggled_button):
+    if toggled_button.get_active():
+      print 'Showing warning'
+      self.raw1394Warning.run()
+      self.raw1394Warning.hide()
+    else:
+      print 'Not showing warning'
+      pass
+
   def serialze_settings(self):
     self.settings_value = {}
-    self.settings_value['memlock'] = { 'memlock_checkButton' : self.memlock_enabled, 'memlock_spinbutton' : self.wTree.get_widget('memlock_spinbutton').get_value() }
+    self.settings_value['memlock'] = { 'memlock_checkButton' : self.wTree.get_widget('memlock_checkButton').get_active(), 'memlock_spinbutton' : self.wTree.get_widget('memlock_spinbutton').get_value() }
+    self.settings_value['raw1394'] = { 'raw1394_checkbutton' : self.wTree.get_widget('raw1394_checkbutton').get_active() } 
     us_config = open(os.path.expanduser('~/.us-controls'), 'w')
     cPickle.dump(self.settings_value, us_config)
     us_config.close()
