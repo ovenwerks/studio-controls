@@ -33,6 +33,7 @@ class Uscontrols:
     #Get the Main Window, and connect the "destroy" event
     self.window = self.wTree.get_widget("mainWindow")
     self.aboutWidget = self.wTree.get_widget("about")
+    self.raw1394Warning = self.wTree.get_widget("raw_dialog")
 
     #Create our dictionay and connect it
     dic = { "on_closeButton_clicked" : self.closeButton_clicked,
@@ -40,7 +41,8 @@ class Uscontrols:
       "on_about_button_clicked" : self.about,
       "on_apply_button_clicked" : self.apply_settings,
       "on_memlock_spinbutton_value_changed" : self.update_memlock_amount,
-      "on_memlock_checkButton_toggled" : self.set_memlock_enable,}
+      "on_memlock_checkButton_toggled" : self.set_memlock_enable,
+      "on_raw1394_checkbutton_toggled" : self.show_raw1394_warning,}
     self.wTree.signal_autoconnect(dic)
 
   #Determine how much memory is on the system
@@ -68,7 +70,7 @@ class Uscontrols:
 
   def apply_settings(self, apply_button):
     #Get all the widgets and add those widgets to a diction in the format {widget : self.instance}
-    self.active_settings = {self.wTree.get_widget('memlock_checkButton') : self.memlock, self.wTree.get_widget('raw1394_button') : self.raw1394}
+    self.active_settings = {self.wTree.get_widget('memlock_checkButton') : self.memlock, self.wTree.get_widget('raw1394_checkbutton') : self.raw1394}
     #Apply those settings
     for widget, instanceName in self.active_settings.items():
       if widget.get_active():
@@ -93,6 +95,11 @@ class Uscontrols:
     memlock_spinbutton = self.wTree.get_widget('memlock_spinbutton')
     memlock_spinbutton.set_sensitive(memlock_checkButton.get_active())
     print self.memlock_enabled
+
+  def show_raw1394_warning(self, toggeled_button):
+    print 'Showing warning'
+    self.raw1394Warning.show()
+    self.raw1394Warning.hide()
 
   def serialze_settings(self):
     self.settings_value = {}
