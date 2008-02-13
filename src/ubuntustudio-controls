@@ -17,7 +17,7 @@
 
 #Error message dialoge lifted from Terminator. http://launchpad.net/terminator
 try:
-  import gtk, changesettings, meminfo_total, sys, os
+  import gtk, changesettings, meminfo_total, sys, os, cPickle
   from gtk import glade
 except:
   import_error = gtk.MessageDialog (None, gtk.DIALOG_MODAL, gtk.MESSAGE_ERROR, gtk.BUTTONS_OK, ('You need to install python bindings for gtk and/or glade ("python-gtk2 & python-glade2" in debian/ubuntu)'))
@@ -27,7 +27,7 @@ except:
 class Uscontrols:
   def __init__(self):
     #Set the Glade file
-    self.gladefile = "/usr/share/ubuntustudio-controls/gui.glade" #Remove /usr/share/ubuntustudio-controls/ to run from src dir
+    self.gladefile = "gui.glade" #Remove /usr/share/ubuntustudio-controls/ to run from src dir
     self.wTree = gtk.glade.XML(self.gladefile)
 
     #Get the Main Window, and connect the "destroy" event
@@ -47,7 +47,7 @@ class Uscontrols:
   memtotal = meminfo_total.meminfo_total()
 
   #Subclass ChangeSettings so that it reverts instead of removes
-  class ChangeRaw1394(ChangeSettings):
+  class ChangeRaw1394(changesettings.ChangeSettings):
     def rm_settings(self):
       self.line_check = self.regex_search()
       if self.line_check:
@@ -68,9 +68,9 @@ class Uscontrols:
 
   def apply_settings(self, apply_button):
     #Get all the widgets and add those widgets to a diction in the format {widget : self.instance}
-    active_settings = {self.wTree.get_widget('memlock_checkButton') : self.memlock, self.wTree.get_widget('raw1394_button') : self.raw1394}
+    self.active_settings = {self.wTree.get_widget('memlock_checkButton') : self.memlock, self.wTree.get_widget('raw1394_button') : self.raw1394}
     #Apply those settings
-    for widget, instanceName in active_settings.items():
+    for widget, instanceName in self.active_settings.items():
       if widget.get_active():
         print 'Applying settings'
         instanceName.ch_setting()
@@ -89,10 +89,28 @@ class Uscontrols:
     apply_button.set_sensitive(True)
 
   def set_memlock_enable(self, memlock_checkButton):
-    memlock_enabled = memlock_checkButton.get_active()
+    self.memlock_enabled = memlock_checkButton.get_active()
     memlock_spinbutton = self.wTree.get_widget('memlock_spinbutton')
     memlock_spinbutton.set_sensitive(memlock_checkButton.get_active())
-    print memlock_enabled
+    print self.memlock_enabled
+
+  def serialze_settings(self):
+    self.settings_value = {}
+    self.settings_value['memlock'] = { 'memlock_checkButton' : self.memlock_enabled, 'memlock_spinbutton' : self.wTree.get_widget('memlock_spinbutton').get_value() }
+    us_config = open(os.path.expanduser('~/.us-controls'), 'w')
+    cPickle.dump(self.settings_value, us_config)
+    us_config.close()
+
+  def load_settings(self):
+    us_config = open(os.path.expanduser('~/.us-controls'), 'r')
+    self.settings_value = cPickle.load(us_config)
+    for key, value in self.settings_value.items():
+      for widget, value in value.items():
+        try:
+          self.wTree.get_widget(widget).set_value(value)
+        except:
+          self.wTree.get_widget(widget).set_active(value)
+    us_config.close()
 
 print __name__
 if __name__ == "__main__":
@@ -112,5 +130,10 @@ if __name__ == "__main__":
 
   else:
     uscontrols = Uscontrols()
+    try:
+      uscontrols.load_settings()
+    except IOError:
+      pass
     gtk.main()
+    uscontrols.serialze_settings()
     os.remove('/var/lock/ubuntustudio-controls')
