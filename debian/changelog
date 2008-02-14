@@ -1,3 +1,11 @@
+ubuntustudio-controls (0.2) hardy; urgency=low
+
+  * Added support for changing raw1394 from group 'disk' to group
+    'video'.
+  * Added persistence support so that values remain between instances.
+
+ -- Andrew Hunter <andrew@aehunter.net>  Wed, 13 Feb 2008 18:37:17 -0500
+
 ubuntustudio-controls (0.1) hardy; urgency=low
 
   * Initial Release. (LP: #184586)
