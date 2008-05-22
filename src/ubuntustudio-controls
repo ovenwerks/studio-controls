@@ -42,7 +42,8 @@ class Uscontrols:
       "on_apply_button_clicked" : self.apply_settings,
       "on_memlock_spinbutton_value_changed" : self.update_memlock_amount,
       "on_memlock_checkButton_toggled" : self.set_memlock_enable,
-      "on_raw1394_checkbutton_toggled" : self.show_raw1394_warning,}
+      "on_raw1394_checkbutton_toggled" : self.show_raw1394_warning,
+      "on_enableNice_toggled" : self.}
     self.wTree.signal_autoconnect(dic)
 
   #Determine how much memory is on the system
@@ -58,8 +59,9 @@ class Uscontrols:
         self._seek_write(self.newlines)
   
   #For each setting to change, create an instance
-  memlock = changesettings.ChangeSettings("/etc/security/limits.conf", "@audio - memlock (\d*)", "")
+  memlock = changesettings.ChangeSettings("/etc/security/limits.conf", "@audio\s-\smemlock (\d*)", "")
   raw1394 = ChangeRaw1394("/etc/udev/rules.d/40-permissions.rules", "KERNEL==\"raw1394\",\s*GROUP=\".*\"", "KERNEL==\"raw1394\",\t\t\tGROUP=\"video\"")
+  nice = changesettings.ChangeSetting("/etc/security/limits.conf", "@audio\s-\snice\s(.*)", "")
 
   def closeButton_clicked(self, widget):
     gtk.main_quit()
