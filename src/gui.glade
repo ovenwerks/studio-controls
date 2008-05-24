@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8" standalone="no"?>
 <!DOCTYPE glade-interface SYSTEM "glade-2.0.dtd">
-<!--Generated with glade3 3.4.1 on Wed Feb 13 16:19:04 2008 -->
+<!--Generated with glade3 3.4.5 on Sat May 24 09:52:10 2008 -->
 <glade-interface>
   <widget class="GtkWindow" id="mainWindow">
     <property name="visible">True</property>
@@ -15,41 +15,20 @@
         <property name="events">GDK_POINTER_MOTION_MASK | GDK_POINTER_MOTION_HINT_MASK | GDK_BUTTON_PRESS_MASK | GDK_BUTTON_RELEASE_MASK</property>
         <property name="spacing">5</property>
         <child>
-          <widget class="GtkHBox" id="hbox2">
+          <widget class="GtkHButtonBox" id="hbuttonbox2">
             <property name="visible">True</property>
-            <property name="events">GDK_POINTER_MOTION_MASK | GDK_POINTER_MOTION_HINT_MASK | GDK_BUTTON_PRESS_MASK | GDK_BUTTON_RELEASE_MASK</property>
             <child>
               <widget class="GtkCheckButton" id="memlock_checkButton">
                 <property name="visible">True</property>
                 <property name="can_focus">True</property>
                 <property name="events">GDK_POINTER_MOTION_MASK | GDK_POINTER_MOTION_HINT_MASK | GDK_BUTTON_PRESS_MASK | GDK_BUTTON_RELEASE_MASK</property>
+                <property name="label" translatable="yes">Enable memlock</property>
                 <property name="response_id">0</property>
                 <property name="draw_indicator">True</property>
                 <signal name="toggled" handler="on_memlock_checkButton_toggled"/>
               </widget>
               <packing>
                 <property name="expand">False</property>
-              </packing>
-            </child>
-            <child>
-              <widget class="GtkLabel" id="memlock_enableLabel">
-                <property name="visible">True</property>
-                <property name="events">GDK_POINTER_MOTION_MASK | GDK_POINTER_MOTION_HINT_MASK | GDK_BUTTON_PRESS_MASK | GDK_BUTTON_RELEASE_MASK</property>
-                <property name="label" translatable="yes">Enable memlock</property>
-              </widget>
-              <packing>
-                <property name="expand">False</property>
-                <property name="padding">5</property>
-                <property name="position">1</property>
-              </packing>
-            </child>
-            <child>
-              <widget class="GtkLabel" id="empty_label">
-                <property name="visible">True</property>
-                <property name="events">GDK_POINTER_MOTION_MASK | GDK_POINTER_MOTION_HINT_MASK | GDK_BUTTON_PRESS_MASK | GDK_BUTTON_RELEASE_MASK</property>
-              </widget>
-              <packing>
-                <property name="position">2</property>
               </packing>
             </child>
             <child>
@@ -63,7 +42,7 @@
                 <signal name="value_changed" handler="on_memlock_spinbutton_value_changed"/>
               </widget>
               <packing>
-                <property name="position">4</property>
+                <property name="position">1</property>
               </packing>
             </child>
             <child>
@@ -75,7 +54,7 @@
               <packing>
                 <property name="expand">False</property>
                 <property name="pack_type">GTK_PACK_END</property>
-                <property name="position">3</property>
+                <property name="position">2</property>
               </packing>
             </child>
           </widget>
@@ -99,12 +78,10 @@
                 <property name="visible">True</property>
                 <property name="can_focus">True</property>
                 <property name="events">GDK_POINTER_MOTION_MASK | GDK_POINTER_MOTION_HINT_MASK | GDK_BUTTON_PRESS_MASK | GDK_BUTTON_RELEASE_MASK</property>
+                <property name="label" translatable="yes">Enable raw1394 access</property>
                 <property name="response_id">0</property>
                 <property name="draw_indicator">True</property>
                 <signal name="toggled" handler="on_raw1394_checkbutton_toggled"/>
-                <child>
-                  <placeholder/>
-                </child>
               </widget>
               <packing>
                 <property name="expand">False</property>
@@ -112,25 +89,10 @@
               </packing>
             </child>
             <child>
-              <widget class="GtkLabel" id="empty_label2">
-                <property name="visible">True</property>
-                <property name="events">GDK_POINTER_MOTION_MASK | GDK_POINTER_MOTION_HINT_MASK | GDK_BUTTON_PRESS_MASK | GDK_BUTTON_RELEASE_MASK</property>
-              </widget>
-              <packing>
-                <property name="position">1</property>
-              </packing>
+              <placeholder/>
             </child>
             <child>
-              <widget class="GtkLabel" id="raw1394_label">
-                <property name="visible">True</property>
-                <property name="events">GDK_POINTER_MOTION_MASK | GDK_POINTER_MOTION_HINT_MASK | GDK_BUTTON_PRESS_MASK | GDK_BUTTON_RELEASE_MASK</property>
-                <property name="label" translatable="yes">Enable raw 1394 </property>
-                <property name="justify">GTK_JUSTIFY_RIGHT</property>
-              </widget>
-              <packing>
-                <property name="expand">False</property>
-                <property name="position">2</property>
-              </packing>
+              <placeholder/>
             </child>
           </widget>
           <packing>
@@ -145,6 +107,45 @@
           <packing>
             <property name="expand">False</property>
             <property name="position">3</property>
+          </packing>
+        </child>
+        <child>
+          <widget class="GtkHButtonBox" id="hbuttonbox1">
+            <property name="visible">True</property>
+            <child>
+              <widget class="GtkCheckButton" id="EnableNice">
+                <property name="visible">True</property>
+                <property name="can_focus">True</property>
+                <property name="label" translatable="yes">Enable nice</property>
+                <property name="response_id">0</property>
+                <property name="draw_indicator">True</property>
+                <signal name="toggled" handler="on_EnableNice_toggled"/>
+              </widget>
+            </child>
+            <child>
+              <widget class="GtkSpinButton" id="nicePercentageAmount">
+                <property name="visible">True</property>
+                <property name="can_focus">True</property>
+                <property name="adjustment">0 -20 100 1 10 10</property>
+                <property name="numeric">True</property>
+                <signal name="value_changed" handler="on_nicePercentageAmount_value_changed"/>
+              </widget>
+              <packing>
+                <property name="position">1</property>
+              </packing>
+            </child>
+            <child>
+              <widget class="GtkLabel" id="nicePercentage">
+                <property name="visible">True</property>
+                <property name="label" translatable="yes">Nice percentage</property>
+              </widget>
+              <packing>
+                <property name="position">2</property>
+              </packing>
+            </child>
+          </widget>
+          <packing>
+            <property name="position">4</property>
           </packing>
         </child>
         <child>
@@ -219,7 +220,7 @@
             </child>
           </widget>
           <packing>
-            <property name="position">4</property>
+            <property name="position">5</property>
           </packing>
         </child>
       </widget>
@@ -228,12 +229,12 @@
   <widget class="GtkAboutDialog" id="about">
     <property name="events">GDK_POINTER_MOTION_MASK | GDK_POINTER_MOTION_HINT_MASK | GDK_BUTTON_PRESS_MASK | GDK_BUTTON_RELEASE_MASK</property>
     <property name="border_width">5</property>
-    <property name="title" translatable="yes">About Glade</property>
+    <property name="title" translatable="yes">About Ubuntu Studio Controls</property>
     <property name="window_position">GTK_WIN_POS_CENTER_ON_PARENT</property>
     <property name="type_hint">GDK_WINDOW_TYPE_HINT_DIALOG</property>
     <property name="has_separator">False</property>
     <property name="program_name">Ubuntu Studio Controls</property>
-    <property name="version">0.1</property>
+    <property name="version">0.3</property>
     <property name="copyright" translatable="yes">Copyright © 2008 Andrew Hunter, Luis de Bethencourt</property>
     <property name="comments" translatable="yes">Ubuntu Studio Controls is the official Ubuntu Studio application to handle your system audio specific controls. </property>
     <property name="website">http://www.ubuntustudio.org</property>

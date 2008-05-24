@@ -17,8 +17,9 @@
 
 #Error message dialoge lifted from Terminator. http://launchpad.net/terminator
 try:
-  import gtk, changesettings, meminfo_total, sys, os, cPickle
+  import gtk, meminfo_total, sys, os, cPickle
   from gtk import glade
+  from changesettings import ChangeSettings
 except:
   import_error = gtk.MessageDialog (None, gtk.DIALOG_MODAL, gtk.MESSAGE_ERROR, gtk.BUTTONS_OK, ('You need to install python bindings for gtk and/or glade ("python-gtk2 & python-glade2" in debian/ubuntu)'))
   import_error.run()
@@ -42,14 +43,17 @@ class Uscontrols:
       "on_apply_button_clicked" : self.apply_settings,
       "on_memlock_spinbutton_value_changed" : self.update_memlock_amount,
       "on_memlock_checkButton_toggled" : self.set_memlock_enable,
-      "on_raw1394_checkbutton_toggled" : self.show_raw1394_warning,}
+      "on_raw1394_checkbutton_toggled" : self.check_raw1394_enabled,
+      "on_EnableNice_toggled" : self.set_nice_enable,
+      "on_nicePercentageAmount_value_changed" : self.set_nice_amount,
+}
     self.wTree.signal_autoconnect(dic)
 
   #Determine how much memory is on the system
   memtotal = meminfo_total.meminfo_total()
 
   #Subclass ChangeSettings so that it reverts instead of removes
-  class ChangeRaw1394(changesettings.ChangeSettings):
+  class ChangeRaw1394(ChangeSettings):
     def rm_setting(self):
       self.line_check = self.regex_search()
       if self.line_check:
@@ -58,8 +62,9 @@ class Uscontrols:
         self._seek_write(self.newlines)
   
   #For each setting to change, create an instance
-  memlock = changesettings.ChangeSettings("/etc/security/limits.conf", "@audio - memlock (\d*)", "")
+  memlock = ChangeSettings("/etc/security/limits.conf", "@audio\s-\smemlock (\d*)", "")
   raw1394 = ChangeRaw1394("/etc/udev/rules.d/40-permissions.rules", "KERNEL==\"raw1394\",\s*GROUP=\".*\"", "KERNEL==\"raw1394\",\t\t\tGROUP=\"video\"")
+  nice = ChangeSettings("/etc/security/limits.conf", "@audio\s-\snice\s(.*)", "")
 
   def closeButton_clicked(self, widget):
     gtk.main_quit()
@@ -71,7 +76,7 @@ class Uscontrols:
 
   def apply_settings(self, apply_button):
     #Get all the widgets and add those widgets to a diction in the format {widget : self.instance}
-    self.active_settings = {self.wTree.get_widget('memlock_checkButton') : self.memlock, self.wTree.get_widget('raw1394_checkbutton') : self.raw1394}
+    self.active_settings = {self.wTree.get_widget('memlock_checkButton') : self.memlock, self.wTree.get_widget('raw1394_checkbutton') : self.raw1394, self.wTree.get_widget('EnableNice') : self.nice}
     #Apply those settings
     for widget, instanceName in self.active_settings.items():
       if widget.get_active():
@@ -97,22 +102,41 @@ class Uscontrols:
     memlock_spinbutton.set_sensitive(memlock_checkButton.get_active())
     print self.memlock_enabled
 
+  def check_raw1394_enabled(self, toggled_button):
+    print self.settings_value['raw1394']
+    first = self.settings_value['raw1394']['raw1394_checkbutton']
+    if not first and toggled_button.get_active():
+      self.show_raw1394_warning(toggled_button)
+      first = True
+    else:
+      print 'Toggle button active, not running warning'
+    self.set_apply_sensitive()
+
   def show_raw1394_warning(self, toggled_button):
-    if toggled_button.get_active():
       print 'Showing warning'
       self.raw1394Warning.run()
       self.raw1394Warning.hide()
+
+  def set_apply_sensitive(self):
       apply_button = self.wTree.get_widget('apply_button')
       apply_button.set_sensitive(True)
 
-    else:
-      print 'Not showing warning'
-      pass
+  def set_nice_amount(self, spin_button):
+    nice_amount = str(int(spin_button.get_value()))
+    self.nice.line_replacement = '@audio - nice ' + nice_amount
+    self.set_apply_sensitive()
+    print self.nice.line_replacement
 
+  def set_nice_enable(self, check_button):
+    self.nice_spin_button = self.wTree.get_widget('nicePercentageAmount')
+    self.nice_spin_button.set_sensitive(check_button.get_active())
+    print 'Nice toggled'
+   
   def serialze_settings(self):
     self.settings_value = {}
     self.settings_value['memlock'] = { 'memlock_checkButton' : self.wTree.get_widget('memlock_checkButton').get_active(), 'memlock_spinbutton' : self.wTree.get_widget('memlock_spinbutton').get_value() }
     self.settings_value['raw1394'] = { 'raw1394_checkbutton' : self.wTree.get_widget('raw1394_checkbutton').get_active() } 
+    self.settings_value['nice'] = { 'EnableNice' : self.wTree.get_widget('EnableNice').get_active(), 'nicePercentageAmount' : self.wTree.get_widget('nicePercentageAmount').get_value() }
     us_config = open(os.path.expanduser('~/.us-controls'), 'w')
     cPickle.dump(self.settings_value, us_config)
     us_config.close()
@@ -142,6 +166,7 @@ if __name__ == "__main__":
   if not os.geteuid()==0:  
     root_error = gtk.MessageDialog (None, gtk.DIALOG_MODAL, gtk.MESSAGE_ERROR, gtk.BUTTONS_OK, ('You need to have admistrator privilages to run Ubuntu Studio Controls'))
     root_error.run()
+    os.remove('/var/lock/ubuntustudio-controls')
     sys.exit(1)
 
   else:
