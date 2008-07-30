@@ -1,3 +1,10 @@
+ubuntustudio-controls (0.3) intrepid; urgency=low
+
+  * Fixed raw1394 warning being shown at startup
+  * Added support for setting the 'niceness' of audio processes (LP: #230115)
+
+ -- Andrew Hunter <andrew@aehunter.net>  Wed, 30 Jul 2008 16:25:18 -0400
+
 ubuntustudio-controls (0.2) hardy; urgency=low
 
   * Added support for changing raw1394 from group 'disk' to group
