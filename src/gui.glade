@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8" standalone="no"?>
 <!DOCTYPE glade-interface SYSTEM "glade-2.0.dtd">
-<!--Generated with glade3 3.4.5 on Sat May 24 09:52:10 2008 -->
+<!--Generated with glade3 3.4.5 on Tue Aug  5 11:53:06 2008 -->
 <glade-interface>
   <widget class="GtkWindow" id="mainWindow">
     <property name="visible">True</property>
@@ -126,7 +126,7 @@
               <widget class="GtkSpinButton" id="nicePercentageAmount">
                 <property name="visible">True</property>
                 <property name="can_focus">True</property>
-                <property name="adjustment">0 -20 100 1 10 10</property>
+                <property name="adjustment">0 -99 0 1 10 10</property>
                 <property name="numeric">True</property>
                 <signal name="value_changed" handler="on_nicePercentageAmount_value_changed"/>
               </widget>
