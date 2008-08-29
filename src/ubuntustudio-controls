@@ -38,15 +38,16 @@ class Uscontrols:
 
     #Create our dictionay and connect it
     dic = { "on_closeButton_clicked" : self.closeButton_clicked,
-      "on_mainWindow_destroy" : gtk.main_quit,
-      "on_about_button_clicked" : self.about,
-      "on_apply_button_clicked" : self.apply_settings,
-      "on_memlock_spinbutton_value_changed" : self.update_memlock_amount,
-      "on_memlock_checkButton_toggled" : self.set_memlock_enable,
-      "on_raw1394_checkbutton_toggled" : self.check_raw1394_enabled,
-      "on_EnableNice_toggled" : self.set_nice_enable,
-      "on_nicePercentageAmount_value_changed" : self.set_nice_amount,
-}
+            "on_mainWindow_destroy" : gtk.main_quit,
+            "on_about_button_clicked" : self.about,
+            "on_apply_button_clicked" : self.apply_settings,
+            "on_memlock_spinbutton_value_changed" : self.update_memlock_amount,
+            "on_memlock_checkButton_toggled" : self.set_memlock_enable,
+            "on_raw1394_checkbutton_toggled" : self.check_raw1394_enabled,
+            "on_EnableNice_toggled" : self.set_nice_enable,
+            "on_nicePercentageAmount_value_changed" : self.set_nice_amount,
+            }
+
     self.wTree.signal_autoconnect(dic)
 
   #Determine how much memory is on the system
@@ -64,7 +65,7 @@ class Uscontrols:
   #For each setting to change, create an instance
   memlock = ChangeSettings("/etc/security/limits.conf", "@audio\s-\smemlock (\d*)", "")
   raw1394 = ChangeRaw1394("/etc/udev/rules.d/40-permissions.rules", "KERNEL==\"raw1394\",\s*GROUP=\".*\"", "KERNEL==\"raw1394\",\t\t\tGROUP=\"video\"")
-  raw1394_module = ChangeSettings("/etc/modules", r"raw1394", "raw1394")
+  load_raw1394_module = ChangeSettings("/etc/modules", r"raw1394", "raw1394")
   nice = ChangeSettings("/etc/security/limits.conf", "@audio\s-\snice\s(.*)", "")
 
   def closeButton_clicked(self, widget):
@@ -77,7 +78,11 @@ class Uscontrols:
 
   def apply_settings(self, apply_button):
     #Get all the widgets and add those widgets to a diction in the format {widget : self.instance}
-    self.active_settings = {self.wTree.get_widget('memlock_checkButton') : self.memlock, self.wTree.get_widget('raw1394_checkbutton') : self.raw1394, self.wTree.get_widget('raw1394_checkbutton') : self.raw1394_module, self.wTree.get_widget('EnableNice') : self.nice}
+    self.active_settings = { self.wTree.get_widget('memlock_checkButton') : self.memlock, 
+                             self.wTree.get_widget('raw1394_checkbutton') : self.raw1394, 
+                             self.wTree.get_widget('raw1394_checkbutton') : self.load_raw1394_module, 
+                             self.wTree.get_widget('EnableNice') : self.nice
+                             }
     #Apply those settings
     for widget, instanceName in self.active_settings.items():
       if widget.get_active():
