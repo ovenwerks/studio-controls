@@ -180,7 +180,8 @@ if __name__ == "__main__":
     try:
       uscontrols.load_settings()
     except IOError:
-      pass
+      #Initialize settings, even if empty...
+      uscontrols.serialize_settings()
     gtk.main()
     uscontrols.serialze_settings()
     os.remove('/var/lock/ubuntustudio-controls')
