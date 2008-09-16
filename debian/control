@@ -5,7 +5,7 @@ Priority: optional
 Maintainer: Ubuntu Studio Development Team <ubuntu-studio-devel@lists.ubuntu.com>
 XSCB-Original-Maintainer: Andrew Hunter <andrew@aehunter.net>
 Build-Depends: cdbs, debhelper (>= 5.0.38), python-all, python-central (>= 0.5.6)
-Standards-Version: 3.7.3
+Standards-Version: 3.8.0
 Vcs-Bzr: https://code.launchpad.net/~ubuntustudio-dev/ubuntustudio-controls/ubuntustudio-controls
 Homepage: https://wiki.ubuntu.com/UbuntuStudio/SettingsApp
 
@@ -23,7 +23,7 @@ XB-Python-Version: ${python:Versions}
 Architecture: all
 Section: python
 Depends: ${python:Depends}
-Description: A python module to change lines in config files.
+Description: Python module to change lines in config files
  Changesettings is a python module that will add a string to a file
  if it is not present, or update it if a string in the file matches
  a given regular expression.
@@ -32,6 +32,6 @@ Package: python-meminfo-total
 XB-Python-Version: ${python:Versions}
 Architecture: all
 Section: python
-Description: A python module to determine the amount of system memory.
+Description: Python module to determine the amount of system memory
  Meminfo_total is a python module that reads /proc/meminfo and returns an 
  interger of the total amount in kB. 
