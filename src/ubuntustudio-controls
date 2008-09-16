@@ -138,7 +138,7 @@ class Uscontrols:
     self.nice_spin_button.set_sensitive(check_button.get_active())
     print 'Nice toggled'
    
-  def serialze_settings(self):
+  def serialize_settings(self):
     self.settings_value = {}
     self.settings_value['memlock'] = { 'memlock_checkButton' : self.wTree.get_widget('memlock_checkButton').get_active(), 'memlock_spinbutton' : self.wTree.get_widget('memlock_spinbutton').get_value() }
     self.settings_value['raw1394'] = { 'raw1394_checkbutton' : self.wTree.get_widget('raw1394_checkbutton').get_active() } 
@@ -183,5 +183,5 @@ if __name__ == "__main__":
       #Initialize settings, even if empty...
       uscontrols.serialize_settings()
     gtk.main()
-    uscontrols.serialze_settings()
+    uscontrols.serialize_settings()
     os.remove('/var/lock/ubuntustudio-controls')
