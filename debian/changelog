@@ -1,6 +1,9 @@
 ubuntustudio-controls (0.3.1) intrepid; urgency=low
 
   * Fixed a typo causing a crash in seralize_settings (LP: #269389)
+  * Fixed lintian warnings:
+   + Upped debhelper version requirement to (>= 5.0.51~)
+   + Rephrased descriptions in debian/control
 
  -- Andrew Hunter <andrew@aehunter.net>  Tue, 16 Sep 2008 15:30:12 -0500
 
