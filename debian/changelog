@@ -1,9 +1,10 @@
 ubuntustudio-controls (0.4) jaunty; urgency=low
 
-  * Added DontZap option for x.org
-  * Removing missing translations from .desktop file. 
+  * Added DontZap option for x.org (LP: #329150)
+  * Removing missing translations from .desktop file. (LP: #322757)
+  * Modify raw1394 permissions to work with new layout.
 
- -- Andrew Hunter <rexbron@snow-jaunty-vm>  Mon, 16 Feb 2009 21:52:41 -0500
+ -- Andrew Hunter <andrew@aehunter.net>  Mon, 16 Feb 2009 21:52:41 -0500
 
 ubuntustudio-controls (0.3.1) intrepid; urgency=low
 
