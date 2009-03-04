@@ -1,3 +1,9 @@
+ubuntustudio-controls (0.4.2) jaunty; urgency=low
+
+  * correct version for dontzap dependency
+
+ -- Luke Yelavich <themuso@ubuntu.com>  Thu, 05 Mar 2009 10:03:57 +1100
+
 ubuntustudio-controls (0.4.1) jaunty; urgency=low
 
   * adjust for python 2.6 transition
