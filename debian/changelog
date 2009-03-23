@@ -1,3 +1,23 @@
+ubuntustudio-controls (0.4.2) jaunty; urgency=low
+
+  * correct version for dontzap dependency
+
+ -- Luke Yelavich <themuso@ubuntu.com>  Thu, 05 Mar 2009 10:03:57 +1100
+
+ubuntustudio-controls (0.4.1) jaunty; urgency=low
+
+  * adjust for python 2.6 transition
+
+ -- Luke Yelavich <themuso@ubuntu.com>  Wed, 04 Mar 2009 16:21:43 +1100
+
+ubuntustudio-controls (0.4) jaunty; urgency=low
+
+  * Added DontZap option for x.org (LP: #329150)
+  * Removing missing translations from .desktop file. (LP: #322757)
+  * Modify raw1394 permissions to work with new layout.
+
+ -- Andrew Hunter <andrew@aehunter.net>  Mon, 16 Feb 2009 21:52:41 -0500
+
 ubuntustudio-controls (0.3.1) intrepid; urgency=low
 
   * Fixed a typo causing a crash in seralize_settings (LP: #269389)

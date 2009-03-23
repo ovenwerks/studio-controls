@@ -20,6 +20,7 @@ try:
   import gtk, meminfo_total, sys, os, cPickle
   from gtk import glade
   from changesettings import ChangeSettings
+  from DontZap.dontzap import DontZap
 except:
   import_error = gtk.MessageDialog (None, gtk.DIALOG_MODAL, gtk.MESSAGE_ERROR, gtk.BUTTONS_OK, ('You need to install python bindings for gtk and/or glade ("python-gtk2 & python-glade2" in debian/ubuntu)'))
   import_error.run()
@@ -46,6 +47,7 @@ class Uscontrols:
             "on_raw1394_checkbutton_toggled" : self.check_raw1394_enabled,
             "on_EnableNice_toggled" : self.set_nice_enable,
             "on_nicePercentageAmount_value_changed" : self.set_nice_amount,
+            "on_dontzap_checkButton_toggled" : self.set_dont_zap,
             }
 
     self.wTree.signal_autoconnect(dic)
@@ -67,7 +69,9 @@ class Uscontrols:
   raw1394 = ChangeRaw1394("/lib/udev/rules.d/50-udev-default.rules", "# Firewire", "# Firewire\nKERNEL==\"raw1394\",\t\tGROUP=\"video\"")
   load_raw1394_module = ChangeSettings("/etc/modules", r"raw1394", "raw1394")
   nice = ChangeSettings("/etc/security/limits.conf", "@audio\s-\snice\s(.*)", "")
-
+  zap = DontZap()
+  
+    
   def closeButton_clicked(self, widget):
     gtk.main_quit()
 
@@ -80,7 +84,7 @@ class Uscontrols:
     #Get all the widgets and add those widgets to a diction in the format {widget : self.instance}
     self.active_settings = { self.wTree.get_widget('memlock_checkButton') : [self.memlock], 
                              self.wTree.get_widget('raw1394_checkbutton') : [self.raw1394, self.load_raw1394_module], 
-                             self.wTree.get_widget('EnableNice') : [self.nice]
+                             self.wTree.get_widget('EnableNice') : [self.nice],
                              }
     #Apply those settings
     for widget, instanceArray in self.active_settings.items():
@@ -137,6 +141,18 @@ class Uscontrols:
     self.nice_spin_button = self.wTree.get_widget('nicePercentageAmount')
     self.nice_spin_button.set_sensitive(check_button.get_active())
     print 'Nice toggled'
+
+  def set_dont_zap(self, checkbox):
+    #Silly helper funtion for dontzap.
+    def switch_bool_value(input):
+      if input is True:
+        input = False
+      elif input is False:
+        input = True
+      return input
+
+    self.zap.setDontZap(switch_bool_value(checkbox.get_active()))
+    self.wTree.get_widget('apply_button').set_sensitive(True)
    
   def serialize_settings(self):
     self.settings_value = {}
