@@ -84,7 +84,7 @@ class Uscontrols:
     #Get all the widgets and add those widgets to a diction in the format {widget : self.instance}
     self.active_settings = { self.wTree.get_widget('memlock_checkButton') : [self.memlock], 
                              self.wTree.get_widget('raw1394_checkbutton') : [self.raw1394, self.load_raw1394_module], 
-                             self.wTree.get_widget('EnableNice') : [self.nice],
+                             self.wTree.get_widget('EnableNice') : [self.nice]
                              }
     #Apply those settings
     for widget, instanceArray in self.active_settings.items():
