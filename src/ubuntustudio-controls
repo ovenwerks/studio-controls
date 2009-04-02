@@ -82,21 +82,21 @@ class Uscontrols:
 
   def apply_settings(self, apply_button):
     #Get all the widgets and add those widgets to a diction in the format {widget : self.instance}
-    self.active_settings = { self.wTree.get_widget('memlock_checkButton') : self.memlock, 
-                             self.wTree.get_widget('raw1394_checkbutton') : self.raw1394, 
-                             self.wTree.get_widget('raw1394_checkbutton') : self.load_raw1394_module, 
-                             self.wTree.get_widget('EnableNice') : self.nice,
+    self.active_settings = { self.wTree.get_widget('memlock_checkButton') : [self.memlock], 
+                             self.wTree.get_widget('raw1394_checkbutton') : [self.raw1394, self.load_raw1394_module], 
+                             self.wTree.get_widget('EnableNice') : [self.nice]
                              }
     #Apply those settings
-    for widget, instanceName in self.active_settings.items():
-      if widget.get_active():
-        print 'Applying settings'
-        instanceName.ch_setting()
-        apply_button.set_sensitive(False)
-        print instanceName.line_replacement
-      elif not widget.get_active():
-        print 'Removing settings'
-        instanceName.rm_setting()
+    for widget, instanceArray in self.active_settings.items():
+      for instanceName in instanceArray:
+        if widget.get_active():
+          print 'Applying settings'
+          instanceName.ch_setting()
+          apply_button.set_sensitive(False)
+          print instanceName.line_replacement
+        elif not widget.get_active():
+          print 'Removing settings'
+          instanceName.rm_setting()
 
   def update_memlock_amount(self, spin_object):   
     #Check to make sure that the value entered is an interger, then convert it to a string
