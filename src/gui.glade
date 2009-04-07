@@ -171,7 +171,7 @@
             <property name="visible">True</property>
             <child>
               <widget class="GtkCheckButton" id="dontzap_checkButton1">
-                <property name="label" translatable="yes">Enable X restart shortcut</property>
+                <property name="label" translatable="yes">Enable X restart shortcut (Ctrl+Alt+Backspace)</property>
                 <property name="visible">True</property>
                 <property name="can_focus">True</property>
                 <property name="receives_default">False</property>
