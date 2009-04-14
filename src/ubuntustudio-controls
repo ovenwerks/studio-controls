@@ -56,6 +56,7 @@ class Uscontrols:
   memtotal = meminfo_total.meminfo_total()
 
   #Subclass ChangeSettings so that it reverts instead of removes
+  #This subclass is obsoleted with latest changes for raw1394 permissions
   class ChangeRaw1394(ChangeSettings):
     def rm_setting(self):
       self.line_check = self.regex_search()
@@ -66,7 +67,7 @@ class Uscontrols:
   
   #For each setting to change, create an instance
   memlock = ChangeSettings("/etc/security/limits.conf", "@audio\s-\smemlock (\d*)", "")
-  raw1394 = ChangeRaw1394("/lib/udev/rules.d/50-udev-default.rules", "# Firewire", "# Firewire\nKERNEL==\"raw1394\",\t\tGROUP=\"video\"")
+  raw1394 = ChangeSettings("/lib/udev/rules.d/50-udev-default.rules", r"KERNEL==\"raw1394\",\t\tGROUP=\"video\"", "KERNEL==\"raw1394\",\t\tGROUP=\"video\"")
   load_raw1394_module = ChangeSettings("/etc/modules", r"raw1394", "raw1394")
   nice = ChangeSettings("/etc/security/limits.conf", "@audio\s-\snice\s(.*)", "")
   zap = DontZap()
