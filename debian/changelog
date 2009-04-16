@@ -1,3 +1,9 @@
+ubuntustudio-controls (0.4.4ubuntu1) jaunty; urgency=low
+
+  * Fixed writing/rewriting raw1394 permission issue LP: #360895
+
+ -- Eric Hedekar <afterthebeep@gmail.com>  Mon, 13 Apr 2009 22:21:03 -0700
+
 ubuntustudio-controls (0.4.4) jaunty; urgency=low
 
   * Fixed raw1394 for Jaunty's new udev rules. Thanks to Eric Hedekar
