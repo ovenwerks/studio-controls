@@ -1,3 +1,9 @@
+ubuntustudio-controls (0.4.5) karmic; urgency=low
+
+  * Ensure lock file is removed on window close. (LP: #395807)
+
+ -- Thomas E Jenkins <thomas.jenkins@gmail.com>  Sun, 05 Jul 2009 14:47:35 -0400
+
 ubuntustudio-controls (0.4.4ubuntu1) jaunty; urgency=low
 
   * Fixed writing/rewriting raw1394 permission issue LP: #360895

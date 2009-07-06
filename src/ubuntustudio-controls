@@ -38,8 +38,8 @@ class Uscontrols:
     self.raw1394Warning = self.wTree.get_widget("raw_dialog")
 
     #Create our dictionay and connect it
-    dic = { "on_closeButton_clicked" : self.closeButton_clicked,
-            "on_mainWindow_destroy" : gtk.main_quit,
+    dic = { "on_closeButton_clicked" : self.close_window,
+            "on_mainWindow_destroy" : self.close_window,
             "on_about_button_clicked" : self.about,
             "on_apply_button_clicked" : self.apply_settings,
             "on_memlock_spinbutton_value_changed" : self.update_memlock_amount,
@@ -73,7 +73,8 @@ class Uscontrols:
   zap = DontZap()
   
     
-  def closeButton_clicked(self, widget):
+  def close_window(self, widget):
+    os.remove('/var/lock/ubuntustudio-controls')
     gtk.main_quit()
 
   def about(self, widget):
@@ -201,4 +202,3 @@ if __name__ == "__main__":
       uscontrols.serialize_settings()
     gtk.main()
     uscontrols.serialize_settings()
-    os.remove('/var/lock/ubuntustudio-controls')
