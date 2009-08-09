@@ -1,3 +1,9 @@
+ubuntustudio-controls (0.4.6) UNRELEASED; urgency=low
+
+  * Remove dontzap (functionality subsumed by GNOME prefs)
+
+ -- Daniel T Chen <crimsun@ubuntu.com>  Sun, 09 Aug 2009 16:44:43 -0400
+
 ubuntustudio-controls (0.4.5) karmic; urgency=low
 
   [ Thomas E Jenkins ]
