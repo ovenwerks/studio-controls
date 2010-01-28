@@ -11,6 +11,6 @@ setup(name = 'ubuntustudio-controls',
   package_dir = {'':'src'},
   py_modules = ['changesettings', 'meminfo_total'],
   scripts = ['src/ubuntustudio-controls'],
-  data_files = [('share/ubuntustudio-controls', ['src/gui.glade', 'src/ubuntustudio-controls.svg'])],
+  data_files = [('share/ubuntustudio-controls', ['src/gui.xml', 'src/ubuntustudio-controls.svg'])],
   classifiers = ['License :: OSI Approved :: GNU General Public License (GPL)'])
 

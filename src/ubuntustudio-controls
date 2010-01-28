@@ -18,23 +18,24 @@
 #Error message dialoge lifted from Terminator. http://launchpad.net/terminator
 try:
   import gtk, meminfo_total, sys, os, cPickle
-  from gtk import glade
   from changesettings import ChangeSettings
 except:
-  import_error = gtk.MessageDialog (None, gtk.DIALOG_MODAL, gtk.MESSAGE_ERROR, gtk.BUTTONS_OK, ('You need to install python bindings for gtk and/or glade ("python-gtk2 & python-glade2" in debian/ubuntu)'))
+  import_error = gtk.MessageDialog (None, gtk.DIALOG_MODAL, gtk.MESSAGE_ERROR, gtk.BUTTONS_OK, ('You need to install python bindings for gtk ("python-gtk2" in debian/ubuntu)'))
   import_error.run()
   sys.exit(1)
 
 class Uscontrols:
   def __init__(self):
-    #Set the Glade file
-    self.gladefile = "/usr/share/ubuntustudio-controls/gui.glade" #Remove /usr/share/ubuntustudio-controls/ to run from src dir
-    self.wTree = gtk.glade.XML(self.gladefile)
+
+    #get the gtkbuilderfile
+    self.gtkbuilderfile = "/usr/share/ubuntustudio-controls/gui.xml" #Remove /usr/share/ubuntustudio-controls/ to run from src dir
+    self.builder = gtk.Builder()
+    self.builder.add_from_file(self.gtkbuilderfile)
 
     #Get the Main Window, and connect the "destroy" event
-    self.window = self.wTree.get_widget("mainWindow")
-    self.aboutWidget = self.wTree.get_widget("about")
-    self.raw1394Warning = self.wTree.get_widget("raw_dialog")
+    self.window = self.builder.get_object("mainWindow")
+    self.aboutWidget = self.builder.get_object("about")
+    self.raw1394Warning = self.builder.get_object("raw_dialog")
 
     #Create our dictionary and connect it
     dic = { "on_closeButton_clicked" : self.close_window,
@@ -48,7 +49,7 @@ class Uscontrols:
             "on_nicePercentageAmount_value_changed" : self.set_nice_amount,
             }
 
-    self.wTree.signal_autoconnect(dic)
+    self.builder.connect_signals(dic)
 
   #Determine how much memory is on the system
   memtotal = meminfo_total.meminfo_total()
@@ -81,9 +82,9 @@ class Uscontrols:
 
   def apply_settings(self, apply_button):
     #Get all the widgets and add those widgets to a diction in the format {widget : self.instance}
-    self.active_settings = { self.wTree.get_widget('memlock_checkButton') : [self.memlock], 
-                             self.wTree.get_widget('raw1394_checkbutton') : [self.raw1394, self.load_raw1394_module], 
-                             self.wTree.get_widget('EnableNice') : [self.nice]
+    self.active_settings = { self.builder.get_object('memlock_checkButton') : [self.memlock], 
+                             self.builder.get_object('raw1394_checkbutton') : [self.raw1394, self.load_raw1394_module], 
+                             self.builder.get_object('EnableNice') : [self.nice]
                              }
     #Apply those settings
     for widget, instanceArray in self.active_settings.items():
@@ -102,12 +103,12 @@ class Uscontrols:
     memlock_entry_amount = str(int(self.memtotal*(spin_object.get_value()/100)))
     self.memlock.line_replacement = "@audio - memlock " + memlock_entry_amount
     print self.memlock.line_replacement
-    apply_button = self.wTree.get_widget('apply_button')
+    apply_button = self.builder.get_object('apply_button')
     apply_button.set_sensitive(True)
 
   def set_memlock_enable(self, memlock_checkButton):
     self.memlock_enabled = memlock_checkButton.get_active()
-    memlock_spinbutton = self.wTree.get_widget('memlock_spinbutton')
+    memlock_spinbutton = self.builder.get_object('memlock_spinbutton')
     memlock_spinbutton.set_sensitive(memlock_checkButton.get_active())
     print self.memlock_enabled
 
@@ -127,7 +128,7 @@ class Uscontrols:
       self.raw1394Warning.hide()
 
   def set_apply_sensitive(self):
-      apply_button = self.wTree.get_widget('apply_button')
+      apply_button = self.builder.get_object('apply_button')
       apply_button.set_sensitive(True)
 
   def set_nice_amount(self, spin_button):
@@ -137,15 +138,15 @@ class Uscontrols:
     print self.nice.line_replacement
 
   def set_nice_enable(self, check_button):
-    self.nice_spin_button = self.wTree.get_widget('nicePercentageAmount')
+    self.nice_spin_button = self.builder.get_object('nicePercentageAmount')
     self.nice_spin_button.set_sensitive(check_button.get_active())
     print 'Nice toggled'
 
   def serialize_settings(self):
     self.settings_value = {}
-    self.settings_value['memlock'] = { 'memlock_checkButton' : self.wTree.get_widget('memlock_checkButton').get_active(), 'memlock_spinbutton' : self.wTree.get_widget('memlock_spinbutton').get_value() }
-    self.settings_value['raw1394'] = { 'raw1394_checkbutton' : self.wTree.get_widget('raw1394_checkbutton').get_active() } 
-    self.settings_value['nice'] = { 'EnableNice' : self.wTree.get_widget('EnableNice').get_active(), 'nicePercentageAmount' : self.wTree.get_widget('nicePercentageAmount').get_value() }
+    self.settings_value['memlock'] = { 'memlock_checkButton' : self.builder.get_object('memlock_checkButton').get_active(), 'memlock_spinbutton' : self.builder.get_object('memlock_spinbutton').get_value() }
+    self.settings_value['raw1394'] = { 'raw1394_checkbutton' : self.builder.get_object('raw1394_checkbutton').get_active() } 
+    self.settings_value['nice'] = { 'EnableNice' : self.builder.get_object('EnableNice').get_active(), 'nicePercentageAmount' : self.builder.get_object('nicePercentageAmount').get_value() }
     us_config = open(os.path.expanduser('~/.us-controls'), 'w')
     cPickle.dump(self.settings_value, us_config)
     us_config.close()
@@ -156,9 +157,9 @@ class Uscontrols:
     for key, value in self.settings_value.items():
       for widget, value in value.items():
         try:
-          self.wTree.get_widget(widget).set_value(value)
+          self.builder.get_object(widget).set_value(value)
         except:
-          self.wTree.get_widget(widget).set_active(value)
+          self.builder.get_object(widget).set_active(value)
     us_config.close()
 
 print __name__
