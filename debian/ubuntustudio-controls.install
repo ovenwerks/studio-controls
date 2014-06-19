@@ -1,4 +1,0 @@
-debian/tmp/usr/bin/
-debian/tmp/usr/share/
-src/ubuntustudio-controls.desktop usr/share/applications/
-src/60-raw1394.rules /etc/udev/rules.d/

@@ -1,7 +1,0 @@
-include AUTHORS COPYING ChangeLog
-include src/ubuntustudio-controls.svg
-include src/gui.glade
-include src/ubuntustudio-controls.desktop
-include src/ubuntustudio-controls.1
-exclude .bzr
-exclude debian
