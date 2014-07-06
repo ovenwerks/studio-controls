@@ -1,16 +1,14 @@
 #!/usr/bin/python3
 
-import sys
 import re
 
-
-# Get list of real users
-def get_real_users():
+def list_users():
 
     real_users = []
 
     login_defs = open("/etc/login.defs", "r")
     passwd_file = open("/etc/passwd", "r")
+    groups_file = open("/etc/group", "r")
 
     # get min and max UID values
     for line in login_defs:
@@ -21,14 +19,32 @@ def get_real_users():
             uid_max_expr = re.compile('\d+')        
             uid_max=int(uid_max_expr.findall(line)[0])
 
-    # only list users that have UID within limits and has a login shell
+    # create a list of real users based on UID limits and login shell
     for line in passwd_file:
-        l = line.split(':')
+        l = line.rstrip().split(':')
         uid = int(l[2])
         if uid >= uid_min and uid <= uid_max and l[6] != '/usr/sbin/nologin':
             real_users.append(l)
 
-    return real_users
+    # create a list of users who are members of audio group
+    for line in groups_file:
+        if re.match("^audio", line):
+            audio_users = line.split(':')[3].rstrip().split(',')
 
-users = get_real_users()
-print(users)
+    # create a list with the format: <user_name>, <full_name>, <audio_group_bool>
+    users = []
+    for user in real_users:
+        user_name = user[0]
+        full_name = user[4].strip(",,,")
+
+        if user_name in audio_users:
+            users.append([user_name, full_name, True])
+        else:
+            users.append([user_name, full_name, False])
+
+    return users
+
+
+l_users = list_users()
+
+print(l_users)
