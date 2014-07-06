@@ -4,7 +4,8 @@ import re
 
 def list_users():
 
-    real_users = []
+    l_real_users = [] #users that are within UID limits and have a login shell
+    l_users = [] #list of users in the format: user_name full_name in_audio_group(True/False)
 
     login_defs = open("/etc/login.defs", "r")
     passwd_file = open("/etc/passwd", "r")
@@ -24,27 +25,26 @@ def list_users():
         l = line.rstrip().split(':')
         uid = int(l[2])
         if uid >= uid_min and uid <= uid_max and l[6] != '/usr/sbin/nologin':
-            real_users.append(l)
+            l_real_users.append(l)
 
     # create a list of users who are members of audio group
     for line in groups_file:
         if re.match("^audio", line):
             audio_users = line.split(':')[3].rstrip().split(',')
 
-    # create a list with the format: <user_name>, <full_name>, <audio_group_bool>
-    users = []
-    for user in real_users:
+    # create the list of users and their attributes that we are interested in
+    for user in l_real_users:
         user_name = user[0]
         full_name = user[4].strip(",,,")
 
         if user_name in audio_users:
-            users.append([user_name, full_name, True])
+            l_users.append([user_name, full_name, True])
         else:
-            users.append([user_name, full_name, False])
+            l_users.append([user_name, full_name, False])
 
-    return users
+    return l_users
 
 
-l_users = list_users()
+users = list_users()
 
-print(l_users)
+print(users)
