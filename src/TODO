@@ -1,0 +1,7 @@
+first task is to create a simple gui tool to administer user realtime privilege
+
+ * list "real users" (UID between limits, and has a login shell)
+ * toggle realtime privilege for each user (audio group and /etc/security/limits.d/audio.conf)
+
+Once changes have been made, check if current user has privileges by checking rlimits.
+If not, ask to do fresh login for changes to have effect.
