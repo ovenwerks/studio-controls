@@ -3,7 +3,7 @@
 import resource
 import re
 
-class RTInfo:
+class GetInfo:
     """Functions for getting info about rt privilege in the system"""
 
 

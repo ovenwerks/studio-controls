@@ -1,10 +1,10 @@
 #!/usr/bin/python3
 
-from rtinfo import RTInfo
+from getinfo import GetInfo
 
-rtinfo = RTInfo()
-user_list = rtinfo.user_list()
-rlimits = rtinfo.rlimits()
+info = GetInfo()
+user_list = info.user_list()
+rlimits = info.rlimits()
 
 print("-- username, full name, audio group:")
 print(user_list)
