@@ -2,22 +2,46 @@
 
 import os
 import re
+import filecmp
 
 class AudioConfig:
 
-    def audio_config_check()
-        '''Make ure /etc/security/limits.d/audio.conf exists and that there aren't conflicting settings in other files under /etc/security/.'''
-        # make sure /etc/security/limits.d/audio.conf does not diff from supplied audio.conf
-        # make sure /etc/security/limits.d/audio.conf.disabled does not exist
+    def __init__(self):
+
+        self.audio_conf_file = "/etc/security/limits.d/audio.conf"
+        self.audio_conf_file_disabled = self.audio_conf_file + ".disabled"
+        self.audio_conf_file_us_supplied = "/usr/share/ubuntustudio-controls/audio.conf"
+
+        self.audio_conf_replace = False
+        self.audio_conf_disabled_remove = False
+        self.audio_conf_cleanup = False
+        # self.raw1394_rule_rm = False
+
+    def audio_config_check(self):
+        '''Make sure /etc/security/limits.d/audio.conf exists and that there aren't 
+            conflicting settings in other files under /etc/security/.'''
+
+        if os.path.isfile(self.audio_conf_file): # see if file exists
+            if filecmp.cmp(self.audio_conf_file, self.audio_conf_file_us_supplied): #compare files
+                self.audio_conf_replace = False
+            else:
+                self.audio_conf_replace = True
+        else:
+            self.audio_conf_replace = True
+
+        if os.path.isfile(self.audio_conf_file_disabled): # see if file exists
+            self.audio_conf_disabled_remove = True
+
         # make sure there are no lines with @audio in any other file in /etc/security/, if so, report it
-        # see if /etc/udev/rules.d/60-raw1394.rules exists
-        pass
+        # if ..
+            # self.audio_conf_cleanup = True
 
-    def rm_1394_rule()
-        '''Remove obsolete udev file that was used to gain privilege for raw1394 devices'''
-        pass
+        audio_configs = { 'audio_conf_replace' : self.audio_conf_replace,
+                          'audio_conf_disabled_remove' : self.audio_conf_disabled_remove,
+                          'audio_conf_cleanup' : self.audio_conf_cleanup }
+        return audio_configs
 
-    def audio_conf_setup()
-        '''Set up /etc/security/limits.d/audio.conf'''
-        # copy supplied file to the right path
-        pass
+    def audio_config_setup(self, conf_replace, conf_disabled_remove, conf_cleanup):
+
+        r = [conf_replace, conf_disabled_remove, conf_cleanup]
+        return r
