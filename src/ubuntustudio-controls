@@ -13,8 +13,9 @@ class Handler:
     def on_window_main_delete_event(self, *args):
         Gtk.main_quit(*args)
 
-    def on_window_help_delete_event(self, *args):
-        window_help.hide()
+    def on_window_help_delete_event(self, window, event):
+        window.hide_on_delete()
+        return True
 
     def on_button_ok_clicked(self, button):
         print("ok button clicked")
@@ -65,6 +66,7 @@ for item in l_users:
     user = item[1] + " (" + item[0] + ")"
     user_list_store.append([user, item[2]])
 
+# audio_config_check will return True or False and set the toggle
 check_realtime_audio.set_active(getinfo.audio_config_check())
 
 builder.connect_signals(Handler())
