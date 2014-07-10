@@ -2,9 +2,18 @@
 
 import resource
 import re
+import os
+import filecmp
 
 class GetInfo:
     """Functions for getting info about rt privilege in the system"""
+
+
+    def __init__(self):
+
+        self.audio_conf_file = "/etc/security/limits.d/audio.conf"
+        self.audio_conf_file_disabled = self.audio_conf_file + ".disabled"
+        self.audio_conf_file_us_supplied = "/usr/share/ubuntustudio-controls/audio.conf"
 
 
     def user_list(self):
@@ -62,3 +71,12 @@ class GetInfo:
             return True
         else:
             return False
+
+    def audio_config_check(self):
+        '''Checks whether /etc/security/limits.d/audio.conf exists and has appropriate levels'''
+
+        if os.path.isfile(self.audio_conf_file): # see if file exists
+            if filecmp.cmp(self.audio_conf_file, self.audio_conf_file_us_supplied): #compare files
+                return True
+            else:
+                return False

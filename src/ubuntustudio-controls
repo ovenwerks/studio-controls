@@ -14,19 +14,19 @@ class Handler:
         Gtk.main_quit(*args)
 
     def on_window_help_delete_event(self, *args):
-        window_help.hide_all()
+        window_help.hide()
 
     def on_button_ok_clicked(self, button):
         print("ok button clicked")
 
     def on_button_cancel_clicked(self, button):
-        print("ok button clicked")
+        print("cancel button clicked")
 
     def on_button_help_clicked(self, button):
-        window_help.show_all()
+        window_help.show()
 
-    def on_check_audio_group_toggled(self, button):
-        if button.get_active():
+    def on_check_audio_group_toggled(self, toggle):
+        if toggle.get_active():
             print("audio_group_on")
         else:
             print("audio_group_off")
@@ -42,23 +42,30 @@ class Handler:
         if tree_iter != None:
             model = combo.get_model()
             user_all, audio_group = model[tree_iter][:2]
-            print(user_all, audio_group)
+            check_audio_group.set_active(audio_group)
+
 
 '''Create the GUI'''
 builder = Gtk.Builder()
 builder.add_from_file("ubuntustudio-controls.glade")
 
+# get windows
 window = builder.get_object('window_main')
 dialog_confirm = builder.get_object('dialog_confirm')
 window_help = builder.get_object('window_help')
-
+# get buttons
+check_audio_group = builder.get_object('check_audio_group')
+check_realtime_audio = builder.get_object('check_realtime_audio')
+#get liststore for combo-box
 user_list_store = builder.get_object('liststore1')
 
-''' Get a of users and append them to the combo'''
+'''Get a list of users and append them to the combo'''
 l_users = getinfo.user_list()
 for item in l_users:
     user = item[1] + " (" + item[0] + ")"
     user_list_store.append([user, item[2]])
+
+check_realtime_audio.set_active(getinfo.audio_config_check())
 
 builder.connect_signals(Handler())
 window.show_all()
