@@ -1,3 +1,11 @@
+ubuntustudio-controls (1) wily; urgency=medium
+
+  * Application rewritten from scratch. Current features are:
+    1) enable/disable rtprio and memlock in pam settings file
+    2) add/remove users from audio group
+
+ -- Kaj Ailomaa <zequence@mousike.me>  Tue, 18 Aug 2015 12:16:57 +0200
+
 ubuntustudio-controls (0.4.7) lucid; urgency=low
 
   [Ricardo Lameiro]

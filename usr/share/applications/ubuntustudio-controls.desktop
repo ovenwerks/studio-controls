@@ -1,0 +1,9 @@
+[Desktop Entry]
+Name=Ubuntu Studio Controls
+GenericName=Realtime Audio Administrator
+Comment=Administer realtime privilege for users
+Exec=ubuntustudio-controls-pkexec
+Icon=ubuntustudio-controls
+Terminal=false
+Type=Application
+Categories=GTK;System;Settings

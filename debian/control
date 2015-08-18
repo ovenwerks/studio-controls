@@ -1,37 +1,15 @@
 Source: ubuntustudio-controls
-XS-Python-Version: all
 Section: admin
 Priority: optional
 Maintainer: Ubuntu Studio Development Team <ubuntu-studio-devel@lists.ubuntu.com>
-XSCB-Original-Maintainer: Andrew Hunter <andrew@aehunter.net>
-Build-Depends: cdbs, debhelper (>= 5.0.51~), python-all, python-central (>= 0.5.6)
-Standards-Version: 3.8.0
-Vcs-Bzr: https://code.launchpad.net/~ubuntustudio-dev/ubuntustudio-controls/ubuntustudio-controls
-Homepage: https://wiki.ubuntu.com/UbuntuStudio/SettingsApp
+Build-Depends: debhelper (>=9)
+Standards-Version: 3.9.6.1
+Vcs-Bzr: https://code.launchpad.net/~ubuntustudio-dev/ubuntustudio-controls/devel
+Homepage: https://wiki.ubuntu.com/UbuntuStudio/UbuntuStudioControls
 
 Package: ubuntustudio-controls
-XB-Python-Version: ${python:Versions}
 Architecture: all
 Section: admin
-Depends: ${python:Depends}, python-changesettings, python-meminfo-total, python-gtk2 (>= 2.0), python-glade2 (>= 2.0)
-Description: Ubuntu Studio Controls is a small app that changes A/V settings.
- Ubuntu Studio Controls is a small app that provides users access to 
- commonly hand-edited settings on an A/V production system.
-
-Package: python-changesettings
-XB-Python-Version: ${python:Versions}
-Architecture: all
-Section: python
-Depends: ${python:Depends}
-Description: Python module to change lines in config files
- Changesettings is a python module that will add a string to a file
- if it is not present, or update it if a string in the file matches
- a given regular expression.
- 
-Package: python-meminfo-total
-XB-Python-Version: ${python:Versions}
-Architecture: all
-Section: python
-Description: Python module to determine the amount of system memory
- Meminfo_total is a python module that reads /proc/meminfo and returns an 
- interger of the total amount in kB. 
+Depends: ${misc:Depends}, python3, python-gi
+Description: Ubuntu Studio Controls is a small application that 
+ enables/disables realtime privilege for users
