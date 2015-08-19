@@ -1,3 +1,12 @@
+ubuntustudio-controls (1.2) wily; urgency=medium
+
+  * added dependency to jack, as -controls only adjusts privilege for
+    jack anyway.
+  * added backup file of /etc/security/limits.d/audio.conf, supplied
+    by the debian package, but which may be missing otherwise.
+
+ -- Kaj Ailomaa <zequence@mousike.me>  Wed, 19 Aug 2015 13:02:38 +0200
+
 ubuntustudio-controls (1.1) wily; urgency=medium
 
   * Esthetic changes to the gui, and corrected text in one of the
