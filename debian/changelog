@@ -1,3 +1,10 @@
+ubuntustudio-controls (1.1) wily; urgency=medium
+
+  * Esthetic changes to the gui, and corrected text in one of the
+    dialogues.
+
+ -- Kaj Ailomaa <zequence@mousike.me>  Wed, 19 Aug 2015 12:46:56 +0200
+
 ubuntustudio-controls (1) wily; urgency=medium
 
   * Application rewritten from scratch. Current features are:

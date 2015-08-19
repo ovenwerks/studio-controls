@@ -446,19 +446,17 @@
   </object>
   <object class="GtkMessageDialog" id="message_dialog_changes_info">
     <property name="can_focus">False</property>
-    <property name="type">popup</property>
     <property name="title" translatable="yes">Info</property>
     <property name="resizable">False</property>
     <property name="window_position">center-always</property>
-    <property name="default_width">300</property>
+    <property name="default_width">400</property>
     <property name="default_height">115</property>
     <property name="destroy_with_parent">True</property>
     <property name="type_hint">dialog</property>
     <property name="gravity">center</property>
     <property name="transient_for">window_main</property>
     <property name="attached_to">window_main</property>
-    <property name="text" translatable="yes">For a system change you need to reboot.
-For a user group change, the user must do a fresh login in order for changes to have effect.</property>
+    <property name="text" translatable="yes">For changes to take effect, you need to do a fresh login.</property>
     <child internal-child="vbox">
       <object class="GtkBox" id="messagedialog-vbox">
         <property name="can_focus">False</property>
@@ -498,7 +496,6 @@ For a user group change, the user must do a fresh login in order for changes to 
   </object>
   <object class="GtkMessageDialog" id="message_dialog_rt_info">
     <property name="can_focus">False</property>
-    <property name="type">popup</property>
     <property name="title" translatable="yes">RT info</property>
     <property name="resizable">False</property>
     <property name="window_position">center-always</property>
@@ -510,7 +507,7 @@ For a user group change, the user must do a fresh login in order for changes to 
     <property name="gravity">center</property>
     <property name="transient_for">window_main</property>
     <property name="attached_to">window_main</property>
-    <property name="text" translatable="yes">It seems you have made settings previously and not rebooted, or you already have realtime settings in effect, but you are not using the file supplied with the package jackd.
+    <property name="text" translatable="yes">It seems you have made settings previously and not done a fresh login, or you already have realtime settings in effect, but you are not using the file supplied with the package jackd.
 If you want to use this application for administering realtime settings, please remove any custom settings and reboot your computer.</property>
     <child internal-child="vbox">
       <object class="GtkBox" id="messagedialog-vbox3">
