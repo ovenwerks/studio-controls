@@ -38,7 +38,7 @@ class SysInfo:
         # create a list of users who are members of audio group:
         with open("/etc/group", "r") as groups_file:
             for line in groups_file:
-                if re.match("^audio", line):
+                if re.match("^audio:", line):
                     audio_users = line.split(':')[3].rstrip().split(',')
         # create the list of users and their attributes that we are interested in
         # return in the format: user_name full_name in_audio_group(True/False)

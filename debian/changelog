@@ -1,6 +1,8 @@
 ubuntustudio-controls (1.3) wily; urgency=medium
 
   * Minor graphical fixes.
+  * Make sure user membership in group audio is not confused with
+    membership in other groups which names begin with "audio".
 
  -- Kaj Ailomaa <zequence@mousike.me>  Thu, 03 Sep 2015 11:27:43 +0200
 
