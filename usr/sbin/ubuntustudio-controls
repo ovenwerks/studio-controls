@@ -6,6 +6,7 @@ import re
 import resource
 import shutil
 import subprocess
+import glob
 
 """First, make sure user is root"""
 if os.getuid() != 0:
@@ -52,6 +53,16 @@ class SysInfo:
                 users.append([user_name, full_name, False])
         return users
 
+    def get_performance(self):
+        '''Checks for current cpu governor'''
+        in_performance = False
+        if os.path.isfile("/sys/devices/system/cpu/cpufreq/policy0/scaling_governor"):
+            with open("/sys/devices/system/cpu/cpufreq/policy0/scaling_governor", "r") as perform_file_test:
+                for line in perform_file_test:
+                    if re.match("performance", line.rstrip()):
+                        in_performance = True
+        return in_performance
+
     def check_pam_files(self):
         '''Checks for the existence of two files'''
         jack_file_exists = False
@@ -81,6 +92,16 @@ class RTSetup:
         elif action == "create":
             shutil.copyfile(self.backup_file, self.enabled_path)
 
+    def set_governor(self, enable):
+        if enable == True:
+            gov = "performance"
+        else:
+            gov = "powersave"
+        cpus = "/sys/devices/system/cpu/cpu*/cpufreq/scaling_governor"
+        for line in glob.glob(cpus):
+            with open(line, "w") as gov_file:
+                gov_file.write(gov)
+
     def set_user_audio_group(self, users):
         for user in users:
             if user[1] == True:
@@ -106,6 +127,7 @@ class UbuntuStudioControls:
         '''Get buttons'''
         self.check_audio_group = builder.get_object('check_audio_group')
         self.check_realtime_audio = builder.get_object('check_realtime_audio')
+        self.check_performance = builder.get_object('check_performance')
         self.button_msg_ok = builder.get_object('button_msg_ok')
         '''Get liststore for combo-box'''
         self.user_list_store = builder.get_object('liststore1')
@@ -130,6 +152,11 @@ class UbuntuStudioControls:
                 self.check_realtime_audio.set_sensitive(False)
                 self.message_dialog_rt_info.show()
 
+        self.in_performance = self.sysinfo.get_performance()
+        if self.in_performance:
+            self.check_performance.set_active(True)
+        else:
+            self.check_performance.set_active(False)
 
         handlers = {
             "on_window_main_delete_event": self.on_window_main_delete_event,
@@ -138,6 +165,7 @@ class UbuntuStudioControls:
             "on_main_button_cancel_clicked": self.on_main_button_cancel_clicked,
             "on_main_button_help_clicked": self.on_main_button_help_clicked,
             "on_check_audio_group_toggled": self.on_check_audio_group_toggled,
+            "on_check_performance_toggled": self.on_check_performance_toggled,
             "on_check_realtime_audio_toggled": self.on_check_realtime_audio_toggled,
             "on_user_combo_changed": self.on_user_combo_changed,
             "on_button_msg_ok_clicked": self.on_button_msg_ok_clicked,
@@ -176,6 +204,12 @@ class UbuntuStudioControls:
         else:
             pass
 
+    def on_check_performance_toggled(self, button):
+        if button.get_active():
+            pass
+        else:
+            pass
+
     def on_user_combo_changed(self, combo):
         tree_iter = combo.get_active_iter()
         if tree_iter != None:
@@ -197,6 +231,13 @@ class UbuntuStudioControls:
             elif rt_toggle == False:
                 self.rtsetup.enable_pam_file("disable")
             change_happened = True
+        '''Then, whether we are changing governor'''
+        governor_change = self.check_performance.get_active()
+        if governor_change:
+            self.rtsetup.set_governor(True)
+        else:
+            self.rtsetup.set_governor(False)
+            
         '''Then, whether we are changing user group memberships'''
         i = 0
         change_users = []
