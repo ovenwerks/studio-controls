@@ -2,6 +2,9 @@ ubuntustudio-controls (1.4) UNRELEASED; urgency=medium
 
   * Added an option to change CPU governor.
   * Fix changelog version.
+  * Added option to defeat Intel Boost.
+  * Added option to set two above items at boot.
+  * Changed GUI to use note book added extra pages to test.
 
  -- Len Ovens <len@music>  Sat, 03 Dec 2016 11:51:56 -0800
 
