@@ -13,10 +13,6 @@ if os.getuid() != 0:
     print("This application needs to run as root.")
     exit(1)
 
-'''Make sure /etc/init.d/ubuntustudio is added to rc*.d'''
-if not os.path.exists("/etc/rc5.d/*ubuntustudio"):
-    subprocess.call(["/usr/sbin/update-rc.d", "ubuntustudio", "enable"])
-
 class SysInfo:
     """Get information about the system"""
     def list_users(self):
@@ -67,37 +63,6 @@ class SysInfo:
                         in_performance = True
         return in_performance
 
-    def get_boosted(self):
-        '''Checks for Intel boost state'''
-        boosted = False
-        boost_path = "/sys/devices/system/cpu/intel_pstate/no_turbo"
-        if os.path.exists(boost_path):
-            with open(boost_path, "r") as boost_test:
-                for line in boost_test:
-                    if re.match("0", line.rstrip()):
-                        boosted = True
-        return boosted
-
-    def get_performance_boot(self):
-        '''Checks for current cpu governor'''
-        performance_boot = False
-        if glob.glob("/etc/rc?.d/K??ondemand"):
-            performance_boot = True
-        return performance_boot
-
-    def get_boosted_boot(self):
-        '''Checks for Intel boost boot state'''
-        boosted = False
-        boot_file = "/etc/default/ubuntustudio"
-        if os.path.exists(boot_file):
-            with open(boot_file, "r") as boot_test:
-                for line in boot_test:
-                    if re.match("NO_TURBO=0", line.rstrip()):
-                        boosted = True
-                    if re.match("NO_TURBO=1", line.rstrip()):
-                        boosted = False
-        return boosted
-
     def check_pam_files(self):
         '''Checks for the existence of two files'''
         jack_file_exists = False
@@ -131,30 +96,11 @@ class RTSetup:
         if enable == True:
             gov = "performance"
         else:
-            if os.path.exists("/sys/devices/system/cpu/intel_pstate"):
-                gov = "powersave"
-            else:
-                gov = "ondemand"
+            gov = "powersave"
         cpus = "/sys/devices/system/cpu/cpu*/cpufreq/scaling_governor"
         for line in glob.glob(cpus):
             with open(line, "w") as gov_file:
                 gov_file.write(gov)
-
-    def set_boost(self, enable):
-        boost_path = "/sys/devices/system/cpu/intel_pstate/no_turbo"
-        if os.path.exists(boost_path):
-            if enable == True:
-                cmd = "echo ""0"" | tee "+boost_path
-                subprocess.call(cmd, shell = True)
-            else:
-                cmd = "echo 1 | tee "+boost_path
-                subprocess.call(cmd, shell = True)
-
-    def set_govpersist(self, enable):
-        if enable == True:
-            subprocess.call(["/usr/sbin/update-rc.d", "ondemand", "disable"])
-        else:
-            subprocess.call(["/usr/sbin/update-rc.d", "ondemand", "enable"])
 
     def set_user_audio_group(self, users):
         for user in users:
@@ -181,10 +127,7 @@ class UbuntuStudioControls:
         '''Get buttons'''
         self.check_audio_group = builder.get_object('check_audio_group')
         self.check_realtime_audio = builder.get_object('check_realtime_audio')
-        self.combo_governor = builder.get_object('combo_governor')
-        self.combo_boost = builder.get_object('combo_boost')
-        self.gov_persist = builder.get_object('gov_persist')
-        self.boot_boosted = builder.get_object('boot_boosted')
+        self.check_performance = builder.get_object('check_performance')
         self.button_msg_ok = builder.get_object('button_msg_ok')
         '''Get liststore for combo-box'''
         self.user_list_store = builder.get_object('liststore1')
@@ -209,45 +152,11 @@ class UbuntuStudioControls:
                 self.check_realtime_audio.set_sensitive(False)
                 self.message_dialog_rt_info.show()
 
-        '''show current CPU Governor'''
-        self.combo_governor.append_text("Performance")
-        if os.path.exists("/sys/devices/system/cpu/intel_pstate/"):
-            self.combo_governor.append_text("Powersave")
-        else:
-            self.combo_governor.append_text("Ondemand")
         self.in_performance = self.sysinfo.get_performance()
         if self.in_performance:
-            self.combo_governor.set_active(0)
+            self.check_performance.set_active(True)
         else:
-            self.combo_governor.set_active(1)
-
-        '''show boost state'''
-        if os.path.exists("/sys/devices/system/cpu/intel_pstate/no_turbo"):
-            self.boosted = self.sysinfo.get_boosted()
-            if self.boosted:
-                self.combo_boost.set_active(1)
-            else:
-                self.combo_boost.set_active(0)
-        else:
-            self.combo_boost.set_sensitive(False)
-
-        '''Show cpu governor at boot'''
-        self.boot_performance = self.sysinfo.get_performance_boot()
-        if self.in_performance == self.boot_performance:
-            self.gov_persist.set_active(True)
-        else:
-            self.gov_persist.set_active(False)
-
-        '''show boost state at boot'''
-        if os.path.exists("/sys/devices/system/cpu/intel_pstate/no_turbo"):
-            self.boosted = self.sysinfo.get_boosted()
-            self.boot = self.sysinfo.get_boosted_boot()
-            if self.boosted == self.boot:
-                self.boot_boosted.set_active(True)
-            else:
-                self.boot_boosted.set_active(False)
-        else:
-            self.boot_boosted.set_sensitive(False)
+            self.check_performance.set_active(False)
 
         handlers = {
             "on_window_main_delete_event": self.on_window_main_delete_event,
@@ -256,10 +165,7 @@ class UbuntuStudioControls:
             "on_main_button_cancel_clicked": self.on_main_button_cancel_clicked,
             "on_main_button_help_clicked": self.on_main_button_help_clicked,
             "on_check_audio_group_toggled": self.on_check_audio_group_toggled,
-            "combo_governor_changed_cb": self.combo_governor_changed_cb,
-            "combo_boost_changed_cb": self.combo_boost_changed_cb,
-            "gov_persist_toggled_cb": self.gov_persist_toggled_cb,
-            "boot_boosted_toggled_cb": self.boot_boosted_toggled_cb,
+            "on_check_performance_toggled": self.on_check_performance_toggled,
             "on_check_realtime_audio_toggled": self.on_check_realtime_audio_toggled,
             "on_user_combo_changed": self.on_user_combo_changed,
             "on_button_msg_ok_clicked": self.on_button_msg_ok_clicked,
@@ -298,40 +204,7 @@ class UbuntuStudioControls:
         else:
             pass
 
-    def combo_governor_changed_cb(self, button):
-        if button.get_active_text() == "Performance":
-            self.rtsetup.set_governor(True)
-        else:
-            self.rtsetup.set_governor(False)
-        self.in_performance = self.sysinfo.get_performance()
-        if self.in_performance == self.boot_performance:
-            self.gov_persist.set_active(True)
-        else:
-            self.gov_persist.set_active(False)
-
-    def combo_boost_changed_cb(self, button):
-        if button.get_active_text() == "on":
-            self.rtsetup.set_boost(True)
-        else:
-            self.rtsetup.set_boost(False)
-        self.boosted = self.sysinfo.get_boosted()
-        if self.boosted == 0:
-            
-            self.boot_boosted.set_active(True)
-        else:
-            self.boot_boosted.set_active(False)
-        if self.boosted:
-            self.combo_boost.set_active(1)
-        else:
-            self.combo_boost.set_active(0)
-
-    def gov_persist_toggled_cb(self, button):
-        if button.get_active():
-            pass
-        else:
-            pass
-
-    def boot_boosted_toggled_cb(self, button):
+    def on_check_performance_toggled(self, button):
         if button.get_active():
             pass
         else:
@@ -358,35 +231,12 @@ class UbuntuStudioControls:
             elif rt_toggle == False:
                 self.rtsetup.enable_pam_file("disable")
             change_happened = True
-
-        '''Then, what governor to use at boot'''
-        self.gov_is_persist = self.gov_persist.get_active()
-        self.in_performance = self.sysinfo.get_performance()
-        if self.gov_is_persist == self.in_performance:
-            self.rtsetup.set_govpersist(self.in_performance)
+        '''Then, whether we are changing governor'''
+        governor_change = self.check_performance.get_active()
+        if governor_change:
+            self.rtsetup.set_governor(True)
         else:
-            self.rtsetup.set_govpersist(not self.in_performance)
-            
-        '''Open a file for writing for US boot time settings'''
-        '''All things that need this write must be in this block'''
-        with open("/etc/default/ubuntustudio", "w") as us_file:
-        
-            '''Then, if we use boost at boot'''
-            self.boot = self.boot_boosted.get_active()
-            self.boosted = self.sysinfo.get_boosted()
-            self.bootme = False
-            print("boot = ", self.boot, " boost = ", self.boosted, "\n")
-            if self.boot == self.boosted:
-                print("boot==boost, boot = %i, boost = %i\n", self.boot, self.boosted)
-                self.bootme = self.boosted
-            else:
-                self.bootme = not self.boosted
-            if self.bootme:
-                us_file.write("NO_TURBO=1\n")
-            else:
-                us_file.write("NO_TURBO=0\n")
-
-
+            self.rtsetup.set_governor(False)
             
         '''Then, whether we are changing user group memberships'''
         i = 0
