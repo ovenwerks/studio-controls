@@ -1,9 +1,9 @@
-ubuntustudio-controls (1.4) zesty; urgency=medium
+ubuntustudio-controls (1.4) artful; urgency=medium
 
   [ Len Ovens ]
-  * Added an option to change CPU governor.
+  * Added an option to change CPU governor (LP: #1678316)
 
- -- Ross Gammon <rosco2@ubuntu.com>  Fri, 31 Mar 2017 19:05:09 +0200
+ -- Ross Gammon <rosco2@ubuntu.com>  Fri, 21 Apr 2017 17:51:39 +0200
 
 ubuntustudio-controls (1.3) wily; urgency=medium
 
