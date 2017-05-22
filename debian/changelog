@@ -1,3 +1,9 @@
+ubuntustudio-controls (1.5) UNRELEASED; urgency=medium
+
+  * Rewrote so that GUI does not run sudo.
+
+ -- Len Ovens <len@music>  Sun, 21 May 2017 18:13:57 -0700
+
 ubuntustudio-controls (1.4) artful; urgency=medium
 
   [ Len Ovens ]

@@ -1,0 +1,321 @@
+#!/usr/bin/python3
+
+from gi.repository import Gtk
+import os
+import getpass
+import pwd
+import re
+import resource
+import shutil
+import subprocess
+import glob
+
+'''Make sure /etc/init.d/ubuntustudio is added to rc*.d'''
+#if not os.path.exists("/etc/rc5.d/*ubuntustudio"):
+#    subprocess.call(["/usr/sbin/update-rc.d", "ubuntustudio", "enable"])
+#can't do this here... -system maybe?
+
+class SysInfo:
+    """Get information about the system"""
+    def user_audio(self):
+        """Lists "real" users and shows whether they are in audio group, or not"""
+        # scrap this, just check current user
+        # Get min and max UID values for users
+        # This will later be used to determine which users are regular users
+        
+
+        # create a list of real users based on UID limits and login shell
+        #change this to just user=$USER (in pythonese)
+
+
+        # create a list of users who are members of audio group:
+        with open("/etc/group", "r") as groups_file:
+            for line in groups_file:
+                if re.match("^audio:", line):
+                    audio_users = line.split(':')[3].rstrip().split(',')
+        # create the list of users and their attributes that we are interested in
+        # return in the format: user_name full_name in_audio_group(True/False)
+        user = getpass.getuser()
+        audio_group = False
+        if user in audio_users:
+            audio_group = True
+
+        return audio_group
+
+    # Audio stuff
+    def list_audio_devices(self):
+        audio_devices = []
+        audio_devices.append("Audio Device One")
+        audio_devices.append("Audio Device Two")
+        audio_devices.append("Audio Device Three")
+        return audio_devices
+        
+    # jack SR
+    def get_jack_sr(self):
+        if not subprocess.call(["/usr/bin/jack_control", "status"]):
+            return "48000"
+        else:
+            return "41000"
+
+    # System tweaks
+    def get_performance(self):
+        '''Checks for current cpu governor'''
+        in_performance = False
+        if os.path.isfile("/sys/devices/system/cpu/cpufreq/policy0/scaling_governor"):
+            with open("/sys/devices/system/cpu/cpufreq/policy0/scaling_governor", "r") as perform_file_test:
+                for line in perform_file_test:
+                    if re.match("performance", line.rstrip()):
+                        in_performance = True
+        return in_performance
+
+    def get_boosted(self):
+        '''Checks for Intel boost state'''
+        boosted = False
+        boost_path = "/sys/devices/system/cpu/intel_pstate/no_turbo"
+        if os.path.exists(boost_path):
+            with open(boost_path, "r") as boost_test:
+                for line in boost_test:
+                    if re.match("0", line.rstrip()):
+                        boosted = True
+        return boosted
+
+    def get_performance_boot(self):
+        '''Checks for current cpu governor'''
+        performance_boot = False
+        if glob.glob("/etc/rc?.d/K??ondemand"):
+            performance_boot = True
+        return performance_boot
+
+    def get_boosted_boot(self):
+        '''Checks for Intel boost boot state'''
+        boosted = False
+        boot_file = "/etc/default/ubuntustudio"
+        if os.path.exists(boot_file):
+            with open(boot_file, "r") as boot_test:
+                for line in boot_test:
+                    if re.match("NO_TURBO=0", line.rstrip()):
+                        boosted = True
+                    if re.match("NO_TURBO=1", line.rstrip()):
+                        boosted = False
+        return boosted
+
+    def check_pam_files(self):
+        '''Checks for the existence of two files'''
+        jack_file_exists = False
+        if os.path.isfile("/etc/security/limits.d/audio.conf"):
+            jack_file_exists = True
+        return jack_file_exists
+
+    def check_rlimits(self):
+        """returns hard rlimit values for RTPRIO and MEMLOCK"""
+        return resource.getrlimit(resource.RLIMIT_RTPRIO)[1], resource.getrlimit(resource.RLIMIT_MEMLOCK)[1]
+
+class RTSetup:
+    """Adds or removes RT ability with jack"""
+    def __init__(self):
+        self.enabled_path = "/etc/security/limits.d/audio.conf"
+        self.disabled_path = "/etc/security/limits.d/audio.conf.disabled"
+        self.backup_file = "/usr/share/ubuntustudio-controls/audio.conf"
+
+    def set_governor(self, enable):
+        if enable == True:
+            gov = "performance"
+        else:
+            if os.path.exists("/sys/devices/system/cpu/intel_pstate"):
+                gov = "powersave"
+            else:
+                gov = "ondemand"
+        cmd = "pkexec /usr/sbin/ubuntustudio-system "+gov
+        subprocess.call(cmd, shell = True)
+
+    def set_boost(self, enable):
+        boost_path = "/sys/devices/system/cpu/intel_pstate/no_turbo"
+        if os.path.exists(boost_path):
+            if enable == True:
+                cmd = "pkexec /usr/sbin/ubuntustudio-system boost"
+                subprocess.call(cmd, shell = True)
+            else:
+                cmd = "pkexec /usr/sbin/ubuntustudio-system noboost"
+                subprocess.call(cmd, shell = True)
+
+
+    def set_user_audio_group(self, users):
+        for user in users:
+            if user[1] == True:
+                subprocess.call(["/usr/sbin/adduser", user[0], "audio"])
+            elif user[1] == False:
+                subprocess.call(["/usr/sbin/deluser", user[0], "audio"])
+
+class UbuntuStudioControls:
+
+    def __init__(self):
+        '''Activate the SysInfo class'''
+        self.sysinfo = SysInfo()
+        '''Create the GUI'''
+        builder = Gtk.Builder()
+        builder.add_from_file("/usr/share/ubuntustudio-controls/ubuntustudio-controls.glade")
+        '''Get windows'''
+        self.window_main = builder.get_object('window_main')
+        self.window_help = builder.get_object('window_help')
+        self.message_dialog_changes_info = builder.get_object('message_dialog_changes_info')
+        self.message_dialog_rt_info = builder.get_object('message_dialog_rt_info')
+        self.message_dialog_changes_info.set_transient_for(self.window_main)
+        self.message_dialog_rt_info.set_transient_for(self.window_main)
+        '''Get buttons'''
+        self.rt_button = builder.get_object('rt_button')
+        self.rt_warning = builder.get_object('rt_warning')
+        self.combo_governor = builder.get_object('combo_governor')
+        self.combo_boost = builder.get_object('combo_boost')
+        self.button_msg_ok = builder.get_object('button_msg_ok')
+        '''audio tab stuff'''
+        self.jack_device_combo = builder.get_object('jack_device_combo')
+        self.jack_rate_combo = builder.get_object('jack_rate_combo')
+
+        '''Check if audio.conf and/or audio.conf.disabled exists, returns are true or false'''
+        self.rt_file = False
+        self.jack_file_exists = self.sysinfo.check_pam_files()
+        if self.jack_file_exists and self.sysinfo.user_audio():
+            rtprio, memlock = self.sysinfo.check_rlimits()
+            if rtprio == 0:
+                self.rt_button.set_label("Logout required")
+                self.rt_button.set_sensitive(False)
+                self.message_dialog_rt_info.show()
+                self.rt_warning.set_text("Session restart required for Real Time Permissions")
+            else:
+            #if self.rt_file == True:
+                # turn off warning text, check on, deactate
+                self.rt_warning.set_text("")
+                self.rt_button.set_label("Real Time Permissions Enabled")
+                self.rt_button.set_sensitive(False)
+
+        '''show current CPU Governor'''
+        self.combo_governor.append_text("Performance")
+        if os.path.exists("/sys/devices/system/cpu/intel_pstate/"):
+            self.combo_governor.append_text("Powersave")
+        else:
+            self.combo_governor.append_text("Ondemand")
+        self.in_performance = self.sysinfo.get_performance()
+        if self.in_performance:
+            self.combo_governor.set_active(0)
+        else:
+            self.combo_governor.set_active(1)
+
+        '''show boost state'''
+        if os.path.exists("/sys/devices/system/cpu/intel_pstate/no_turbo"):
+            self.boosted = self.sysinfo.get_boosted()
+            if self.boosted:
+                self.combo_boost.set_active(1)
+            else:
+                self.combo_boost.set_active(0)
+        else:
+            self.combo_boost.set_sensitive(False)
+
+        '''show audio devices in master combo'''
+        self.audio_device_list = self.sysinfo.list_audio_devices()
+        for dev in self.audio_device_list:
+            self.jack_device_combo.append_text(dev)
+        self.jack_device_combo.set_active(0)
+        
+        # get jack SR and set combo to match
+        self.jack_rate_combo.set_active_id(self.sysinfo.get_jack_sr())
+
+        handlers = {
+            "on_window_main_delete_event": self.on_window_main_delete_event,
+            "on_window_help_delete_event": self.on_window_help_delete_event,
+            "on_main_button_ok_clicked": self.on_main_button_ok_clicked,
+            "on_main_button_cancel_clicked": self.on_main_button_cancel_clicked,
+            "on_main_button_help_clicked": self.on_main_button_help_clicked,
+            "combo_governor_changed_cb": self.combo_governor_changed_cb,
+            "combo_boost_changed_cb": self.combo_boost_changed_cb,
+            "jack_device_combo_changed": self.jack_device_combo_changed,
+            "rt_button_hit": self.rt_button_hit,
+            "on_button_msg_ok_clicked": self.on_button_msg_ok_clicked,
+            "on_button_rt_info_ok_clicked": self.on_button_rt_info_ok_clicked,
+            "on_button_help_ok_clicked": self.on_button_help_ok_clicked
+        }
+        builder.connect_signals(handlers)
+
+        self.rtsetup = RTSetup()
+
+    '''Functions for all the gui controls'''
+    def on_window_main_delete_event(self, *args):
+        Gtk.main_quit(*args)
+
+    def on_window_help_delete_event(self, window, event):
+        self.window_help.hide_on_delete()
+        return True
+
+    def on_main_button_cancel_clicked(self, button):
+        Gtk.main_quit()
+
+    def on_main_button_help_clicked(self, button):
+        self.window_help.show()
+
+    def on_check_audio_group_toggled(self, toggle):
+        combo_index = int(self.combo_user.get_active())
+        if toggle.get_active():
+            self.user_list_store[combo_index][3] = True
+        else:
+            self.user_list_store[combo_index][3] = False
+
+    def rt_button_hit(self, button):
+        cmd = "pkexec /usr/sbin/ubuntustudio-system fix"
+        subprocess.call(cmd, shell = True)
+        self.rt_button.set_label("Logout required")
+        self.rt_button.set_sensitive(False)
+        self.message_dialog_rt_info.show()
+        self.rt_warning.set_text("Session restart required for Real Time Permissions")
+
+            # ok the stuff is fixed but...
+            # put stuff to check and reset widget here
+            
+
+    # system tweaks
+    def combo_governor_changed_cb(self, button):
+        if button.get_active_text() == "Performance":
+            self.rtsetup.set_governor(True)
+        else:
+            self.rtsetup.set_governor(False)
+
+    def combo_boost_changed_cb(self, button):
+        if button.get_active_text() == "on":
+            self.rtsetup.set_boost(True)
+        else:
+            self.rtsetup.set_boost(False)
+        self.boosted = self.sysinfo.get_boosted()
+        if self.boosted:
+            self.combo_boost.set_active(1)
+        else:
+            self.combo_boost.set_active(0)
+
+    # Audio setup call backs
+    def jack_device_combo_changed(self, combo):
+        print(combo.get_active_text())
+
+
+    def on_main_button_ok_clicked(self, button):
+        '''Let's hide the controls, so nothing goes wrong after this'''
+        self.window_main.hide()
+        change_happened = False
+        '''First, check if rt_setting was changed'''
+
+
+            #change_happened = True
+        if change_happened:
+            self.message_dialog_changes_info.show()
+        else:
+            Gtk.main_quit()
+
+    def on_button_help_ok_clicked(self, button):
+        self.window_help.hide()
+
+    def on_button_msg_ok_clicked(self, button):
+        Gtk.main_quit()
+
+    def on_button_rt_info_ok_clicked(self, button):
+        self.message_dialog_rt_info.hide()
+
+us = UbuntuStudioControls()
+us.window_main.show_all()
+
+Gtk.main()

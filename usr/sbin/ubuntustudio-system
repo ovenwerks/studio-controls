@@ -1,0 +1,100 @@
+#! /bin/sh
+#
+# Script to change do system side things for ubuntustudio-controls
+#
+#
+AVAILABLE="/sys/devices/system/cpu/cpu0/cpufreq/scaling_available_governors"
+[ -f $AVAILABLE ] || exit 0
+read governors < $AVAILABLE
+GOVERNOR="unset"
+
+
+case "$1" in
+	performance)
+		/usr/sbin/update-rc.d ondemand disable
+         case $governors in
+              *performance*)
+                    GOVERNOR="performance"
+                    ;;
+               *)
+                    exit 0
+                    ;;
+          esac
+          ;;
+
+
+	ondemand)
+		/usr/sbin/update-rc.d ondemand enable
+		case $governors in
+			*ondemand*)
+				GOVERNOR="ondemand"
+				;;
+			*powersave*)
+				GOVERNOR="powersave"
+				;;
+			*)
+				exit 0
+				;;
+		esac
+
+	;;
+
+	powersave)
+		/usr/sbin/update-rc.d ondemand enable
+         case $governors in
+               *powersave*)
+                    GOVERNOR="powersave"
+                    ;;
+               *)
+                    exit 0
+                    ;;
+          esac
+	 ;;
+
+	fix)
+		if [ -f /etc/security/limits.d/audio.conf.disabled ]; then
+			mv /etc/security/limits.d/audio.conf.disabled /etc/security/limits.d/audio.conf
+		elif ! [ -f /etc/security/limits.d/audio.conf ]; then
+			cp /usr/share/ubuntustudio-controls/audio.conf /etc/security/limits.d/audio.conf
+		fi
+		/usr/sbin/adduser `id -nu ${PKEXEC_UID}` audio
+		;;
+
+	boost)
+		if [ -f /sys/devices/system/cpu/intel_pstate/no_turbo ]; then
+			echo "NO_TURBO=0\n" > /etc/default/ubuntustudio
+			echo "0" | tee /sys/devices/system/cpu/intel_pstate/no_turbo
+		fi
+		;;
+
+	noboost)
+		if [ -f /sys/devices/system/cpu/intel_pstate/no_turbo ]; then
+			echo "NO_TURBO=1\n" > /etc/default/ubuntustudio
+			echo "1" | tee /sys/devices/system/cpu/intel_pstate/no_turbo
+		fi
+		;;
+
+
+	nosys)
+		/etc/init.d/cron stop
+		;;
+
+	sys)
+		/etc/init.d/cron start
+		;;
+
+	*)
+	 exit 0
+	 ;;
+
+	esac
+
+
+	if [ $GOVERNOR != "unset" ]; then
+		for CPUFREQ in /sys/devices/system/cpu/cpu*/cpufreq/scaling_governor
+		do
+			[ -f $CPUFREQ ] || continue
+			echo -n $GOVERNOR > $CPUFREQ
+		done
+	fi
+
