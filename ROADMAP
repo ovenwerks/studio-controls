@@ -1,6 +1,10 @@
-Notes to Len:
- This is Notes about developing this application and of no use to the end user :)
 
+ This is Notes about developing this application, known bugs and
+ features to add. It is generally in order of importance... or at
+ least order to be worked on. (some later things rely on sooner
+ things)
+
+Need to change devices to device_name,sub,sub and add description
 
 Need to change autojack to accept start/restart/stop parameter
 	- should restart be different from start?

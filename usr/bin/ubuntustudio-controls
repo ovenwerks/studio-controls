@@ -246,45 +246,55 @@ class UbuntuStudioControls:
 
         for x in range(0, 10):
             #card loop
+            cname = ""
+            next_id = ""
+            next_d = ""
             if os.path.exists("/proc/asound/card"+str(x)):
                 with open("/proc/asound/card"+str(x)+"/id", "r") as card_file:
                     for line in card_file:
-                        #need inner for loop to get sub devices and sub.sub devices
-                        #need decription text too
-                        next_id = line.rstrip()
-                        next_d = next_id
-                        self.jack_device_combo.append(next_id, next_d)
-                        self.combo_output.append(next_id, next_d)
-                        if x == 0 and self.dev == "default":
-                            self.dev = next_id
-                        if x == 0 and self.dev_desc == "default":
-                            self.dev_desc = next_d
-                        if x == 0 and self.d_out == "default":
-                            self.d_out = next_id 
-                        if self.dev == next_id:
-                            self.jack_device_combo.set_active_id(next_id)
-                            self.dev_desc = next_d
-                        else:
-                            if self.zdev.find(next_id) >= 0:
-                                self.combo_zita_remove.append(next_id, next_d)
+                        #only need one line
+                        cname = line.rstrip()
+            for y in range(0, 10):
+                d_type = ""
+                d_desc = ""
+                if os.path.exists("/proc/asound/card"+str(x)+"/pcm"+str(y)+"p"):
+                    d_type = "play"
+                if os.path.exists("/proc/asound/card"+str(x)+"/pcm"+str(y)+"c"):
+                    if d_type == "":
+                        d_type = "capture"
+                    else:
+                        d_type = d_type+" and capture"
+                if d_type != "":
+                    for z in range(0, 10):
+                        if os.path.exists("/proc/asound/card"+str(x)+"/pcm"+str(y)+d_type[0]+"/sub"+str(z)):
+                            with open("/proc/asound/card"+str(x)+"/pcm"+str(y)+d_type[0]+"/sub"+str(z)+"/info", "r") as info_file:
+                                for line in info_file:
+                                    if re.match("^name:", line.rstrip()):
+                                        dname = line.rstrip().split(": ", 1)[1]
+                                        next_id = cname+","+str(y)+","+str(z)
+                                        next_d = next_id+" "+d_type+" ("+dname+")"
+                            #   Have everything we need now
+
+                            # this block will fit whereever we know sub-ids and description
+                            self.jack_device_combo.append(next_id, next_d)
+                            self.combo_output.append(next_id, next_d)
+                            if x == 0 and self.dev == "default":
+                                self.dev = next_id
+                            if x == 0 and self.dev_desc == "default":
+                                self.dev_desc = next_d
+                            if x == 0 and self.d_out == "default":
+                                self.d_out = next_id 
+                            if self.dev == next_id:
+                                self.jack_device_combo.set_active_id(next_id)
+                                self.dev_desc = next_d
                             else:
-                                self.combo_zita_add.append(next_id, next_d)
-                        if self.d_out == next_id:
-                            self.combo_output.set_active_id(next_id)
+                                if self.zdev.find(next_id) >= 0:
+                                    self.combo_zita_remove.append(next_id, next_d)
+                                else:
+                                    self.combo_zita_add.append(next_id, next_d)
+                            if self.d_out == next_id:
+                                self.combo_output.set_active_id(next_id)
 
-            #for y in range(0, 10):
-        #return audio_devices
-
-        '''show audio devices in master combo'''
-
-        #    self.jack_device_combo.append_text(dev)
-        #    self.combo_output.append_text(dev)
-        #    self.combo_zita_add.append_text(dev)
-
-        #next line should reflect current reality from file or jack
-        #self.jack_device_combo.set_active(0)
-        
-        # get jack SR and set combo to match
 
         handlers = {
             "on_window_main_delete_event": self.on_window_main_delete_event,
@@ -417,26 +427,25 @@ class UbuntuStudioControls:
         # if auto start jack then restart jack
         # else kill jack and restart pulse
         home = expanduser("~")
-        if os.path.isfile(home+"/.config/autojackrc"):
-            with open(home+"/.config/autojackrc", "w") as rc_file:
-                rc_file.write("# file generated by ubuntustudio-controls\n\n")
-                rc_file.write("\nJACK="+str(self.jack_autostart_check.get_active()))
-                rc_file.write("\nDRIVER=alsa")
-                rc_file.write("\nDEV="+str(self.jack_device_combo.get_active_id()))
-                rc_file.write("\nRATE="+str(self.jack_rate_combo.get_active_id()))
-                rc_file.write("\nFRAME="+str(self.combobox_late.get_active_id()))
-                self.zframe = str(int(int(self.combobox_late.get_active_id()) / 2))
-                rc_file.write("\nZFRAME="+self.zframe)
-                rc_file.write("\nPERIOD=2")
-                rc_file.write("\nPULSE="+str(self.pulse_check.get_active()))
-                rc_file.write("\nA2J="+str(self.jack_midi_check.get_active()))
-                rc_file.write("\nOUTPUT="+str(self.combo_output.get_active_id()))
-                rc_file.write("\nPORTS="+str(self.combo_out_ports.get_active_id()))
-                rc_file.write("\nUSBAUTO="+str(self.usb_plug_combo.get_active_id()))
-                rc_file.write("\nXDEV=\"")
-                model = self.combo_zita_remove.get_model()
-                model.foreach(self.z_save, rc_file)
-                rc_file.write("\"\n# end of auto generated parameters\n")
+        with open(home+"/.config/autojackrc", "w") as rc_file:
+            rc_file.write("# file generated by ubuntustudio-controls\n\n")
+            rc_file.write("\nJACK="+str(self.jack_autostart_check.get_active()))
+            rc_file.write("\nDRIVER=alsa")
+            rc_file.write("\nDEV="+str(self.jack_device_combo.get_active_id()))
+            rc_file.write("\nRATE="+str(self.jack_rate_combo.get_active_id()))
+            rc_file.write("\nFRAME="+str(self.combobox_late.get_active_id()))
+            self.zframe = str(int(int(self.combobox_late.get_active_id()) / 2))
+            rc_file.write("\nZFRAME="+self.zframe)
+            rc_file.write("\nPERIOD=2")
+            rc_file.write("\nPULSE="+str(self.pulse_check.get_active()))
+            rc_file.write("\nA2J="+str(self.jack_midi_check.get_active()))
+            rc_file.write("\nOUTPUT="+str(self.combo_output.get_active_id()))
+            rc_file.write("\nPORTS="+str(self.combo_out_ports.get_active_id()))
+            rc_file.write("\nUSBAUTO="+str(self.usb_plug_combo.get_active_id()))
+            rc_file.write("\nXDEV=\"")
+            model = self.combo_zita_remove.get_model()
+            model.foreach(self.z_save, rc_file)
+            rc_file.write("\"\n# end of auto generated parameters\n")
 
         print("Audio settings saved")
 
