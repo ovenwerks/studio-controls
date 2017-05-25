@@ -1,6 +1,7 @@
 ubuntustudio-controls (1.5) UNRELEASED; urgency=medium
 
   * Rewrote so that GUI does not run sudo.
+  * Added functionality to Audio settings
 
  -- Len Ovens <len@music>  Sun, 21 May 2017 18:13:57 -0700
 
