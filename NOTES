@@ -1,6 +1,4 @@
 Notes to Len:
  This is Notes about developing this application and of no use to the end user :)
  
- Buttons do not need local equivalents 
- 
- Audio combos do not need call backs as apply will read them all at that time
+Application start does not read file correctly... Why?

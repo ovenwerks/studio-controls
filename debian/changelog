@@ -4,6 +4,7 @@ ubuntustudio-controls (1.5) UNRELEASED; urgency=medium
   * Added functionality to Audio settings
   * GUI correctly writes file, jack starts and connects to pulse
     correctly
+  * fix not loading values from rc file, zita likes lower buffer size
 
  -- Len Ovens <len@music>  Sun, 21 May 2017 18:13:57 -0700
 

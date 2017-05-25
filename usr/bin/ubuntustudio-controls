@@ -205,7 +205,7 @@ class UbuntuStudioControls:
             with open(home+"/.config/autojackrc", "r") as rc_file:
                 for line in rc_file:
                     if re.match("^#", line):
-                        break
+                        continue
                     lsplit = line.rstrip().split("=", 1)
                     if lsplit[0] == "NOJACK":
                         self.nojack = lsplit[1]
@@ -388,15 +388,19 @@ class UbuntuStudioControls:
     def cb_jack_start(self, button):
         # test if running and start or restart with saved parameters
         # does not care if auto start is valid
-        cmd = "jack_control stop"
-        subprocess.call(cmd, shell = True)
+        subprocess.call("killall zita-a2j", shell = True)
+        subprocess.call("killall zita-j2a", shell = True)
+        subprocess.call("a2j_control stop", shell = True)
+        subprocess.call("jack_control stop", shell = True)
         subprocess.call("autojack", shell = True)
         print("start_jack")
 
     def cb_jack_stop(self, button):
         # test if jack is running and stop. Also kill pulse so it can see devices again
-        cmd = "jack_control stop"
-        subprocess.call(cmd, shell = True)
+        subprocess.call("killall zita-a2j", shell = True)
+        subprocess.call("killall zita-j2a", shell = True)
+        subprocess.call("a2j_control stop", shell = True)
+        subprocess.call("jack_control stop", shell = True)
         subprocess.call("pulseaudio -k", shell = True)
         
         print("jack stopped.")
@@ -421,7 +425,8 @@ class UbuntuStudioControls:
                 rc_file.write("\nDEV="+str(self.jack_device_combo.get_active_id()))
                 rc_file.write("\nRATE="+str(self.jack_rate_combo.get_active_id()))
                 rc_file.write("\nFRAME="+str(self.combobox_late.get_active_id()))
-                rc_file.write("\nZFRAME="+str(self.combobox_late.get_active_id()))
+                self.zframe = str(int(int(self.combobox_late.get_active_id()) / 2))
+                rc_file.write("\nZFRAME="+self.zframe)
                 rc_file.write("\nPERIOD=2")
                 rc_file.write("\nPULSE="+str(self.pulse_check.get_active()))
                 rc_file.write("\nA2J="+str(self.jack_midi_check.get_active()))
