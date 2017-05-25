@@ -388,11 +388,18 @@ class UbuntuStudioControls:
     def cb_jack_start(self, button):
         # test if running and start or restart with saved parameters
         # does not care if auto start is valid
+        cmd = "jack_control stop"
+        subprocess.call(cmd, shell = True)
+        subprocess.call("autojack", shell = True)
         print("start_jack")
 
     def cb_jack_stop(self, button):
         # test if jack is running and stop. Also kill pulse so it can see devices again
-        print("stop jack")
+        cmd = "jack_control stop"
+        subprocess.call(cmd, shell = True)
+        subprocess.call("pulseaudio -k", shell = True)
+        
+        print("jack stopped.")
 
     def z_save(self, model, path, d_iter, save_file):
         m_id = str(model.get(d_iter, 1)[0])
@@ -421,10 +428,10 @@ class UbuntuStudioControls:
                 rc_file.write("\nOUTPUT="+str(self.combo_output.get_active_id()))
                 rc_file.write("\nPORTS="+str(self.combo_out_ports.get_active_id()))
                 rc_file.write("\nUSBAUTO="+str(self.usb_plug_combo.get_active_id()))
-                rc_file.write("\nXDEV=")
+                rc_file.write("\nXDEV=\"")
                 model = self.combo_zita_remove.get_model()
                 model.foreach(self.z_save, rc_file)
-                rc_file.write("\n# end of auto generated parameters\n")
+                rc_file.write("\"\n# end of auto generated parameters\n")
 
 
 
