@@ -1,0 +1,16 @@
+UbuntuStudio Controls
+
+This is a small application to allow setting up audio for (semi)pro
+audio work.
+
+The application first checks to see if application will have access to
+memory locking and real time priorities. If not, a warning is displayed
+and a checkbox allows repairing this. After repairing this the user needs
+to log out and back in for the new setting to have effect, there is
+a warning to this effect.
+
+It is assumed that jack will run at session start and not be stopped till
+session end. However, it is possible to override this.
+
+Everything is working (if not optimally) except that USB audio device
+hot plug detection has not yet been implemented.

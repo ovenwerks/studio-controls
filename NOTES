@@ -1,4 +1,12 @@
 Notes to Len:
  This is Notes about developing this application and of no use to the end user :)
- 
-Application start does not read file correctly... Why?
+
+
+Need to change autojack to accept start/restart/stop parameter
+	- should restart be different from start?
+		- can check for running jack and internally choose
+
+Need to do all of USB hot plug detection
+	- write udev rules
+	- write connect script
+	- change RC file to start correctly with usb device plugged or not

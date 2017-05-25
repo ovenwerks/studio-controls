@@ -4,7 +4,7 @@
 DELAY=1
 
 # default parameters
-NOJACK=False
+JACK=True
 DRIVER=alsa
 DEV=default
 RATE=48000
@@ -28,7 +28,7 @@ if [ -r ~/.config/autojackrc ]
  then . ~/.config/autojackrc
 fi
 
-if [ $NOJACK = "True" ]
+if [ $JACK = "False" ]
 	then
 	exit 0
 fi
