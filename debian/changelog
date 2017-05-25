@@ -7,6 +7,8 @@ ubuntustudio-controls (1.5) UNRELEASED; urgency=medium
   * fix not loading values from rc file, zita likes lower buffer size
   * fix jack checkbox, fix extra device reading from rc file
   * Add readme file
+  * Changed device name to card,device,sub with some info
+  * add etc/ to install so autostart gets installed
 
  -- Len Ovens <len@music>  Sun, 21 May 2017 18:13:57 -0700
 
