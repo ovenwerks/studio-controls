@@ -32,7 +32,7 @@ PATH=/usr/local/sbin:/usr/local/bin:/sbin:/bin:/usr/sbin:/usr/bin
 ENABLE="true"
 NO_TURBO="0"
 
-# we should check for teh availablity of any setting we wish to change
+# we should check for the availablity of any setting we wish to change
 check_turbo_avail() {
 	info="/sys/devices/system/cpu/intel_pstate/no_turbo"
 	if [ -f $info ]; then

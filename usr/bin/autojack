@@ -1,0 +1,105 @@
+#! /bin/bash
+# start jack and midi
+
+DELAY=1
+
+# default parameters
+NOJACK=False
+DRIVER=alsa
+DEV=default
+RATE=48000
+FRAME=512
+# zita-ajbridge seems to run better with a lower frame rate.
+ZFRAME=256
+PERIOD=2
+# bridge pulse
+PULSE=True
+# bridge ALSA MIDI to Jack
+A2J=TRUE
+# device pulse sees as output
+OUTPUT=default
+# first of two ports to use as output
+PORTS=1
+# on new usb audio IF detect
+USBAUTO=slave
+XDEV=" "
+let "PORTS2=PORTS+1"
+
+# config file can override defaults.
+if [ -r ~/.config/autojackrc ]
+ then . ~/.config/autojackrc
+fi
+
+if [$NOJACK == "True"]
+	then
+	exit 0
+fi
+
+# Pulse may not be settled yet
+sleep 2
+
+# rip pulse's guts out, We only use it as a front end for jack.
+# -controls can reload these if we want to stop jack for some reason.
+pactl unload-module module-jackdbus-detect
+#sleep $DELAY
+pactl unload-module module-udev-detect
+#sleep $DELAY
+pactl unload-module module-alsa-card
+
+# start jack
+	jack_control ds $DRIVER dps capture none dps playback none
+	jack_control dps device hw:${DEV} dps rate $RATE dps period $FRAME \
+		dps nperiods $PERIOD start
+	# next line should actually check jack status
+	Jackup='True'
+	sleep $DELAY
+	if [$DEV == $OUTPUT]
+		then
+		if [$PULSE == "True"]
+			then
+			pactl load-module module-jack-sink client_name=PA-${DEV} channels=2 connect=no
+			#sleep $DELAY
+			pactl load-module module-jack-source client_name=PA_${DEV} channels=2 connect=no
+			jack_connect ${DEV}-in:capture_1 PA_${DEV}:front-left
+			jack_connect ${DEV}-in:capture_2 PA_${DEV}:front-right
+			jack_connect PA-${DEV}:front-left ${DEV}-out:playback_${PORTS}
+			jack_connect PA-${DEV}:front-right ${DEV}-out:playback_${PORTS2}
+		fi
+	fi
+
+
+#cycle through zita devices starting them
+# should use if Jackup == True
+for cname in $XDEV; do
+
+	zita-a2j -j ${cname}-in -d hw:${cname} -r $RATE -p $ZFRAME -n $PERIOD &
+	zita-j2a -j ${cname}-out -d hw:${cname} -r $RATE -p $ZFRAME -n $PERIOD &  
+
+	# not sure all these delays need to be here. Was checking with old pulse.
+	sleep $DELAY
+	sleep $DELAY
+	sleep $DELAY
+	if [$DEV == $OUTPUT]
+		then
+		if [$PULSE == "True"]
+			then
+			pactl load-module module-jack-sink client_name=PA-${cname} channels=2 connect=no
+			pactl load-module module-jack-source client_name=PA_${cname} channels=2 connect=no
+			jack_connect ${cname}-in:capture_1 PA_${cname}:front-left
+			jack_connect ${cname}-in:capture_2 PA_${cname}:front-right
+			jack_connect PA-${cname}:front-left ${cname}-out:playback_${PORTS}
+			jack_connect PA-${cname}:front-right ${cname}-out:playback_${PORTS2}
+		fi
+	fi
+
+
+done
+
+if [$A2J == "True"]
+	then
+	a2j_control ehw start
+fi
+
+
+echo "done"
+exit
