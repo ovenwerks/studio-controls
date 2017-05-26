@@ -4,8 +4,6 @@
  least order to be worked on. (some later things rely on sooner
  things)
 
-Need to change devices to device_name,sub,sub and add description
-
 Need to change autojack to accept start/restart/stop parameter
 	- should restart be different from start?
 		- can check for running jack and internally choose

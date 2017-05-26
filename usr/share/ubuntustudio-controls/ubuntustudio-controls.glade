@@ -487,21 +487,6 @@
                       </packing>
                     </child>
                     <child>
-                      <object class="GtkButton" id="button_jack_stop">
-                        <property name="label" translatable="yes">Stop Jack</property>
-                        <property name="visible">True</property>
-                        <property name="can_focus">True</property>
-                        <property name="receives_default">True</property>
-                        <property name="relief">none</property>
-                        <signal name="clicked" handler="cb_jack_stop" swapped="no"/>
-                      </object>
-                      <packing>
-                        <property name="left_attach">1</property>
-                        <property name="top_attach">7</property>
-                        <property name="width">2</property>
-                      </packing>
-                    </child>
-                    <child>
                       <object class="GtkLabel" id="label_output">
                         <property name="visible">True</property>
                         <property name="can_focus">False</property>
@@ -565,7 +550,7 @@
                             <property name="can_focus">False</property>
                             <property name="active">0</property>
                             <items>
-                              <item id="label" translatable="yes">Add</item>
+                              <item id="label" translatable="yes">Add (Available)</item>
                             </items>
                             <signal name="changed" handler="cb_zita_add" swapped="no"/>
                           </object>
@@ -581,7 +566,7 @@
                             <property name="can_focus">False</property>
                             <property name="active">0</property>
                             <items>
-                              <item id="label" translatable="yes">Remove</item>
+                              <item id="label" translatable="yes">Remove (connected)</item>
                             </items>
                             <signal name="changed" handler="cb_zita_remove" swapped="no"/>
                           </object>
@@ -597,6 +582,23 @@
                         <property name="top_attach">4</property>
                         <property name="width">2</property>
                       </packing>
+                    </child>
+                    <child>
+                      <object class="GtkButton" id="button_jack_stop">
+                        <property name="label" translatable="yes">Stop Jack</property>
+                        <property name="visible">True</property>
+                        <property name="can_focus">True</property>
+                        <property name="receives_default">True</property>
+                        <property name="relief">none</property>
+                        <signal name="clicked" handler="cb_jack_stop" swapped="no"/>
+                      </object>
+                      <packing>
+                        <property name="left_attach">2</property>
+                        <property name="top_attach">7</property>
+                      </packing>
+                    </child>
+                    <child>
+                      <placeholder/>
                     </child>
                   </object>
                   <packing>
@@ -661,12 +663,12 @@
                     <property name="can_focus">True</property>
                     <property name="receives_default">True</property>
                     <property name="halign">center</property>
-                    <property name="xalign">0.50999999046325684</property>
                     <signal name="clicked" handler="cb_audio_apply" swapped="no"/>
                   </object>
                   <packing>
                     <property name="expand">False</property>
                     <property name="fill">True</property>
+                    <property name="padding">8</property>
                     <property name="position">4</property>
                   </packing>
                 </child>
