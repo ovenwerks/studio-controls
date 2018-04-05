@@ -15,7 +15,7 @@ ubuntustudio-controls (1.5) UNRELEASED; urgency=medium
   * Add USB device hotplug detect
   * Fix README and remove some comments
 
- -- Len Ovens <len@music>  Wed, 04 April 2018 20:31:00 -0700
+ -- Len Ovens <len@music>  Wed, 04 Apr 2018 20:31:00 -0700
 
 ubuntustudio-controls (1.4) artful; urgency=medium
 
