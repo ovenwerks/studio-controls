@@ -13,8 +13,9 @@ ubuntustudio-controls (1.5) UNRELEASED; urgency=medium
   * Rewrite autojack as a python daemon
   * Rewrite ubuntustudio-controls to talk to new daemon
   * Add USB device hotplug detect
+  * Fix README and remove some comments
 
- -- Len Ovens <len@music>  Sun, 21 May 2017 18:13:57 -0700
+ -- Len Ovens <len@music>  Wed, 04 April 2018 20:31:00 -0700
 
 ubuntustudio-controls (1.4) artful; urgency=medium
 

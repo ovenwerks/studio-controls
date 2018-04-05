@@ -147,7 +147,6 @@ def config_start():
 		if pulse == "True":
 			cmd = "pactl load-module module-jack-sink client_name=PA-"+dev+" channels=2 connect=no"
 			subprocess.call(cmd, shell = True)
-			#sleep $DELAY
 			cmd = "pactl load-module module-jack-source client_name=PA_"+dev+" channels=2 connect=no"
 			subprocess.call(cmd, shell = True)
 			cmd = "jack_connect system:capture_1 PA_"+dev+":front-left"
@@ -164,11 +163,9 @@ def config_start():
 		if cname != "":
 			start_slave(cname)
 
-		# zita-a2j -j ${cname}-in -d hw:${cname} -r $RATE -p $ZFRAME -n $PERIOD &
-		# zita-j2a -j ${cname}-out -d hw:${cname} -r $RATE -p $ZFRAME -n $PERIOD &  
-
 		# not sure all these delays need to be here. Was checking with old pulse.
 		time.sleep(3)
+		# this needs to be pulled into it's own call so it can be used by master switching
 		if cname.strip('"') == d_out:
 			if pulse == "True":
 				cmd = "pactl load-module module-jack-sink client_name=PA-"+cname+" channels=2 connect=no"

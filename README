@@ -19,8 +19,3 @@ mic for input and internal audio for monitoring. These two devices have
 no way of being in sync with each other and in most cases can not be
 used together. This application allows setting one jack device and adding
 a second device as a jack client via zita-ajbridge.
-
-Everything is working (if not optimally) except that USB audio device
-hot plug detection has not yet been implemented. This means that any
-USB device needs to be plugged in before logging in to the session or
-running ubuntustudio-controls to set things up.
