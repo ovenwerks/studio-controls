@@ -474,11 +474,10 @@
                     </child>
                     <child>
                       <object class="GtkButton" id="button_jack_start">
-                        <property name="label" translatable="yes">Restart Jack</property>
+                        <property name="label" translatable="yes">Start or Restart  Jack</property>
                         <property name="visible">True</property>
                         <property name="can_focus">True</property>
                         <property name="receives_default">True</property>
-                        <property name="relief">half</property>
                         <signal name="clicked" handler="cb_jack_start" swapped="no"/>
                       </object>
                       <packing>
@@ -589,7 +588,6 @@
                         <property name="visible">True</property>
                         <property name="can_focus">True</property>
                         <property name="receives_default">True</property>
-                        <property name="relief">none</property>
                         <signal name="clicked" handler="cb_jack_stop" swapped="no"/>
                       </object>
                       <packing>
@@ -598,7 +596,17 @@
                       </packing>
                     </child>
                     <child>
-                      <placeholder/>
+                      <object class="GtkButton" id="usb_disconnect">
+                        <property name="label" translatable="yes">Safely Remove USB Audio device</property>
+                        <property name="visible">True</property>
+                        <property name="can_focus">True</property>
+                        <property name="receives_default">True</property>
+                        <signal name="clicked" handler="usb_remove_cb" swapped="no"/>
+                      </object>
+                      <packing>
+                        <property name="left_attach">1</property>
+                        <property name="top_attach">7</property>
+                      </packing>
                     </child>
                   </object>
                   <packing>

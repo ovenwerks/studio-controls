@@ -5,10 +5,23 @@
  things)
 
 Need to change autojack to accept start/restart/stop parameter
+	- autojack is now dbus opperated and runs for whole session
 	- should restart be different from start?
 		- can check for running jack and internally choose
+	- should check if DEV exists, use "default" otherwise
+	- need to rewrite rcfile on USB plugin to include usb device(s)
+
+Need to not remove a device from XDEV just because it does not exist?
+maybe same for DEV? (change device name to card,dev,sub (unplugged))
 
 Need to do all of USB hot plug detection
-	- write udev rules
-	- write connect script
+	- write udev rules - Done
+	- write connect script - Done
 	- change RC file to start correctly with usb device plugged or not
+		Actually this would be in Autojack
+	- hw:USB,0 is the only device to become jack master hw:USB,1 etc.
+		will be clients.
+	- may be best to move most of autojack in here... maybe make this
+		autojack. autostart/autojack.desktop can start it at asession
+		start and -controls can send dbus messages to control it:
+		start, stop, restart, reconfig

@@ -10,6 +10,6 @@ Homepage: https://wiki.ubuntu.com/UbuntuStudio/UbuntuStudioControls
 Package: ubuntustudio-controls
 Architecture: all
 Section: admin
-Depends: ${misc:Depends}, python3, python-gi, jackd, cpufrequtils
+Depends: ${misc:Depends}, python3, python-gi, jackd2, cpufrequtils, python-dbus, zita-ajbridge
 Description: Ubuntu Studio Controls is a small application that 
  enables/disables realtime privilege for users

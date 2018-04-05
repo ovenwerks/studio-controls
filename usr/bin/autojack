@@ -1,106 +1,311 @@
-#! /bin/bash
-# start jack and midi
+#!/usr/bin/python
 
-DELAY=1
+# jack-usb - Monitors dbus for added audio devices (hot plugged USB audio intefaces)
+# on detect it does one of three things:
+#	Makes it the jack device
+#	makes it a jack client (via zita-ajbridge)
+#	nothing
+#
+# The mode is chosen from either the USBAUTO setting or if the device
+# name is present in XDEV then slave mode is assumed. If DEV has the
+# device name, then master is chosen.
+#
+# jack-usb also monitors dbus for messages from ubuntustudio-controls to:
+#	- stop jack
+#	- re/start jack
+#	- remove a USB device as jack master to allow safe device removal
+#	- reread ~/.config/autojackrc and apply any changes
 
-# default parameters
-JACK=True
-DRIVER=alsa
-DEV=default
-RATE=48000
-FRAME=512
-# zita-ajbridge seems to run better with a lower frame rate.
-ZFRAME=256
-PERIOD=2
-# bridge pulse
-PULSE=True
-# bridge ALSA MIDI to Jack
-A2J=TRUE
-# device pulse sees as output
-OUTPUT=default
-# first of two ports to use as output
-PORTS=1
-# on new usb audio IF detect
-USBAUTO=slave
-XDEV=" "
-# config file can override defaults.
-if [ -r ~/.config/autojackrc ]
- then . ~/.config/autojackrc
-fi
+import os
+from os.path import expanduser
+import re
+import time
+import dbus.service
+import dbus.glib
+import gobject
+import dbus
+import subprocess
+import sys
 
-if [ $JACK = "False" ]
-	then
-	exit 0
-fi
+def get_dev_names(x):
+	card_id = ""
+	card_d = ""
+	if os.path.exists("/proc/asound/card"+str(x)):
+		with open("/proc/asound/card"+str(x)+"/id", "r") as card_file:
+			for line in card_file:
+				#only need one line
+				cname = line.rstrip()
 
+	for y in range(0, 10):
+		d_type = ""
+		d_desc = ""
+		if os.path.exists("/proc/asound/card"+str(x)+"/pcm"+str(y)+"p"):
+			d_type = "play"
+		if os.path.exists("/proc/asound/card"+str(x)+"/pcm"+str(y)+"c"):
+			if d_type == "":
+				d_type = "capture"
+			else:
+				d_type = d_type+" and capture"
+			if d_type != "":
+				for z in range(0, 10):
+					if os.path.exists("/proc/asound/card"+str(x)+"/pcm"+str(y)+d_type[0]+"/sub"+str(z)):
+						with open("/proc/asound/card"+str(x)+"/pcm"+str(y)+d_type[0]+"/sub"+str(z)+"/info", "r") as info_file:
+							for line in info_file:
+								if re.match("^name:", line.rstrip()):
+									dname = line.rstrip().split(": ", 1)[1]
+									card_id = cname+","+str(y)+","+str(z)
+									card_d = card_id+" "+d_type+" ("+dname+")"
+	# change this to create a list, USB cards may have devices and subdevices
+	return card_id, card_d
 
-PORTS2=`expr $PORTS + 1`
+def import_config():
+	global jack
+	global driver
+	global sr
+	global late
+	global period
+	global zframe
+	global zdev
+	global pulse
+	global a2j
+	global dev
+	global dev_desc
+	global d_out
+	global o_port
+	global usb
+	global usbdev
 
-# Pulse may not be settled yet
-sleep 2
+	# read in autojack config file
+	home = expanduser("~")
+	if os.path.isfile(home+"/.config/autojackrc"):
+		with open(home+"/.config/autojackrc", "r") as rc_file:
+			for line in rc_file:
+				if re.match("^#", line):
+					continue
+				lsplit = line.rstrip().split("=", 1)
+				if lsplit[0] == "JACK":
+					jack = lsplit[1]
+				elif lsplit[0] == "DRIVER":
+					driver = lsplit[1]
+				elif lsplit[0] == "DEV":
+					dev = dev_desc = lsplit[1]
+				elif lsplit[0] == "RATE":
+					sr = lsplit[1]
+				elif lsplit[0] == "FRAME":
+					late = lsplit[1]
+				elif lsplit[0] == "ZFRAME":
+					zframe = lsplit[1]
+				elif lsplit[0] == "PERIOD":
+					period = lsplit[1]
+				elif lsplit[0] == "PULSE":
+					pulse = lsplit[1]
+				elif lsplit[0] == "A2J":
+					a2j = lsplit[1]
+				elif lsplit[0] == "OUTPUT":
+					d_out = lsplit[1]
+				elif lsplit[0] == "PORTS":
+					o_port = lsplit[1]
+				elif lsplit[0] == "XDEV":
+					zdev = lsplit[1]
+				elif lsplit[0] == "USBAUTO":
+					usb = lsplit[1]
+				elif lsplit[0] == "USDEV":
+					usbdev = lsplit[1]
 
-# rip pulse's guts out, We only use it as a front end for jack.
-# -controls can reload these if we want to stop jack for some reason.
-pactl unload-module module-jackdbus-detect
-#sleep $DELAY
-pactl unload-module module-udev-detect
-#sleep $DELAY
-pactl unload-module module-alsa-card
+def config_start():
+	import_config()
+	# if at session start we should wait a few seconds for pulse
+	# to be fully running
+	time.sleep(2)	
+	# Stop jack if running
+	cmd = "killall -9 jackdbus jackd a2jmidid"
+	subprocess.call(cmd, shell = True)
+	if jack == "False":
+		# restart Pulse
+		cmd = "pulseaudio -k"
+		subprocess.call(cmd, shell = True)
+		return
+		
+	# Assume start of session where pulse may be fully loaded
+	# get rid of anything that can automatically interfere
+	cmd = "pactl unload-module module-jackdbus-detect"
+	subprocess.call(cmd, shell = True)
+	cmd = "pactl unload-module module-udev-detect"
+	subprocess.call(cmd, shell = True)
+	cmd = "pactl unload-module module-alsa-card"
+	subprocess.call(cmd, shell = True)
 
-# start jack
-	jack_control ds $DRIVER dps capture none dps playback none
-	jack_control dps device hw:${DEV} dps rate $RATE dps period $FRAME \
-		dps nperiods $PERIOD start
-	# next line should actually check jack status
-	Jackup='True'
-	sleep $DELAY
-	if [ $DEV = $OUTPUT ]
-		then
-		if [ $PULSE = "True" ]
-			then
-			pactl load-module module-jack-sink client_name=PA-${DEV} channels=2 connect=no
+	# Now start jackdbus with the configured device
+	cmd = "jack_control ds "+driver+" dps capture none dps playback none"
+	subprocess.call(cmd, shell = True)
+	cmd = "jack_control dps device hw:"+dev+" dps rate "+sr
+	cmd = cmd+" dps period "+late+" dps nperiods "+period+" start"
+	subprocess.call(cmd, shell = True)
+	# maybe check for jack up (need function?)
+	time.sleep(2)
+	if dev == d_out:
+		if pulse == "True":
+			cmd = "pactl load-module module-jack-sink client_name=PA-"+dev+" channels=2 connect=no"
+			subprocess.call(cmd, shell = True)
 			#sleep $DELAY
-			pactl load-module module-jack-source client_name=PA_${DEV} channels=2 connect=no
-			jack_connect system:capture_1 PA_${DEV}:front-left
-			jack_connect system:capture_2 PA_${DEV}:front-right
-			jack_connect PA-${DEV}:front-left system:playback_${PORTS}
-			jack_connect PA-${DEV}:front-right system:playback_${PORTS2}
-		fi
-	fi
+			cmd = "pactl load-module module-jack-source client_name=PA_"+dev+" channels=2 connect=no"
+			subprocess.call(cmd, shell = True)
+			cmd = "jack_connect system:capture_1 PA_"+dev+":front-left"
+			subprocess.call(cmd, shell = True)
+			cmd = "jack_connect system:capture_2 PA_"+dev+":front-right"
+			subprocess.call(cmd, shell = True)
+			cmd = "jack_connect PA-"+dev+":front-left system:playback_"+o_port
+			subprocess.call(cmd, shell = True)
+			cmd = "jack_connect PA-"+dev+":front-right system:playback_"+str(int(o_port) + 1)
+			subprocess.call(cmd, shell = True)
+
+	for cname in zdev.strip('"').strip().split(" "):
+		print("cname: "+cname)
+		if cname != "":
+			start_slave(cname)
+
+		# zita-a2j -j ${cname}-in -d hw:${cname} -r $RATE -p $ZFRAME -n $PERIOD &
+		# zita-j2a -j ${cname}-out -d hw:${cname} -r $RATE -p $ZFRAME -n $PERIOD &  
+
+		# not sure all these delays need to be here. Was checking with old pulse.
+		time.sleep(3)
+		if cname.strip('"') == d_out:
+			if pulse == "True":
+				cmd = "pactl load-module module-jack-sink client_name=PA-"+cname+" channels=2 connect=no"
+				subprocess.call(cmd, shell = True)
+				cmd = "pactl load-module module-jack-source client_name=PA_"+cname+" channels=2 connect=no"
+				subprocess.call(cmd, shell = True)
+				cmd = "jack_connect "+cname+"-in:capture_1 PA_"+cname+":front-left"
+				subprocess.call(cmd, shell = True)
+				cmd = "jack_connect "+cname+"-in:capture_2 PA_"+cname+":front-right"
+				subprocess.call(cmd, shell = True)
+				cmd = "jack_connect PA-"+cname+":front-left "+cname+"-out:playback_"+o_port
+				subprocess.call(cmd, shell = True)
+				cmd = "jack_connect PA-"+cname+":front-right "+cname+"-out:playback_"+str(int(o_port) + 1)
+				subprocess.call(cmd, shell = True)
+
+	if a2j == "True":
+		cmd = "a2jmidid -e &"
+		subprocess.call(cmd, shell = True)
+
+def msg_cb_print(*args, **kwargs):
+	print("jack says: "+args[0])
+
+def msg_cb_new(*args, **kwargs):
+	global usbdev
+	import_config()
+		
+	if args[0].find("sound-card") >= 0:
+		a_if = args[0].split("sound-card", 1)
+		audio_if = a_if[1].split(".", 1)[0]
+		print("sound card: hw:"+audio_if+" added")
+		cid, cd = get_dev_names(audio_if)
+		usbdev = cid
+		print("device = "+cid+" description: "+cd)
+		if jack == "True":
+			if usb == "master":
+				change_jack_master(usbdev, "sm")
+				time.sleep(1)
+				start_slave(dev)
+			elif usb == "slave":
+				start_slave(usbdev)
+
+def msg_cb_removed(*args, **kwargs):
+	import_config()
+	
+	if args[0].find("sound-card") >= 0:
+		a_if = args[0].split("sound-card", 1)
+		audio_if = a_if[1].split(".", 1)[0]
+		print("sound card: hw:"+audio_if+" removed")
+		cid, cd = get_dev_names(audio_if)
+		if jack == "True":
+			if usbdev == "":
+				return
+			if usb == "master":
+				kill_slave(dev)
+				cmd = "killall -9 jackdbus jackd"
+				subprocess.call(cmd, shell = True)
+				time.sleep(3)
+				change_jack_master(dev, "start")
+			elif usb == "slave":
+				kill_slave(usbdev)
+
+def change_jack_master(ldev, com):
+	global last_master
+	print("Changing jack master to: "+ldev)
+	cmd = "jack_control dps device hw:"+ldev
+	subprocess.call(cmd, shell = True)
+	time.sleep(2)
+	cmd = "jack_control "+com
+	subprocess.call(cmd, shell = True)
+
+	last_master = ldev
+
+def start_slave(ldev):
+	global procin
+	global procout
+	cmd = "/usr/bin/zita-a2j -j "+ldev+"-in -d hw:"+ldev+" -r "+sr+" -p "+zframe+" -n "+period+" &"
+	procin = subprocess.Popen(cmd.split(), stdout=subprocess.PIPE)
+	cmd = "/usr/bin/zita-j2a -j "+ldev+"-out -d hw:"+ldev+" -r "+sr+" -p "+zframe+" -n "+period+" &"
+	procout = subprocess.Popen(cmd.split(), stdout=subprocess.PIPE)
+	# proc is the pid use proc.kill() to kill it
+	print("start a slave jack client for: "+ldev+" PID = "+str(procin.pid)+" and "+str(procout.pid))
+
+def kill_slave(ldev):
+	procin.terminate()
+	procout.terminate()
+	print("Kill jack client for: "+ldev)
+
+def ses_cb_quit (*args, **kwargs):
+	print("Got quit signal.\n")
+	cmd = "killall -9 jackdbus jackd a2jmidid"
+	subprocess.call(cmd, shell = True)
+	cmd = "pulseaudio -k"
+	subprocess.call(cmd, shell = True)
+	os._exit(0)
+
+def ses_cb_stop (*args, **kwargs):
+	print("Got stop signal.\n")
+	cmd = "killall -9 jackdbus jackd a2jmidid"
+	subprocess.call(cmd, shell = True)
+	cmd = "pulseaudio -k"
+	subprocess.call(cmd, shell = True)
+
+def ses_cb_start (*args, **kwargs):
+	print("Got start signal.\n")
+	config_start()
+
+def ses_cb_config (*args, **kwargs):
+	print("Got config signal.\n")
+	config_start()
+
+def ses_cb_disconnect (*args, **kwargs):
+	global usbdev
+	print("Got disconnect signal.\n")
+	if usb == "master":
+		if last_master == usbdev:
+			kill_slave(dev)
+			time.sleep(1)
+			change_jack_master(dev, "sm")
+			usbdev = ""
+
+def main():
+	config_start()
+	system_bus = dbus.SystemBus()
+	system_bus.add_signal_receiver(msg_cb_new, dbus_interface='org.freedesktop.systemd1.Manager', signal_name='UnitNew')
+	system_bus.add_signal_receiver(msg_cb_removed, dbus_interface='org.freedesktop.systemd1.Manager', signal_name='UnitRemoved')
+
+	user_bus = dbus.SessionBus()
+	user_bus.add_signal_receiver(ses_cb_quit, dbus_interface='org.ubuntustudio.control.event', signal_name='quit_signal')
+	user_bus.add_signal_receiver(ses_cb_stop, dbus_interface='org.ubuntustudio.control.event', signal_name='stop_signal')
+	user_bus.add_signal_receiver(ses_cb_start, dbus_interface='org.ubuntustudio.control.event', signal_name='start_signal')
+	user_bus.add_signal_receiver(ses_cb_config, dbus_interface='org.ubuntustudio.control.event', signal_name='config_signal')
+	user_bus.add_signal_receiver(ses_cb_disconnect, dbus_interface='org.ubuntustudio.control.event', signal_name='disconnect_signal')
+
+	mainloop = gobject.MainLoop ()
+	mainloop.run ()
 
 
-#cycle through zita devices starting them
-# should use if Jackup == True
-for cname in $XDEV; do
 
-	zita-a2j -j ${cname}-in -d hw:${cname} -r $RATE -p $ZFRAME -n $PERIOD &
-	zita-j2a -j ${cname}-out -d hw:${cname} -r $RATE -p $ZFRAME -n $PERIOD &  
-
-	# not sure all these delays need to be here. Was checking with old pulse.
-	sleep $DELAY
-	sleep $DELAY
-	sleep $DELAY
-	if [ $cname = $OUTPUT ]
-		then
-		if [ $PULSE = "True" ]
-			then
-			pactl load-module module-jack-sink client_name=PA-${cname} channels=2 connect=no
-			pactl load-module module-jack-source client_name=PA_${cname} channels=2 connect=no
-			jack_connect ${cname}-in:capture_1 PA_${cname}:front-left
-			jack_connect ${cname}-in:capture_2 PA_${cname}:front-right
-			jack_connect PA-${cname}:front-left ${cname}-out:playback_${PORTS}
-			jack_connect PA-${cname}:front-right ${cname}-out:playback_${PORTS2}
-		fi
-	fi
-
-
-done
-
-if [ $A2J = "True" ]
-	then
-	a2j_control ehw start
-fi
-
-
-echo "done"
-exit
+if __name__ == '__main__':
+    main()

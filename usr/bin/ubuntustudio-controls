@@ -198,6 +198,7 @@ class UbuntuStudioControls:
         self.d_out = "default"
         self.o_port = "1"
         self.usb = "slave"
+        self.usbdev = ""
 
         # read in autojack config file
         home = expanduser("~")
@@ -233,12 +234,13 @@ class UbuntuStudioControls:
                         self.zdev = lsplit[1]
                     elif lsplit[0] == "USBAUTO":
                         self.usb = lsplit[1]
+                    elif lsplit[0] == "USDEV":
+                        self.usbdev = lsplit[1]
 
         self.jack_rate_combo.set_active_id(self.sr)
         self.combobox_late.set_active_id(self.late)
         self.usb_plug_combo.set_active_id(self.usb)
         self.combo_out_ports.set_active_id(self.o_port)
-        # not sure on the next three about set_active
         self.jack_autostart_check.set_active(self.jack)
         self.jack_midi_check.set_active(self.a2j)
         self.pulse_check.set_active(self.pulse)
@@ -312,7 +314,8 @@ class UbuntuStudioControls:
             "cb_jack_start": self.cb_jack_start,
             "cb_jack_stop": self.cb_jack_stop,
             "cb_audio_apply": self.cb_audio_apply,
-            "jack_device_changed": self.jack_device_changed
+            "jack_device_changed": self.jack_device_changed,
+            "usb_remove_cb": self.usb_remove_cb
         }
         builder.connect_signals(handlers)
 
@@ -375,6 +378,7 @@ class UbuntuStudioControls:
             self.combo_zita_remove.remove(button.get_active())
             self.combo_zita_remove.set_active(0)
 
+    # this belongs to jack_device_changed
     def dev_ser(self, model, path, d_iter, dev_id):
         m_id = str(model.get(d_iter, 1)[0])
         if m_id == dev_id:
@@ -396,31 +400,28 @@ class UbuntuStudioControls:
             model.foreach(self.dev_ser, a_id)
                 
     def cb_jack_start(self, button):
-        # test if running and start or restart with saved parameters
-        # does not care if auto start is valid
-        subprocess.call("killall zita-a2j", shell = True)
-        subprocess.call("killall zita-j2a", shell = True)
-        subprocess.call("a2j_control stop", shell = True)
-        subprocess.call("jack_control stop", shell = True)
-        subprocess.call("autojack", shell = True)
-        print("jack started")
+        # this should maybe save config first - maybe not
+        # this should be changed to a dbus message to autojack "ReStart"
+        cmd = "dbus-send --type=signal / org.ubuntustudio.control.event.start_signal"
+        subprocess.call(cmd, shell = True)
 
     def cb_jack_stop(self, button):
         # test if jack is running and stop. Also kill pulse so it can see devices again
-        subprocess.call("killall zita-a2j", shell = True)
-        subprocess.call("killall zita-j2a", shell = True)
-        subprocess.call("a2j_control stop", shell = True)
-        subprocess.call("jack_control stop", shell = True)
-        subprocess.call("pulseaudio -k", shell = True)
-        
-        print("jack stopped.")
+        # This needs to be changed to a dbus message to autojack "StopJack"
+        cmd = "dbus-send --type=signal / org.ubuntustudio.control.event.stop_signal"
+        subprocess.call(cmd, shell = True)
 
+    def usb_remove_cb(self, button):
+        # this should send a dbus message to autojack "USBSafe"
+        cmd = "dbus-send --type=signal / org.ubuntustudio.control.event.disconnect_signal"
+        subprocess.call(cmd, shell = True)
+
+    # this belongs to cb_audio_apply
     def z_save(self, model, path, d_iter, save_file):
         m_id = str(model.get(d_iter, 1)[0])
         if m_id != "label" and m_id !="none":
-            save_file.write(" "+m_id)
+            save_file.write(m_id+" ")
         return 0
-
 
     def cb_audio_apply(self, button):
         # Write audio setting to ~/.config/autojack
@@ -436,18 +437,21 @@ class UbuntuStudioControls:
             rc_file.write("\nFRAME="+str(self.combobox_late.get_active_id()))
             self.zframe = str(int(int(self.combobox_late.get_active_id()) / 2))
             rc_file.write("\nZFRAME="+self.zframe)
-            rc_file.write("\nPERIOD=2")
+            rc_file.write("\nPERIOD="+self.period)
             rc_file.write("\nPULSE="+str(self.pulse_check.get_active()))
             rc_file.write("\nA2J="+str(self.jack_midi_check.get_active()))
             rc_file.write("\nOUTPUT="+str(self.combo_output.get_active_id()))
             rc_file.write("\nPORTS="+str(self.combo_out_ports.get_active_id()))
             rc_file.write("\nUSBAUTO="+str(self.usb_plug_combo.get_active_id()))
+            rc_file.write("\nUSBDEV="+self.usbdev)
             rc_file.write("\nXDEV=\"")
             model = self.combo_zita_remove.get_model()
             model.foreach(self.z_save, rc_file)
             rc_file.write("\"\n# end of auto generated parameters\n")
 
-        print("Audio settings saved")
+        # we should send a message to autojack "Apply"
+        cmd = "dbus-send --type=signal / org.ubuntustudio.control.event.config_signal"
+        subprocess.call(cmd, shell = True)
 
     def on_button_help_ok_clicked(self, button):
         self.window_help.hide()
