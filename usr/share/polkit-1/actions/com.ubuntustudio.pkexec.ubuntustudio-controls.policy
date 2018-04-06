@@ -13,7 +13,7 @@
       <allow_active>yes</allow_active>
     </defaults>
     <annotate key="org.freedesktop.policykit.exec.path">/usr/sbin/ubuntustudio-system</annotate>
-    <annotate key="org.freedesktop.policykit.exec.allow_gui">true</annotate>
+    <!--annotate key="org.freedesktop.policykit.exec.allow_gui">true</annotate -->
   </action>
 
 </policyconfig>

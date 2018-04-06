@@ -193,21 +193,23 @@ def msg_cb_new(*args, **kwargs):
 	import_config()
 		
 	if args[0].find("sound-card") >= 0:
-		a_if = args[0].split("sound-card", 1)
-		audio_if = a_if[1].split(".", 1)[0]
-		print("sound card: hw:"+audio_if+" added")
-		cid, cd = get_dev_names(audio_if)
-		usbdev = cid
-		print("device = "+cid+" description: "+cd)
-		if jack == "True":
-			if usb == "master":
-				change_jack_master(usbdev, "sm")
-				time.sleep(1)
-				start_slave(dev)
-			elif usb == "slave":
-				start_slave(usbdev)
+		if args[0].find("usb") >= 0:
+			a_if = args[0].split("sound-card", 1)
+			audio_if = a_if[1].split(".", 1)[0]
+			print("sound card: hw:"+audio_if+" added")
+			cid, cd = get_dev_names(audio_if)
+			usbdev = cid
+			print("device = "+cid+" description: "+cd)
+			if jack == "True":
+				if usb == "master":
+					change_jack_master(usbdev, "sm")
+					time.sleep(1)
+					start_slave(dev)
+				elif usb == "slave":
+					start_slave(usbdev)
 
 def msg_cb_removed(*args, **kwargs):
+	global usbdev
 	import_config()
 	
 	if args[0].find("sound-card") >= 0:

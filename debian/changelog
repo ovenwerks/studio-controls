@@ -14,6 +14,7 @@ ubuntustudio-controls (1.5) UNRELEASED; urgency=medium
   * Rewrite ubuntustudio-controls to talk to new daemon
   * Add USB device hotplug detect
   * Fix README and remove some comments
+  * udev detection should ignore non-usb devices
 
  -- Len Ovens <len@music>  Wed, 04 Apr 2018 20:31:00 -0700
 

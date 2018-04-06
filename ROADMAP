@@ -25,3 +25,14 @@ Need to do all of USB hot plug detection
 		autojack. autostart/autojack.desktop can start it at asession
 		start and -controls can send dbus messages to control it:
 		start, stop, restart, reconfig
+
+Bugs:
+	- only one USB device can be detected.
+	- udev sometimes redetects already known devices and connects them
+	- Apply audio configuration change restarts jack instead of changing
+		things that have changed, most things can be changed with jack
+		running. Connections to audio interfaces could easily be saved and
+		reconnected as well.
+	- dbus service file missing / not working
+	- adding in stuff from https://github.com/jhernberg/udev-rtirq so that
+		hot plugged USB devices get higher priority.
