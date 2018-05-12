@@ -1,0 +1,47 @@
+#!/bin/sh
+
+set -eu
+
+DESC="Ubuntustudio Controls"
+
+PATH=/usr/local/sbin:/usr/local/bin:/sbin:/bin:/usr/sbin:/usr/bin
+
+ENABLE="true"
+NO_TURBO="0"
+
+# we should check for the availablity of any setting we wish to change
+check_turbo_avail() {
+	info="/sys/devices/system/cpu/intel_pstate/no_turbo"
+	if [ -f $info ]; then
+		return 0;
+	fi
+	return 1;
+}
+
+# any setting in this file will override the above defaults.
+# ubuntustudio-controls will normally write the defaults file
+if [ -f /etc/default/ubuntustudio ] ; then
+	. /etc/default/ubuntustudio
+fi
+
+# if not enabled then exit gracefully
+[ "$ENABLE" = "true" ] || exit 0
+
+RETVAL=0
+
+logger "$DESC: Setting system settings"
+if check_turbo_avail ; then
+	logger "Set no_turbo $NO_TURBO"
+	echo "${NO_TURBO}" | tee /sys/devices/system/cpu/intel_pstate/no_turbo || \
+		RETVAL=$?
+	logger "$DESC: $RETVAL "
+else
+	log_action_cont_msg "turbo/boost not available"
+	log_action_end_msg $RETVAL
+fi
+#sleep 10
+/etc/init.d/cpufrequtils stop
+/etc/init.d/cpufrequtils start
+
+exit 0
+

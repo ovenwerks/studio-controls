@@ -58,6 +58,69 @@ def get_dev_names(x):
 	# change this to create a list, USB cards may have devices and subdevices
 	return card_id, card_d
 
+def get_dev_info(x):
+	device = []
+	cname = ""
+	usb = False
+	sub = 0
+	if os.path.exists("/proc/asound/card"+str(x)):
+		with open("/proc/asound/card"+str(x)+"/id", "r") as card_file:
+			for line in card_file:
+				#only need one line
+				cname = line.rstrip()
+
+	if os.path.exists("/proc/asound/card"+str(x)+"usbbus"):
+		usb = True
+
+	device.append(cname)
+	device.append(usb)
+	device.append(sub)
+
+	for y in range(0, 10):
+		subdevice = []
+		cap = False
+		cap_pid = 0
+		play = False
+		play_pid = 0
+		if os.path.exists("/proc/asound/card"+str(x)+"/pcm"+str(y)+"p"):
+			play = True
+			if os.path.exists("/proc/asound/card"+str(x)+"/pcm"+str(y)+"p/sub0"):
+				with open("/proc/asound/card"+str(x)+"/pcm"+str(y)+"p/sub0/status", "r") as info_file:
+					for line in info_file:
+						if re.match("^owner_pid", line.rstrip()):
+							play_pid = int(line.rstrip().split(": ", 1)[1])
+
+		if os.path.exists("/proc/asound/card"+str(x)+"/pcm"+str(y)+"c"):
+			cap = True
+			if os.path.exists("/proc/asound/card"+str(x)+"/pcm"+str(y)+"c/sub0"):
+				with open("/proc/asound/card"+str(x)+"/pcm"+str(y)+"c/sub0/status", "r") as info_file:
+					for line in info_file:
+						if re.match("^owner_pid", line.rstrip()):
+							cap_pid = int(line.rstrip().split(": ", 1)[1])
+
+		if play or cap:
+			device[2] = device[2] + 1
+			subdevice.append(y)
+			subdevice.append(play)
+			subdevice.append(play_pid)
+			subdevice.append(cap)
+			subdevice.append(cap_pid)
+			device.append(subdevice)
+	# change this to create a list, USB cards may have devices and subdevices
+	return device
+
+def import_device_array():
+	global devices
+	devices = []
+	for x in range(0, 10):
+		#card loop
+		device = []
+		if os.path.exists("/proc/asound/card"+str(x)):
+			device = get_dev_info(x)
+			devices.append(device)
+			del device
+	print(devices)
+
 def import_config():
 	global jack
 	global driver
@@ -290,6 +353,7 @@ def ses_cb_disconnect (*args, **kwargs):
 
 def main():
 	config_start()
+	import_device_array()
 	system_bus = dbus.SystemBus()
 	system_bus.add_signal_receiver(msg_cb_new, dbus_interface='org.freedesktop.systemd1.Manager', signal_name='UnitNew')
 	system_bus.add_signal_receiver(msg_cb_removed, dbus_interface='org.freedesktop.systemd1.Manager', signal_name='UnitRemoved')

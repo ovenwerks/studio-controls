@@ -28,11 +28,16 @@ Need to do all of USB hot plug detection
 
 Bugs:
 	- only one USB device can be detected.
-	- udev sometimes redetects already known devices and connects them
+Fixed	- udev sometimes redetects already known devices and connects them
 	- Apply audio configuration change restarts jack instead of changing
 		things that have changed, most things can be changed with jack
 		running. Connections to audio interfaces could easily be saved and
 		reconnected as well.
 	- dbus service file missing / not working
+	- Default Output Device - should only list devices jack can see:
+		jack master or "Remove list"
+Features:
 	- adding in stuff from https://github.com/jhernberg/udev-rtirq so that
 		hot plugged USB devices get higher priority.
+	- monitor headphone plug statis if PCH is being used for output
+		switch to headphones or speakers in alsa.

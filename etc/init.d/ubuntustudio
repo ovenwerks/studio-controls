@@ -58,13 +58,13 @@ RETVAL=0
 case "$1" in
 	start|force-reload|restart|reload)
 # real stuff happens here
-		log_action_begin_msg "$DESC: Setting system settings"
+		logger "$DESC: Setting system settings"
 		if check_turbo_avail ; then
-			log_action_cont_msg "Set no_turbo $NO_TURBO"
-			echo $NO_TURBO | tee /sys/devices/system/cpu/intel_pstate/no_turbo || \
+			logger "Set no_turbo $NO_TURBO"
+			echo "${NO_TURBO}" | tee /sys/devices/system/cpu/intel_pstate/no_turbo || \
 				RETVAL=$?
-			done
-			log_action_end_msg $RETVAL ""
+#			done
+			logger "$DESC: $RETVAL "
 		else
 			log_action_cont_msg "turbo/boost not available"
 			log_action_end_msg $RETVAL
