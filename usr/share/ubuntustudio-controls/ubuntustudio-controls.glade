@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<!-- Generated with glade 3.18.3 -->
+<!-- Generated with glade 3.22.1 -->
 <interface>
   <requires lib="gtk+" version="3.12"/>
   <object class="GtkTextBuffer" id="current_preset_text">
@@ -20,6 +20,9 @@
     <property name="resizable">False</property>
     <property name="destroy_with_parent">True</property>
     <signal name="delete-event" handler="on_window_help_delete_event" swapped="no"/>
+    <child>
+      <placeholder/>
+    </child>
     <child>
       <object class="GtkBox" id="box1">
         <property name="visible">True</property>
@@ -148,6 +151,9 @@
     <property name="default_width">500</property>
     <property name="gravity">center</property>
     <signal name="delete-event" handler="on_window_main_delete_event" swapped="no"/>
+    <child>
+      <placeholder/>
+    </child>
     <child>
       <object class="GtkBox" id="main_box">
         <property name="visible">True</property>
@@ -337,9 +343,10 @@
                       <object class="GtkLabel" id="jack_device_label">
                         <property name="visible">True</property>
                         <property name="can_focus">False</property>
-                        <property name="halign">start</property>
+                        <property name="halign">end</property>
                         <property name="ypad">2</property>
-                        <property name="label" translatable="yes">Jack Master Audio Interface</property>
+                        <property name="label" translatable="yes">Jack Master Device (no USB):</property>
+                        <property name="justify">right</property>
                         <property name="ellipsize">end</property>
                       </object>
                       <packing>
@@ -365,21 +372,9 @@
                       <object class="GtkLabel" id="jack_sr_label">
                         <property name="visible">True</property>
                         <property name="can_focus">False</property>
-                        <property name="halign">start</property>
+                        <property name="halign">end</property>
                         <property name="label" translatable="yes">Jack Sample Rate:</property>
                         <property name="ellipsize">start</property>
-                      </object>
-                      <packing>
-                        <property name="left_attach">0</property>
-                        <property name="top_attach">1</property>
-                      </packing>
-                    </child>
-                    <child>
-                      <object class="GtkLabel" id="jack_late_label">
-                        <property name="visible">True</property>
-                        <property name="can_focus">False</property>
-                        <property name="halign">start</property>
-                        <property name="label" translatable="yes">Jack Latency:</property>
                       </object>
                       <packing>
                         <property name="left_attach">0</property>
@@ -387,11 +382,11 @@
                       </packing>
                     </child>
                     <child>
-                      <object class="GtkLabel" id="usb_plug_label">
+                      <object class="GtkLabel" id="jack_late_label">
                         <property name="visible">True</property>
                         <property name="can_focus">False</property>
-                        <property name="halign">start</property>
-                        <property name="label" translatable="yes">When USB Audio Device Plugged In:</property>
+                        <property name="halign">end</property>
+                        <property name="label" translatable="yes">Jack Latency:</property>
                       </object>
                       <packing>
                         <property name="left_attach">0</property>
@@ -399,28 +394,10 @@
                       </packing>
                     </child>
                     <child>
-                      <object class="GtkComboBoxText" id="usb_plug_combo">
-                        <property name="visible">True</property>
-                        <property name="can_focus">False</property>
-                        <property name="active">0</property>
-                        <property name="active_id">slave</property>
-                        <items>
-                          <item id="slave" translatable="yes">Add as a bridged client</item>
-                          <item id="master" translatable="yes">Make USB the new Jack Master</item>
-                          <item id="none" translatable="yes">Don't connect</item>
-                        </items>
-                      </object>
-                      <packing>
-                        <property name="left_attach">1</property>
-                        <property name="top_attach">3</property>
-                        <property name="width">2</property>
-                      </packing>
-                    </child>
-                    <child>
                       <object class="GtkLabel" id="zita_label">
                         <property name="visible">True</property>
                         <property name="can_focus">False</property>
-                        <property name="halign">start</property>
+                        <property name="halign">end</property>
                         <property name="label" translatable="yes">Connect Other Audio Interfaces:</property>
                       </object>
                       <packing>
@@ -447,7 +424,7 @@
                       </object>
                       <packing>
                         <property name="left_attach">1</property>
-                        <property name="top_attach">2</property>
+                        <property name="top_attach">3</property>
                         <property name="width">2</property>
                       </packing>
                     </child>
@@ -468,7 +445,7 @@
                       </object>
                       <packing>
                         <property name="left_attach">1</property>
-                        <property name="top_attach">1</property>
+                        <property name="top_attach">2</property>
                         <property name="width">2</property>
                       </packing>
                     </child>
@@ -489,7 +466,8 @@
                       <object class="GtkLabel" id="label_output">
                         <property name="visible">True</property>
                         <property name="can_focus">False</property>
-                        <property name="label" translatable="yes">Default Output Device</property>
+                        <property name="halign">end</property>
+                        <property name="label" translatable="yes">Default PulseAudio Output Device:</property>
                       </object>
                       <packing>
                         <property name="left_attach">0</property>
@@ -500,7 +478,8 @@
                       <object class="GtkLabel" id="label_port">
                         <property name="visible">True</property>
                         <property name="can_focus">False</property>
-                        <property name="label" translatable="yes">Ports to use on default output</property>
+                        <property name="halign">end</property>
+                        <property name="label" translatable="yes">Ports to use on Default PulseAudio Output:</property>
                       </object>
                       <packing>
                         <property name="left_attach">0</property>
@@ -523,13 +502,14 @@
                       <object class="GtkComboBoxText" id="combo_out_ports">
                         <property name="visible">True</property>
                         <property name="can_focus">False</property>
-                        <property name="active">0</property>
+                        <property name="active">1</property>
                         <items>
                           <item id="1" translatable="yes">1 and  2</item>
                           <item id="3" translatable="yes">3 and 4</item>
                           <item id="5" translatable="yes">5 and 6</item>
                           <item id="7" translatable="yes">7 and 8</item>
                           <item id="9" translatable="yes">9 and 10</item>
+                          <item id="0" translatable="yes">Do Not Connect Output</item>
                         </items>
                       </object>
                       <packing>
@@ -544,41 +524,15 @@
                         <property name="can_focus">False</property>
                         <property name="homogeneous">True</property>
                         <child>
-                          <object class="GtkComboBoxText" id="combo_zita_add">
-                            <property name="visible">True</property>
-                            <property name="can_focus">False</property>
-                            <property name="active">0</property>
-                            <items>
-                              <item id="label" translatable="yes">Add (Available)</item>
-                            </items>
-                            <signal name="changed" handler="cb_zita_add" swapped="no"/>
-                          </object>
-                          <packing>
-                            <property name="expand">False</property>
-                            <property name="fill">True</property>
-                            <property name="position">0</property>
-                          </packing>
+                          <placeholder/>
                         </child>
                         <child>
-                          <object class="GtkComboBoxText" id="combo_zita_remove">
-                            <property name="visible">True</property>
-                            <property name="can_focus">False</property>
-                            <property name="active">0</property>
-                            <items>
-                              <item id="label" translatable="yes">Remove (connected)</item>
-                            </items>
-                            <signal name="changed" handler="cb_zita_remove" swapped="no"/>
-                          </object>
-                          <packing>
-                            <property name="expand">False</property>
-                            <property name="fill">True</property>
-                            <property name="position">1</property>
-                          </packing>
+                          <placeholder/>
                         </child>
                       </object>
                       <packing>
                         <property name="left_attach">1</property>
-                        <property name="top_attach">4</property>
+                        <property name="top_attach">5</property>
                         <property name="width">2</property>
                       </packing>
                     </child>
@@ -608,6 +562,63 @@
                         <property name="top_attach">7</property>
                       </packing>
                     </child>
+                    <child>
+                      <object class="GtkLabel" id="jack_bmaster_label1">
+                        <property name="visible">True</property>
+                        <property name="can_focus">False</property>
+                        <property name="halign">end</property>
+                        <property name="label" translatable="yes">USB device that should be Master:</property>
+                        <property name="ellipsize">start</property>
+                      </object>
+                      <packing>
+                        <property name="left_attach">0</property>
+                        <property name="top_attach">1</property>
+                      </packing>
+                    </child>
+                    <child>
+                      <object class="GtkComboBoxText" id="jack_usb_dev_combo">
+                        <property name="visible">True</property>
+                        <property name="can_focus">False</property>
+                        <property name="active">0</property>
+                        <property name="active_id">0</property>
+                        <signal name="changed" handler="usb_master_changed" swapped="no"/>
+                      </object>
+                      <packing>
+                        <property name="left_attach">1</property>
+                        <property name="top_attach">1</property>
+                        <property name="width">2</property>
+                      </packing>
+                    </child>
+                    <child>
+                      <object class="GtkComboBoxText" id="combo_zita_add">
+                        <property name="visible">True</property>
+                        <property name="can_focus">False</property>
+                        <property name="active">0</property>
+                        <items>
+                          <item id="label" translatable="yes">Add (Available)</item>
+                        </items>
+                        <signal name="changed" handler="cb_zita_add" swapped="no"/>
+                      </object>
+                      <packing>
+                        <property name="left_attach">1</property>
+                        <property name="top_attach">4</property>
+                      </packing>
+                    </child>
+                    <child>
+                      <object class="GtkComboBoxText" id="combo_zita_remove">
+                        <property name="visible">True</property>
+                        <property name="can_focus">False</property>
+                        <property name="active">0</property>
+                        <items>
+                          <item id="label" translatable="yes">Remove (connected)</item>
+                        </items>
+                        <signal name="changed" handler="cb_zita_remove" swapped="no"/>
+                      </object>
+                      <packing>
+                        <property name="left_attach">2</property>
+                        <property name="top_attach">4</property>
+                      </packing>
+                    </child>
                   </object>
                   <packing>
                     <property name="expand">False</property>
@@ -616,52 +627,99 @@
                   </packing>
                 </child>
                 <child>
-                  <object class="GtkCheckButton" id="jack_autostart_check">
-                    <property name="label" translatable="yes">Auto Start Jack at Session Start</property>
+                  <object class="GtkGrid">
                     <property name="visible">True</property>
-                    <property name="can_focus">True</property>
-                    <property name="receives_default">False</property>
-                    <property name="xalign">0</property>
-                    <property name="yalign">0.49000000953674316</property>
-                    <property name="active">True</property>
-                    <property name="draw_indicator">True</property>
+                    <property name="can_focus">False</property>
+                    <child>
+                      <object class="GtkCheckButton" id="jack_autostart_check">
+                        <property name="label" translatable="yes">Auto Start Jack at Session Start</property>
+                        <property name="visible">True</property>
+                        <property name="can_focus">True</property>
+                        <property name="receives_default">False</property>
+                        <property name="xalign">0</property>
+                        <property name="yalign">0.49000000953674316</property>
+                        <property name="active">True</property>
+                        <property name="draw_indicator">True</property>
+                      </object>
+                      <packing>
+                        <property name="left_attach">0</property>
+                        <property name="top_attach">0</property>
+                      </packing>
+                    </child>
+                    <child>
+                      <object class="GtkCheckButton" id="jack_midi_check">
+                        <property name="label" translatable="yes">Bridge ALSA to Jack MIDI (turn on a2jmidid)</property>
+                        <property name="visible">True</property>
+                        <property name="can_focus">True</property>
+                        <property name="receives_default">False</property>
+                        <property name="xalign">0</property>
+                        <property name="active">True</property>
+                        <property name="draw_indicator">True</property>
+                      </object>
+                      <packing>
+                        <property name="left_attach">0</property>
+                        <property name="top_attach">1</property>
+                      </packing>
+                    </child>
+                    <child>
+                      <object class="GtkCheckButton" id="pulse_check">
+                        <property name="label" translatable="yes">Bridge Pulseaudio to Jack (allows desktop audio to keep working)</property>
+                        <property name="visible">True</property>
+                        <property name="can_focus">True</property>
+                        <property name="receives_default">False</property>
+                        <property name="xalign">0</property>
+                        <property name="active">True</property>
+                        <property name="draw_indicator">True</property>
+                      </object>
+                      <packing>
+                        <property name="left_attach">0</property>
+                        <property name="top_attach">2</property>
+                      </packing>
+                    </child>
+                    <child>
+                      <object class="GtkCheckButton" id="usb_plug_check">
+                        <property name="label" translatable="yes">Bridge USB Devices to Jack When Plugged In</property>
+                        <property name="visible">True</property>
+                        <property name="can_focus">True</property>
+                        <property name="receives_default">False</property>
+                        <property name="xalign">0</property>
+                        <property name="active">True</property>
+                        <property name="draw_indicator">True</property>
+                      </object>
+                      <packing>
+                        <property name="left_attach">0</property>
+                        <property name="top_attach">3</property>
+                      </packing>
+                    </child>
+                    <child>
+                      <placeholder/>
+                    </child>
+                    <child>
+                      <placeholder/>
+                    </child>
+                    <child>
+                      <placeholder/>
+                    </child>
+                    <child>
+                      <placeholder/>
+                    </child>
+                    <child>
+                      <placeholder/>
+                    </child>
+                    <child>
+                      <placeholder/>
+                    </child>
+                    <child>
+                      <placeholder/>
+                    </child>
+                    <child>
+                      <placeholder/>
+                    </child>
                   </object>
                   <packing>
                     <property name="expand">False</property>
                     <property name="fill">True</property>
                     <property name="position">1</property>
-                  </packing>
-                </child>
-                <child>
-                  <object class="GtkCheckButton" id="jack_midi_check">
-                    <property name="label" translatable="yes">Bridge ALSA to Jack MIDI (turn on a2jmidid)</property>
-                    <property name="visible">True</property>
-                    <property name="can_focus">True</property>
-                    <property name="receives_default">False</property>
-                    <property name="xalign">0</property>
-                    <property name="active">True</property>
-                    <property name="draw_indicator">True</property>
-                  </object>
-                  <packing>
-                    <property name="expand">False</property>
-                    <property name="fill">True</property>
-                    <property name="position">2</property>
-                  </packing>
-                </child>
-                <child>
-                  <object class="GtkCheckButton" id="pulse_check">
-                    <property name="label" translatable="yes">Bridge Pulseaudio to Jack (allows desktop audio to keep working)</property>
-                    <property name="visible">True</property>
-                    <property name="can_focus">True</property>
-                    <property name="receives_default">False</property>
-                    <property name="xalign">0</property>
-                    <property name="active">True</property>
-                    <property name="draw_indicator">True</property>
-                  </object>
-                  <packing>
-                    <property name="expand">False</property>
-                    <property name="fill">True</property>
-                    <property name="position">3</property>
                   </packing>
                 </child>
                 <child>
@@ -677,8 +735,11 @@
                     <property name="expand">False</property>
                     <property name="fill">True</property>
                     <property name="padding">8</property>
-                    <property name="position">4</property>
+                    <property name="position">2</property>
                   </packing>
+                </child>
+                <child>
+                  <placeholder/>
                 </child>
               </object>
               <packing>
@@ -818,6 +879,9 @@
     <property name="transient_for">window_main</property>
     <property name="attached_to">window_main</property>
     <property name="text" translatable="yes">For changes to take effect, you need to do a fresh login.</property>
+    <child>
+      <placeholder/>
+    </child>
     <child internal-child="vbox">
       <object class="GtkBox" id="messagedialog-vbox">
         <property name="can_focus">False</property>
@@ -875,6 +939,9 @@
     <property name="attached_to">window_main</property>
     <property name="text" translatable="yes">It seems you have made settings previously and not done a fresh login, or you already have realtime settings in effect, but you are not using the file supplied with the package jackd.
 If you want to use this application for administering realtime settings, please remove any custom settings and reboot your computer.</property>
+    <child>
+      <placeholder/>
+    </child>
     <child internal-child="vbox">
       <object class="GtkBox" id="messagedialog-vbox3">
         <property name="can_focus">False</property>

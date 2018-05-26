@@ -4,12 +4,17 @@
  least order to be worked on. (some later things rely on sooner
  things)
 
+Need to detect cadence and not mess with it.
+
 Need to change autojack to accept start/restart/stop parameter
 	- autojack is now dbus opperated and runs for whole session
-	- should restart be different from start?
+	- should restart be different from start? NO
 		- can check for running jack and internally choose
 	- should check if DEV exists, use "default" otherwise
 	- need to rewrite rcfile on USB plugin to include usb device(s)
+		No I don't need to. I only need one USB device, the one the user
+		wants to be jack master if it happens to be plugged in. All
+		others are bridged or not.
 
 Need to not remove a device from XDEV just because it does not exist?
 maybe same for DEV? (change device name to card,dev,sub (unplugged))
@@ -20,14 +25,10 @@ Need to do all of USB hot plug detection
 	- change RC file to start correctly with usb device plugged or not
 		Actually this would be in Autojack
 	- hw:USB,0 is the only device to become jack master hw:USB,1 etc.
-		will be clients.
-	- may be best to move most of autojack in here... maybe make this
-		autojack. autostart/autojack.desktop can start it at asession
-		start and -controls can send dbus messages to control it:
-		start, stop, restart, reconfig
+		will be clients. Not true... but I don't have any to test this with
 
 Bugs:
-	- only one USB device can be detected.
+FIXED	- only one USB device can be detected.
 Fixed	- udev sometimes redetects already known devices and connects them
 	- Apply audio configuration change restarts jack instead of changing
 		things that have changed, most things can be changed with jack
@@ -35,7 +36,7 @@ Fixed	- udev sometimes redetects already known devices and connects them
 		reconnected as well.
 	- dbus service file missing / not working
 	- Default Output Device - should only list devices jack can see:
-		jack master or "Remove list"
+		jack master or "Remove list" and have outputs
 Features:
 	- adding in stuff from https://github.com/jhernberg/udev-rtirq so that
 		hot plugged USB devices get higher priority.

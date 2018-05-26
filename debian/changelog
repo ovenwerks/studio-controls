@@ -16,6 +16,8 @@ ubuntustudio-controls (1.5) UNRELEASED; urgency=medium
   * Fix README and remove some comments
   * udev detection should ignore non-usb devices
   * Ubuntu now uses systemd to start ondemand
+  * Switched to git
+  * Use USB if plugged in at session start
 
  -- Len Ovens <len@music>  Wed, 04 Apr 2018 20:31:00 -0700
 
