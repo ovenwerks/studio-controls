@@ -29,6 +29,11 @@ import sys
 import signal
 
 def get_dev_info(x):
+	'''uses audio device number to make a device struture with device
+	info. The info includes: Device name, USB?, number of subdevices and
+	for each subdevice: sub number, playback?, playback PID | 0, Capture? and
+	capture PID | 0. This structure is returned. If the device does not
+	exist, a minimal structure is still returned ["", False, 0]'''
 	device = []
 	cname = ""
 	usb = False
@@ -80,6 +85,11 @@ def get_dev_info(x):
 	return device
 
 def import_device_array():
+	'''creates an array of device structures as per get_dev_info(), from
+	device 0 to the highest number device currently on the system. Missing
+	device numbers will still save a space in the case a USB device has
+	been removed and there is still a higher number so that array index
+	can be the same as the device number.'''
 	global devices
 	devices = []
 	ndevs = 0
@@ -94,6 +104,7 @@ def import_device_array():
 				sub2 = sub.split(" ")
 				if sub2[0].isdigit():
 					ndevs = int(sub2[0])
+		cards_file.close
 	ndevs += 1
 	for x in range(0, ndevs):
 		#card loop
@@ -101,25 +112,40 @@ def import_device_array():
 		device = get_dev_info(x)
 		devices.append(device)
 		del device
-	print(devices)
+	#print(devices)
 
 def import_config():
 	''' sets default parmeters, then reads values from configuration file'''
 	global jack
+	jack = "False"
 	global driver
+	driver = "alsa"
 	global sr
+	sr = "48000"
 	global late
+	late = "1024"
 	global period
+	period = "3"
 	global zframe
+	zframe = "512"
 	global zdev
+	zdev = ""
 	global pulse
+	pulse = "True"
 	global a2j
+	a2j = "True"
 	global dev
+	dev = "default"
 	global dev_desc
+	dev_desc = "audio device"
 	global d_out
+	d_out = "system"
 	global o_port
+	o_port = "0"
 	global usb
+	usb = "True"
 	global usbdev
+	usbdev = ""
 
 	# read in autojack config file
 	home = expanduser("~")
@@ -159,8 +185,10 @@ def import_config():
 					usbdev = lsplit[1]
 
 def reconfig():
-	'''reads values from configuration file and changes runto match. This tries
+	'''reads values from configuration file and changes run to match. This tries
 	to do this without stopping jack if not needed'''
+	global devices
+
 	global jack
 	global driver
 	global sr
@@ -195,10 +223,14 @@ def reconfig():
 					newsr = lsplit[1]
 				elif lsplit[0] == "FRAME":
 					newlate = lsplit[1]
-				elif lsplit[0] == "ZFRAME":
-					newzframe = lsplit[1]
 				elif lsplit[0] == "PERIOD":
 					newperiod = lsplit[1]
+				elif lsplit[0] == "USBDEV":
+					newusbdev = lsplit[1]
+				# all above should restart the world
+				# anything below can leave jack running
+				elif lsplit[0] == "ZFRAME":
+					newzframe = lsplit[1]
 				elif lsplit[0] == "PULSE":
 					newpulse = lsplit[1]
 				elif lsplit[0] == "A2J":
@@ -211,30 +243,58 @@ def reconfig():
 					newzdev = lsplit[1]
 				elif lsplit[0] == "USBAUTO":
 					newusb = lsplit[1]
-				elif lsplit[0] == "USBDEV":
-					newusbdev = lsplit[1]
-	if newjack != jack:
-		# jack was off and now on or on and should be off
+	oldlist = [jack, driver, sr, late, period, dev, usbdev]
+	newlist = [newjack, newdriver, newsr, newlate, newperiod, newdev, newusbdev]
+	if newlist != oldlist:
 		config_start()
 		return
-	oldlist = [driver, sr, late, period]
-	newlist = [newdriver, newsr, newlate, newperiod]
-	olddevice = [dev, usbdev]
-	newdevice = [newdev, newusbdev]
-	if newlist != oldlist or newdevice != olddevice:
+	# if we got this far all the above params have not changed
+	if jack == "False":
+		return
+		# no use checking anything else
+	if pulse != newpulse:
+		pulse = newpulse
+		if pulse == "True":
+			cmd = "pactl load-module module-jack-sink client_name=PulseOut channels=2 connect=no"
+			subprocess.call(cmd, shell = True)
+			cmd = "pactl load-module module-jack-source client_name=PulseIn channels=2 connect=no"
+			subprocess.call(cmd, shell = True)
+		else:
+			disconnect_pa()
+			cmd = "pactl unload-module module-jack-sink"
+			subprocess.call(cmd, shell = True)
+			cmd = "pactl unload-module module-jack-source"
+			subprocess.call(cmd, shell = True)
+			
+	# also connect ports if pulse bridged
+	if [d_out, o_port] != [newd_out, newo_port]:
 		disconnect_pa()
-		cmd = "jack_control ds "+newdriver+" dps capture none dps playback none"
+		d_out = newd_out
+		o_port = newo_port
+		if pulse == "True":
+			connect_pa
+	if newa2j != a2j:
+		a2j = newa2j
+		cmd = "killall -9 a2jmidid"
 		subprocess.call(cmd, shell = True)
-		cmd = "jack_control dps device hw:"+newdev+" dps rate "+newsr
-		cmd = cmd+" dps period "+newlate+" dps nperiods "+newperiod
-		subprocess.call(cmd, shell = True)
-		cmd = "jack_control sm"
-		subprocess.call(cmd, shell = True)
-	
-	if [pulse, d_out, o_port] != [newpulse, newd_out, newo_port]:
-		disconnect_pa()
-		if newd_out == newdev:
-			print newd_out
+		if a2j == "True":
+			cmd = "a2jmidid -e &"
+			subprocess.call(cmd, shell = True)
+	if [usb, zdev] != [newusb, newzdev]:
+		usb = newusb
+		zdev = newzdev
+		import_device_array()
+		for device in devices:
+			if usb == "True":
+				if device[1] and device[0] != dev.split(",")[0]:
+					start_slave(device[0]+",0,0")
+			elif zdev != "":
+				for extra in zdev:
+					print "not done yet"
+					#see next call for getting devices.
+
+			
+			
 
 
 def config_start():
@@ -266,7 +326,6 @@ def config_start():
 	else:
 		mdev = dev
 	# Now start jackdbus with the configured device
-	# need to check if usbdev is there and use it if so, other wise dev
 	cmd = "jack_control ds "+driver+" dps capture none dps playback none"
 	subprocess.call(cmd, shell = True)
 	cmd = "jack_control dps device hw:"+mdev+" dps rate "+sr
@@ -280,39 +339,86 @@ def config_start():
 		subprocess.call(cmd, shell = True)
 		cmd = "pactl load-module module-jack-source client_name=PulseIn channels=2 connect=no"
 		subprocess.call(cmd, shell = True)
-	#need to check also if d_out is jack
-	if dev == d_out or d_out == "system":
-		connect_pa("system", "system")
-
-	# XXXXX Need to connect any USB as if it was just plugged in
-	# after below need to check if d_out is satisfied and connect if not
 	for cname in zdev.strip('"').strip().split(" "):
 		print("cname: "+cname)
 		if cname != "":
 			start_slave(cname)
 
-		# not sure all these delays need to be here. Was checking with old pulse.
-		time.sleep(3)
-		# this needs to be pulled into it's own call so it can be used by master switching
-		if cname.strip('"') == d_out:
-			connect_pa(cname+"-in", cname+"-out")
+	# not sure all these delays need to be here. Was checking with old pulse.
+	time.sleep(2)
+
+	connect_pa()
+	if usb == "True":
+		import_device_array()
+		for device in devices:
+			if device[1]:
+				#this is a USB device
+				if device[0]+",0,0" != usbdev:
+					start_slave(device[0]+",0,0")
 
 	if a2j == "True":
 		cmd = "a2jmidid -e &"
 		subprocess.call(cmd, shell = True)
 
-def connect_pa(in_name, out_name):
-	if o_port:
-		cmd = "jack_connect "+in_name+":capture_1 PulseIn:front-left"
-		subprocess.call(cmd, shell = True)
-		cmd = "jack_connect "+in_name+":capture_2 PulseIn:front-right"
-		subprocess.call(cmd, shell = True)
-		cmd = "jack_connect PulseOut:front-left "+out_name+":playback_"+o_port
-		subprocess.call(cmd, shell = True)
-		cmd = "jack_connect PulseOut:front-right "+out_name+":playback_"+str(int(o_port) + 1)
-		subprocess.call(cmd, shell = True)
+def connect_pa():
+	'''connects pulse ports to the correct device ports. May have to
+	use zita-ajbridge to first make the correct device available.'''
+	if o_port == "0":
+		return
+	global d_out
+	global dev
+	global last_master
+	global devices
+	import_device_array()
+	dev_available = False
+	dev_has_in = False
+	dev_has_pid = False
+	for device in devices:
+		if device[0] == d_out.split(",")[0]:
+			dev_available = True
+			if device[2]:
+				for i in range(3, (device[2] + 3)):
+					if str(device[i][0]) == d_out.split(",")[1]:
+						dev_has_in = True
+					if device[i][2]:
+						dev_has_pid = True
+
+	if d_out == "system":
+		in_name = out_name = "system"
+		dev_has_pid = True
+	elif d_out == dev and last_master == dev:
+		in_name = out_name = "system"
+		dev_has_pid = True
+	elif d_out == usbdev and last_master == usb_dev:
+		in_name = out_name = "system"
+		dev_has_pid = True
+	elif dev_available == True:
+		if dev_has_in:
+			in_name = d_out+"-in"
+		else:
+			in_name = "system"
+		out_name = d_out+"-out"
+	else:
+		in_name = out_name = "system"
+		dev_has_pid = True
+
+	if not dev_has_pid:
+		print "no pid, start slave"
+		start_slave(d_out)
+		time.sleep(1)
+		
+	cmd = "jack_connect "+in_name+":capture_1 PulseIn:front-left"
+	subprocess.call(cmd, shell = True)
+	cmd = "jack_connect "+in_name+":capture_2 PulseIn:front-right"
+	subprocess.call(cmd, shell = True)
+	cmd = "jack_connect PulseOut:front-left "+out_name+":playback_"+o_port
+	subprocess.call(cmd, shell = True)
+	cmd = "jack_connect PulseOut:front-right "+out_name+":playback_"+str(int(o_port) + 1)
+	subprocess.call(cmd, shell = True)
 
 def disconnect_pa():
+	'''Searches jack ports for Pulse ports and disconnects them. The pa-jack
+	bridge is left running.'''
 	stdoutdata = subprocess.check_output("jack_lsp -c Pulse", shell=True)
 	ports = stdoutdata.split("\n")
 	for line in ports:
@@ -324,8 +430,13 @@ def disconnect_pa():
 				cmd = "jack_disconnect "+port1+" "+port2
 
 def msg_cb_new(*args, **kwargs):
+	'''call back for udev sensing new device. checks if device is audio.
+	checks if device is USB. If both are true and configuration is to
+	use this device, the device is either connected with zita-ajbridge
+	or becomes jack's master device'''
 	global usbdev
 	global devices
+	global dev
 	import_config()
 		
 	if args[0].find("sound-card") >= 0:
@@ -343,7 +454,8 @@ def msg_cb_new(*args, **kwargs):
 					change_jack_master(cid, "sm")
 					time.sleep(1)
 					start_slave(dev)
-					connect_pa("system", "system")
+					time.sleep(1)
+					connect_pa()
 				elif usb == "True":
 					start_slave(cid)
 
@@ -357,6 +469,7 @@ def msg_cb_removed(*args, **kwargs):
 		audio_if = a_if[1].split(".", 1)[0]
 		device = devices[int(audio_if)]
 		print("sound card: hw:"+audio_if+" removed")
+		# XXXX needs to add device and sub
 		cid = device[0]
 		if jack == "True":
 			if not device[1]:
@@ -381,53 +494,32 @@ def change_jack_master(ldev, com):
 	cmd = "jack_control "+com
 	time.sleep(3)
 	subprocess.call(cmd, shell = True)
-	#cmd = "jack_control dps device hw:"+ldev
-	#subprocess.call(cmd, shell = True)
-	#time.sleep(2)
-	#cmd = "jack_control "+com
-	#subprocess.call(cmd, shell = True)
-
 	last_master = ldev
 
 def start_slave(ldev):
 	global devices
 	import_device_array()
 	dname, dev, sub = ldev.split(",", 2)
-	print "dname: "+dname+" dev: "+dev+" sub: "+sub
 	for device in devices:
 		if device[0] == dname and device[2] > int(dev):
-			print "found: "+dname
 			if device[3 + int(dev)][1]:
-				print "device: " + dname + "," + dev + ",0 has playback"
 				cmd = "/usr/bin/zita-j2a -j "+ldev+"-out -d hw:"+ldev+" -r "+sr+" -p "+zframe+" -n "+period+" &"
 				procout = subprocess.Popen(cmd.split(), stdout=subprocess.PIPE)
 				device[3+int(dev)][2] = procout.pid
-				print "play pid " + str(device[3+int(dev)][2])
 			if device[3+int(dev)][3]:
-				print "device: " + ldev + " has capture"
 				cmd = "/usr/bin/zita-a2j -j "+ldev+"-in -d hw:"+ldev+" -r "+sr+" -p "+zframe+" -n "+period+" &"
 				procin = subprocess.Popen(cmd.split(), stdout=subprocess.PIPE)
 				device[3 + int(dev)][4] = procin.pid
-				print "capture pid " + str(device[3 + int(dev)][4])
-	#global procin
-	#global procout
-	# proc is the pid use proc.kill() to kill it
-	#print("start a slave jack client for: "+ldev+" PID = "+str(procin.pid)+" and "+str(procout.pid))
 
 def kill_slave(ldev):
 	global devices
+	# XXXX need to separate out dev and subdev like above.
 	for device in devices:
 		if device[0] == ldev and device[2]:
-			print "play pid to kill " + str(device[3][2])
 			if device[3][2]:
-				os.kill(device[3][2], signal.SIGTERM)
-			print "Capture pid to kill " + str(device[3][4])
+				os.kill(device[3][2], signal.SIGKILL)
 			if device[3][4]:
 				os.kill(device[3][4], signal.SIGKILL)
-	#os.kill(pid, signal.SIGTERM)
-	#procin.terminate()
-	#procout.terminate()
-	print("Kill jack client for: "+ldev)
 
 def ses_cb_quit (*args, **kwargs):
 	print("Got quit signal.\n")
@@ -454,23 +546,6 @@ def ses_cb_config (*args, **kwargs):
 	# without stopping
 	config_start()
 
-def ses_cb_disconnect (*args, **kwargs):
-	#this is broken... usbdev must exist
-	# it will have a user chosen USV IF
-	global last_master
-	global usbdev
-	print("Got disconnect signal.\n")
-	# make it safe to disconnect USB if master.
-	# and master = usbdev
-	if last_master == usbdev:
-		disconnect_pa()
-		kill_slave(dev)
-		time.sleep(3)
-		change_jack_master(dev, "sm")
-		time.sleep(3)
-		connect_pa("system","system")
-		last_master = dev
-
 def main():
 	config_start()
 	import_device_array()
@@ -483,7 +558,6 @@ def main():
 	user_bus.add_signal_receiver(ses_cb_stop, dbus_interface='org.ubuntustudio.control.event', signal_name='stop_signal')
 	user_bus.add_signal_receiver(ses_cb_start, dbus_interface='org.ubuntustudio.control.event', signal_name='start_signal')
 	user_bus.add_signal_receiver(ses_cb_config, dbus_interface='org.ubuntustudio.control.event', signal_name='config_signal')
-	user_bus.add_signal_receiver(ses_cb_disconnect, dbus_interface='org.ubuntustudio.control.event', signal_name='disconnect_signal')
 
 	mainloop = gobject.MainLoop ()
 	mainloop.run ()

@@ -18,8 +18,10 @@ ubuntustudio-controls (1.5) UNRELEASED; urgency=medium
   * Ubuntu now uses systemd to start ondemand
   * Switched to git
   * Use USB if plugged in at session start
+  * session start works the same as if usb plugged later
+  * fixed lots of corner cases
 
- -- Len Ovens <len@music>  Wed, 04 Apr 2018 20:31:00 -0700
+ -- Len Ovens <len@ubuntustudio.org>  Wed, 04 Apr 2018 20:31:00 -0700
 
 ubuntustudio-controls (1.4) artful; urgency=medium
 

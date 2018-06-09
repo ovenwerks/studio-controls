@@ -131,6 +131,7 @@ class UbuntuStudioControls:
     self.jack_usb_dev_combo = builder.get_object('jack_usb_dev_combo')
     self.jack_rate_combo = builder.get_object('jack_rate_combo')
     self.combobox_late = builder.get_object('combobox_late')
+    self.combo_periods = builder.get_object('combo_periods')
     self.usb_plug_check = builder.get_object('usb_plug_check')
     self.combo_zita_add = builder.get_object('combo_zita_add')
     self.combo_zita_remove = builder.get_object('combo_zita_remove')
@@ -244,6 +245,7 @@ class UbuntuStudioControls:
 
     self.jack_rate_combo.set_active_id(self.sr)
     self.combobox_late.set_active_id(self.late)
+    self.combo_periods.set_active_id(self.period)
     self.usb_plug_check.set_active(self.usb)
     self.combo_out_ports.set_active_id(self.o_port)
     self.jack_autostart_check.set_active(self.jack)
@@ -257,7 +259,6 @@ class UbuntuStudioControls:
     self.jack_usb_dev_combo.append("", "No USB Master")
     self.jack_usb_dev_combo.set_active_id("")
     if self.usbdev != "":
-      print(self.usbdev)
       self.jack_usb_dev_combo.append(self.usbdev, self.usbdev)
       self.jack_usb_dev_combo.set_active_id(self.usbdev)
 
@@ -340,7 +341,6 @@ class UbuntuStudioControls:
       "cb_audio_apply": self.cb_audio_apply,
       "jack_device_changed": self.jack_device_changed,
       "usb_master_changed": self.usb_master_changed,
-      "usb_remove_cb": self.usb_remove_cb
     }
     builder.connect_signals(handlers)
 
@@ -444,11 +444,6 @@ class UbuntuStudioControls:
     cmd = "dbus-send --type=signal / org.ubuntustudio.control.event.stop_signal"
     subprocess.call(cmd, shell = True)
 
-  def usb_remove_cb(self, button):
-    # this should send a dbus message to autojack "USBSafe"
-    cmd = "dbus-send --type=signal / org.ubuntustudio.control.event.disconnect_signal"
-    subprocess.call(cmd, shell = True)
-
   # this belongs to cb_audio_apply
   def z_save(self, model, path, d_iter, save_file):
     m_id = str(model.get(d_iter, 1)[0])
@@ -470,7 +465,7 @@ class UbuntuStudioControls:
       rc_file.write("\nFRAME="+str(self.combobox_late.get_active_id()))
       self.zframe = str(int(int(self.combobox_late.get_active_id()) / 2))
       rc_file.write("\nZFRAME="+self.zframe)
-      rc_file.write("\nPERIOD="+self.period)
+      rc_file.write("\nPERIOD="+str(self.combo_periods.get_active_id()))
       rc_file.write("\nPULSE="+str(self.pulse_check.get_active()))
       rc_file.write("\nA2J="+str(self.jack_midi_check.get_active()))
       rc_file.write("\nOUTPUT="+str(self.combo_output.get_active_id()))
