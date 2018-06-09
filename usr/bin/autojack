@@ -470,12 +470,12 @@ def msg_cb_removed(*args, **kwargs):
 		device = devices[int(audio_if)]
 		print("sound card: hw:"+audio_if+" removed")
 		# XXXX needs to add device and sub
-		cid = device[0]
+		cid = device[0] + ",0,0"
 		if jack == "True":
 			if not device[1]:
 				# not a usb device
 				return
-			if usbdev == device[0] + ",0,0":
+			if usbdev == cid:
 				if last_master == usbdev:
 					config_start()
 			elif usb == "True":
@@ -514,12 +514,13 @@ def start_slave(ldev):
 def kill_slave(ldev):
 	global devices
 	# XXXX need to separate out dev and subdev like above.
+	dname, dev, sub = ldev.split(",", 2)
 	for device in devices:
-		if device[0] == ldev and device[2]:
-			if device[3][2]:
-				os.kill(device[3][2], signal.SIGKILL)
-			if device[3][4]:
-				os.kill(device[3][4], signal.SIGKILL)
+		if device[0] == dname and device[2]:
+			if device[3 + int(dev)][2]:
+				os.kill(device[3 + int(dev)][2], signal.SIGKILL)
+			if device[3 + int(dev)][4]:
+				os.kill(device[3 + int(dev)][4], signal.SIGKILL)
 
 def ses_cb_quit (*args, **kwargs):
 	print("Got quit signal.\n")
