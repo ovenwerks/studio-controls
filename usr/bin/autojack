@@ -532,11 +532,11 @@ def start_slave(ldev):
 	for device in devices:
 		if device[0] == dname and device[2] > int(dev):
 			if device[3 + int(dev)][1]:
-				cmd = "/usr/bin/zita-j2a -j "+ldev+"-out -d hw:"+ldev+" -r "+sr+" -p "+zframe+" -n "+period+" &"
+				cmd = "/usr/bin/zita-j2a -j "+ldev+"-out -d hw:"+ldev+" -r "+sr+" -p "+zframe+" -n "+period+" -c 100 &"
 				procout = subprocess.Popen(cmd.split(), stdout=subprocess.PIPE)
 				device[3+int(dev)][2] = procout.pid
 			if device[3+int(dev)][3]:
-				cmd = "/usr/bin/zita-a2j -j "+ldev+"-in -d hw:"+ldev+" -r "+sr+" -p "+zframe+" -n "+period+" &"
+				cmd = "/usr/bin/zita-a2j -j "+ldev+"-in -d hw:"+ldev+" -r "+sr+" -p "+zframe+" -n "+period+" -c 100 &"
 				procin = subprocess.Popen(cmd.split(), stdout=subprocess.PIPE)
 				device[3 + int(dev)][4] = procin.pid
 
