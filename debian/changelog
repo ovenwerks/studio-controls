@@ -22,6 +22,7 @@ ubuntustudio-controls (1.5) UNRELEASED; urgency=medium
   * fixed lots of corner cases
   * kill_slave no longer assumes device,0,0
   * added cadence to Conflicts
+  * Added soft reconfig many things don't restart jack
 
  -- Len Ovens <len@ubuntustudio.org>  Wed, 04 Apr 2018 20:31:00 -0700
 

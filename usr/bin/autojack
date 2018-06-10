@@ -259,6 +259,7 @@ def reconfig():
 			subprocess.call(cmd, shell = True)
 			cmd = "pactl load-module module-jack-source client_name=PulseIn channels=2 connect=no"
 			subprocess.call(cmd, shell = True)
+			connect_pa()
 		else:
 			disconnect_pa()
 			cmd = "pactl unload-module module-jack-sink"
@@ -269,10 +270,12 @@ def reconfig():
 	# also connect ports if pulse bridged
 	if [d_out, o_port] != [newd_out, newo_port]:
 		disconnect_pa()
+		if not d_out in newzdev.strip('"').strip().split(" ") and d_out != "system":
+			kill_slave(d_out)
 		d_out = newd_out
 		o_port = newo_port
 		if pulse == "True":
-			connect_pa
+			connect_pa()
 	if newa2j != a2j:
 		a2j = newa2j
 		cmd = "killall -9 a2jmidid"
@@ -281,17 +284,37 @@ def reconfig():
 			cmd = "a2jmidid -e &"
 			subprocess.call(cmd, shell = True)
 	if [usb, zdev] != [newusb, newzdev]:
-		usb = newusb
-		zdev = newzdev
 		import_device_array()
 		for device in devices:
-			if usb == "True":
-				if device[1] and device[0] != dev.split(",")[0]:
-					start_slave(device[0]+",0,0")
-			elif zdev != "":
-				for extra in zdev:
-					print "not done yet"
-					#see next call for getting devices.
+			if device[3][2] and device[3][2] == device[3][4]:
+				# this is jack master skip
+				continue
+			if device[1]:
+				# USB device
+				if usb != newusb:
+					if newusb == "True":
+						start_slave(device[0]+",0,0")
+					else:
+						kill_slave(device[0]+",0,0")
+			else:
+				# not USB device
+				if zdev != newzdev:
+					zdev_list = newzdev.strip('"').strip().split(" ")
+					tempname = "nothing"
+					dev_has_pid = False
+					#stop_dev = True
+					for i in range(3, (device[2] + 3)):
+						tempname = device[0]+","+str(device[i][0])+",0"
+						if device[i][2]:
+							dev_has_pid = True
+						if tempname in zdev_list:
+							if not dev_has_pid:
+								start_slave(tempname)
+						else:
+							kill_slave(tempname)
+
+		usb = newusb
+		zdev = newzdev
 
 			
 			
@@ -428,6 +451,7 @@ def disconnect_pa():
 			else:
 				port2 = line
 				cmd = "jack_disconnect "+port1+" "+port2
+				subprocess.call(cmd, shell = True)
 
 def msg_cb_new(*args, **kwargs):
 	'''call back for udev sensing new device. checks if device is audio.
@@ -460,6 +484,7 @@ def msg_cb_new(*args, **kwargs):
 					start_slave(cid)
 
 def msg_cb_removed(*args, **kwargs):
+	''' dbus call back when a USB device removal has been detected by udev '''
 	global devices
 	global last_master
 	import_config()
@@ -483,6 +508,8 @@ def msg_cb_removed(*args, **kwargs):
 		import_device_array()
 
 def change_jack_master(ldev, com):
+	''' does a switch master to ldev '''
+	# this could be inlined as it is only used in one place any more
 	global devices
 	global last_master
 	print("Changing jack master to: "+ldev)
@@ -497,6 +524,8 @@ def change_jack_master(ldev, com):
 	last_master = ldev
 
 def start_slave(ldev):
+	''' takes the audio device as a parameter and starts a bridge
+	from that device to jack '''
 	global devices
 	import_device_array()
 	dname, dev, sub = ldev.split(",", 2)
@@ -512,6 +541,8 @@ def start_slave(ldev):
 				device[3 + int(dev)][4] = procin.pid
 
 def kill_slave(ldev):
+	''' takes the device as a parameter and if the device exists
+	and is bridged to jack, stops the bridge '''
 	global devices
 	# XXXX need to separate out dev and subdev like above.
 	dname, dev, sub = ldev.split(",", 2)
@@ -523,6 +554,8 @@ def kill_slave(ldev):
 				os.kill(device[3 + int(dev)][4], signal.SIGKILL)
 
 def ses_cb_quit (*args, **kwargs):
+	''' dbus call back when quit signal caught. This is for use in
+	testing and the GUI never sends this. '''
 	print("Got quit signal.\n")
 	cmd = "killall -9 jackdbus jackd a2jmidid"
 	subprocess.call(cmd, shell = True)
@@ -531,6 +564,7 @@ def ses_cb_quit (*args, **kwargs):
 	os._exit(0)
 
 def ses_cb_stop (*args, **kwargs):
+	''' dbus call back when stop signal caught. This stops jack. '''
 	print("Got stop signal.\n")
 	cmd = "killall -9 jackdbus jackd a2jmidid"
 	subprocess.call(cmd, shell = True)
@@ -538,16 +572,18 @@ def ses_cb_stop (*args, **kwargs):
 	subprocess.call(cmd, shell = True)
 
 def ses_cb_start (*args, **kwargs):
+	''' dbus call back when (re)start signal caught'''
 	print("Got start signal.\n")
 	config_start()
 
 def ses_cb_config (*args, **kwargs):
+	''' dbus call back when config signal caught '''
 	print("Got config signal.\n")
-	# need to change this to see if we can just change things
-	# without stopping
-	config_start()
+	reconfig()
 
 def main():
+	''' Autojack runs at session start and manages audio for the session.
+	this is the daemon for ubuntustudio-controls'''
 	config_start()
 	import_device_array()
 	system_bus = dbus.SystemBus()
