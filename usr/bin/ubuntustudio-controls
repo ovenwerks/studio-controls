@@ -12,6 +12,11 @@ import resource
 import shutil
 import subprocess
 import glob
+import dbus.service
+import dbus.glib
+import gobject
+import dbus
+
 
 class SysInfo:
   """Get information about the system"""
@@ -146,6 +151,12 @@ class UbuntuStudioControls:
     #another button
     #self.audio_apply = builder.get_object('audio_apply')
 
+    #system_bus = dbus.SystemBus()
+    #system_bus.add_signal_receiver(self.db_system_cb, dbus_interface='org.freedesktop.systemd1.Manager', signal_name='UnitNew')
+    #system_bus.add_signal_receiver(self.db_system_cb, dbus_interface='org.freedesktop.systemd1.Manager', signal_name='UnitRemoved')
+
+    user_bus = dbus.SessionBus()
+    user_bus.add_signal_receiver(self.db_ses_cb, dbus_interface='org.ubuntustudio.control.event', signal_name='pong_signal')
 
 
 
@@ -257,8 +268,9 @@ class UbuntuStudioControls:
     self.combo_output.append("system", "Jack Master")
     self.combo_output.set_active_id("system")
     self.jack_usb_dev_combo.append("", "No USB Master")
-    self.jack_usb_dev_combo.set_active_id("")
-    if self.usbdev != "":
+    if self.usbdev == "":
+      self.jack_usb_dev_combo.set_active_id("")
+    else:
       self.jack_usb_dev_combo.append(self.usbdev, self.usbdev)
       self.jack_usb_dev_combo.set_active_id(self.usbdev)
 
@@ -341,10 +353,63 @@ class UbuntuStudioControls:
       "cb_audio_apply": self.cb_audio_apply,
       "jack_device_changed": self.jack_device_changed,
       "usb_master_changed": self.usb_master_changed,
+      "usb_master_entered": self.usb_master_entered,
     }
     builder.connect_signals(handlers)
 
     self.rtsetup = RTSetup()
+
+  def db_ses_cb(*args, **kwargs):
+    ''' this means we got a responce from autojack, Good'''
+    global autojack
+    autojack = True
+    print ("got pong")
+
+  def usb_master_entered(self, button, user):
+    '''Before the user drops down refill this as it may have changed'''
+    self.jack_usb_dev_combo.get_model().clear()
+    self.jack_usb_dev_combo.append("", "No USB Master")
+    if self.usbdev == "":
+      self.jack_usb_dev_combo.set_active_id("")
+    else:
+      self.jack_usb_dev_combo.append(self.usbdev, self.usbdev)
+      self.jack_usb_dev_combo.set_active_id(self.usbdev)
+    for x in range(0, 10):
+      #card loop
+      cname = ""
+      next_id = ""
+      next_d = ""
+      if os.path.exists("/proc/asound/card"+str(x)):
+        with open("/proc/asound/card"+str(x)+"/id", "r") as card_file:
+          for line in card_file:
+            #only need one line
+            cname = line.rstrip()
+      if not os.path.exists("/proc/asound/card"+str(x)+"/usbbus"):
+        continue
+      for y in range(0, 10):
+        d_type = ""
+        d_desc = ""
+        if os.path.exists("/proc/asound/card"+str(x)+"/pcm"+str(y)+"p"):
+          d_type = "playback"
+        if os.path.exists("/proc/asound/card"+str(x)+"/pcm"+str(y)+"c"):
+          if d_type == "":
+            d_type = "capture"
+          else:
+            d_type = d_type+" and capture"
+        if d_type != "":
+          for z in range(0, 10):
+            if os.path.exists("/proc/asound/card"+str(x)+"/pcm"+str(y)+d_type[0]+"/sub"+str(z)):
+              with open("/proc/asound/card"+str(x)+"/pcm"+str(y)+d_type[0]+"/sub"+str(z)+"/info", "r") as info_file:
+                for line in info_file:
+                  if re.match("^name:", line.rstrip()):
+                    dname = line.rstrip().split(": ", 1)[1]
+                    next_id = cname+","+str(y)+","+str(z)
+                    next_d = next_id+" "+d_type+" ("+dname+")"
+              #   Have everything we need now
+              if next_id != self.usbdev:
+                self.jack_usb_dev_combo.append(next_id, next_d)
+    
+
 
   '''Functions for all the gui controls'''
   def on_window_main_delete_event(self, *args):
@@ -489,6 +554,10 @@ class UbuntuStudioControls:
 
   def on_button_rt_info_ok_clicked(self, button):
     self.message_dialog_rt_info.hide()
+
+  cmd = "dbus-send --type=signal / org.ubuntustudio.control.event.ping_signal"
+  subprocess.call(cmd, shell = True)
+
 
 us = UbuntuStudioControls()
 us.window_main.show_all()

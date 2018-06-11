@@ -581,6 +581,13 @@ def ses_cb_config (*args, **kwargs):
 	print("Got config signal.\n")
 	reconfig()
 
+def ses_cb_ping (*args, **kwargs):
+	''' dbus call back when config signal caught '''
+	print("Got ping signal.\n")
+	cmd = "dbus-send --type=signal / org.ubuntustudio.control.event.pong_signal"
+	subprocess.call(cmd, shell = True)
+
+
 def main():
 	''' Autojack runs at session start and manages audio for the session.
 	this is the daemon for ubuntustudio-controls'''
@@ -595,6 +602,7 @@ def main():
 	user_bus.add_signal_receiver(ses_cb_stop, dbus_interface='org.ubuntustudio.control.event', signal_name='stop_signal')
 	user_bus.add_signal_receiver(ses_cb_start, dbus_interface='org.ubuntustudio.control.event', signal_name='start_signal')
 	user_bus.add_signal_receiver(ses_cb_config, dbus_interface='org.ubuntustudio.control.event', signal_name='config_signal')
+	user_bus.add_signal_receiver(ses_cb_ping, dbus_interface='org.ubuntustudio.control.event', signal_name='ping_signal')
 
 	mainloop = gobject.MainLoop ()
 	mainloop.run ()

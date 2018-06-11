@@ -537,20 +537,6 @@
                       </packing>
                     </child>
                     <child>
-                      <object class="GtkComboBoxText" id="jack_usb_dev_combo">
-                        <property name="visible">True</property>
-                        <property name="can_focus">False</property>
-                        <property name="active">0</property>
-                        <property name="active_id">0</property>
-                        <signal name="changed" handler="usb_master_changed" swapped="no"/>
-                      </object>
-                      <packing>
-                        <property name="left_attach">1</property>
-                        <property name="top_attach">1</property>
-                        <property name="width">2</property>
-                      </packing>
-                    </child>
-                    <child>
                       <object class="GtkComboBoxText" id="combo_zita_add">
                         <property name="visible">True</property>
                         <property name="can_focus">False</property>
@@ -607,6 +593,29 @@
                       <packing>
                         <property name="left_attach">0</property>
                         <property name="top_attach">4</property>
+                      </packing>
+                    </child>
+                    <child>
+                      <object class="GtkEventBox" id="usb_master_ebox">
+                        <property name="visible">True</property>
+                        <property name="can_focus">False</property>
+                        <signal name="enter-notify-event" handler="usb_master_entered" swapped="no"/>
+                        <child>
+                          <object class="GtkComboBoxText" id="jack_usb_dev_combo">
+                            <property name="visible">True</property>
+                            <property name="can_focus">False</property>
+                            <property name="active">0</property>
+                            <property name="button_sensitivity">on</property>
+                            <property name="active_id">0</property>
+                            <signal name="changed" handler="usb_master_changed" swapped="no"/>
+                            <signal name="enter-notify-event" handler="usb_master_entered" swapped="no"/>
+                          </object>
+                        </child>
+                      </object>
+                      <packing>
+                        <property name="left_attach">1</property>
+                        <property name="top_attach">1</property>
+                        <property name="width">2</property>
                       </packing>
                     </child>
                   </object>
