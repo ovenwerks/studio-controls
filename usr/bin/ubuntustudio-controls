@@ -491,18 +491,26 @@ class UbuntuStudioControls:
 
   def cb_jack_start(self, button):
     ''' call back for Jack (re)start button'''
+    global autojack
     self.jack_autostart_check.set_active(True)
     # Write audio setting to ~/.config/autojack
     self.config_save()
-    cmd = "dbus-send --type=signal / org.ubuntustudio.control.event.start_signal"
-    subprocess.call(cmd, shell = True)
+    if autojack:
+      cmd = "dbus-send --type=signal / org.ubuntustudio.control.event.start_signal"
+      subprocess.call(cmd, shell = True)
+    else:
+      self.start_autojack()
 
   def cb_jack_stop(self, button):
+    global autojack
     self.jack_autostart_check.set_active(False)
     # Write audio setting to ~/.config/autojack
     self.config_save()
-    cmd = "dbus-send --type=signal / org.ubuntustudio.control.event.stop_signal"
-    subprocess.call(cmd, shell = True)
+    if autojack:
+      cmd = "dbus-send --type=signal / org.ubuntustudio.control.event.stop_signal"
+      subprocess.call(cmd, shell = True)
+    else:
+      self.start_autojack()
 
   # this belongs to config_save()
   def z_save(self, model, path, d_iter, save_file):
@@ -513,11 +521,15 @@ class UbuntuStudioControls:
 
   def cb_audio_apply(self, button):
     '''callback for audio tab apply button'''
+    global autojack
     # Write audio setting to ~/.config/autojack
     self.config_save()
-    # we should send a message to autojack "config"
-    cmd = "dbus-send --type=signal / org.ubuntustudio.control.event.config_signal"
-    subprocess.call(cmd, shell = True)
+    if autojack:
+      # we should send a message to autojack "config"
+      cmd = "dbus-send --type=signal / org.ubuntustudio.control.event.config_signal"
+      subprocess.call(cmd, shell = True)
+    else:
+      self.start_autojack()
 
   def config_save(self):
     # Write audio setting to ~/.config/autojack
@@ -543,6 +555,18 @@ class UbuntuStudioControls:
       model.foreach(self.z_save, rc_file)
       rc_file.write("\"\n# end of auto generated parameters\n")
 
+  def start_autojack(self):
+    '''start autojack as it has been detected as not running'''
+    print("Starting Autojack...")
+    #do it
+    home = expanduser("~")
+    if os.path.isfile(home+"/.log/autojack.log"):
+      cmd = "mv -f "+home+"/.log/autojack.log "+home+"/.log/autojack.log.old"
+      subprocess.call(cmd, shell = True)
+    cmd = "nohup /usr/bin/autojack > "+home+"/.log/autojack.log &"
+    subprocess.call(cmd, shell = True)
+
+    
   def on_button_help_ok_clicked(self, button):
     self.window_help.hide()
 

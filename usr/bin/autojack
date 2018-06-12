@@ -605,6 +605,9 @@ def main():
 	user_bus.add_signal_receiver(ses_cb_config, dbus_interface='org.ubuntustudio.control.event', signal_name='config_signal')
 	user_bus.add_signal_receiver(ses_cb_ping, dbus_interface='org.ubuntustudio.control.event', signal_name='ping_signal')
 
+	cmd = "dbus-send --type=signal / org.ubuntustudio.control.event.pong_signal"
+	subprocess.call(cmd, shell = True)
+
 	mainloop = gobject.MainLoop ()
 	mainloop.run ()
 
