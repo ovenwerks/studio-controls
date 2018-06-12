@@ -27,6 +27,7 @@ ubuntustudio-controls (1.5) UNRELEASED; urgency=medium
   * always rebuild usb master list before showing
   * Stop or Start Jack keeps state over reboot
   * start autojack backend if not running
+  * Add missing depends
 
  -- Len Ovens <len@ubuntustudio.org>  Wed, 04 Apr 2018 20:31:00 -0700
 
