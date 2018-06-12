@@ -584,6 +584,7 @@ def ses_cb_config (*args, **kwargs):
 def ses_cb_ping (*args, **kwargs):
 	''' dbus call back when config signal caught '''
 	print("Got ping signal.\n")
+	time.sleep(3)
 	cmd = "dbus-send --type=signal / org.ubuntustudio.control.event.pong_signal"
 	subprocess.call(cmd, shell = True)
 
