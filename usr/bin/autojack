@@ -362,8 +362,12 @@ def config_start():
 		subprocess.call(cmd, shell = True)
 		cmd = "pactl load-module module-jack-source client_name=PulseIn channels=2 connect=no"
 		subprocess.call(cmd, shell = True)
+	if mdev == usbdev:
+		# we are starting with the USB device as master so lets connect
+		# our internal default
+		start_slave(dev)
 	for cname in zdev.strip('"').strip().split(" "):
-		print("cname: "+cname)
+		print("Extra internal: "+cname)
 		if cname != "":
 			start_slave(cname)
 
