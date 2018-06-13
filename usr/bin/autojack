@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/python -u
 
 # jack-usb - Monitors dbus for added audio devices (hot plugged USB audio intefaces)
 # on detect it does one of three things:
@@ -502,6 +502,8 @@ def msg_cb_removed(*args, **kwargs):
 				return
 			if usbdev == cid:
 				if last_master == usbdev:
+					kill_slave(dev)
+					time.sleep(1)
 					config_start()
 			elif usb == "True":
 				kill_slave(cid)

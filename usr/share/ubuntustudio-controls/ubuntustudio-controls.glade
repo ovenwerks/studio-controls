@@ -398,7 +398,7 @@
                         <property name="visible">True</property>
                         <property name="can_focus">False</property>
                         <property name="halign">end</property>
-                        <property name="label" translatable="yes">Connect Other Audio Interfaces:</property>
+                        <property name="label" translatable="yes">Connect Other Internal Audio Interfaces:</property>
                       </object>
                       <packing>
                         <property name="left_attach">0</property>

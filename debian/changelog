@@ -28,6 +28,7 @@ ubuntustudio-controls (1.5) UNRELEASED; urgency=medium
   * Stop or Start Jack keeps state over reboot
   * start autojack backend if not running
   * Add missing depends
+  * nohup is to slow, removed
 
  -- Len Ovens <len@ubuntustudio.org>  Wed, 04 Apr 2018 20:31:00 -0700
 

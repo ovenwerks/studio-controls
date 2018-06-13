@@ -563,7 +563,7 @@ class UbuntuStudioControls:
     if os.path.isfile(home+"/.log/autojack.log"):
       cmd = "mv -f "+home+"/.log/autojack.log "+home+"/.log/autojack.log.old"
       subprocess.call(cmd, shell = True)
-    cmd = "nohup /usr/bin/autojack > "+home+"/.log/autojack.log &"
+    cmd = "/usr/bin/autojack >"+home+"/.log/autojack.log 2>&1 < /dev/null &"
     subprocess.call(cmd, shell = True)
 
     
