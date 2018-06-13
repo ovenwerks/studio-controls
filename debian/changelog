@@ -30,6 +30,7 @@ ubuntustudio-controls (1.5) UNRELEASED; urgency=medium
   * Add missing depends
   * nohup is too slow, removed
   * default internal should be slaved when starting with USB master
+  * if ~/.log does not exist yet, create it
 
  -- Len Ovens <len@ubuntustudio.org>  Wed, 04 Apr 2018 20:31:00 -0700
 

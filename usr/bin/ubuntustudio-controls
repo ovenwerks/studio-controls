@@ -560,6 +560,8 @@ class UbuntuStudioControls:
     print("Starting Autojack...")
     #do it
     home = expanduser("~")
+    if not os.path.exists(home+"/.log"):
+      os.makedirs(home+"/.log")
     if os.path.isfile(home+"/.log/autojack.log"):
       cmd = "mv -f "+home+"/.log/autojack.log "+home+"/.log/autojack.log.old"
       subprocess.call(cmd, shell = True)
