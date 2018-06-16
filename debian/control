@@ -10,8 +10,16 @@ Homepage: https://wiki.ubuntu.com/UbuntuStudio/UbuntuStudioControls
 Package: ubuntustudio-controls
 Architecture: all
 Section: admin
-Depends: ${misc:Depends}, python3, python-gi, jackd2, cpufrequtils, python-dbus,
-  zita-ajbridge, python-gobject, a2jmidid, pulseaudio-module-jack
+Depends: a2jmidid,
+         cpufrequtils,
+         jackd2,
+         pulseaudio-module-jack,
+         python-dbus,
+         python-gi,
+         python-gobject,
+         python3,
+         zita-ajbridge,
+         ${misc:Depends}
 Conflicts: cadence
-Description: Ubuntu Studio Controls is a small application that 
+Description: Ubuntu Studio Controls is a small application that
  enables/disables realtime privilege for users

@@ -1,5 +1,6 @@
 ubuntustudio-controls (1.5) UNRELEASED; urgency=medium
 
+  [ Len Ovens ]
   * Rewrote so that GUI does not run sudo.
   * Added functionality to Audio settings
   * GUI correctly writes file, jack starts and connects to pulse
@@ -31,6 +32,9 @@ ubuntustudio-controls (1.5) UNRELEASED; urgency=medium
   * nohup is too slow, removed
   * default internal should be slaved when starting with USB master
   * if ~/.log does not exist yet, create it
+
+  [ Simon Quigley ]
+  * Run wrap-and-sort.
 
  -- Len Ovens <len@ubuntustudio.org>  Wed, 04 Apr 2018 20:31:00 -0700
 
