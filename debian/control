@@ -15,14 +15,15 @@ Depends: a2jmidid,
          cpufrequtils,
          jackd2,
          pulseaudio-module-jack,
-         python-dbus,
-         python-gi,
-         python-gobject,
+         python3-dbus,
+         python3-gi,
          python3,
          zita-ajbridge,
-         ${python:Depends},
          ${misc:Depends}
 Conflicts: cadence
 Description: Ubuntu Studio Controls
  Ubuntu Studio Controls is a small application that enables/disables realtime
- privilege for users.
+ privilege for users and controls jackdbus. It allows Jackdbus to be run from
+ session start. It also will detect USB audio devices getting plugged in after
+ session start and optionally connect them to jackdbus as a client or switch
+ them in as jackdbus master.
