@@ -22,5 +22,6 @@ Depends: a2jmidid,
          zita-ajbridge,
          ${misc:Depends}
 Conflicts: cadence
-Description: Ubuntu Studio Controls is a small application that
- enables/disables realtime privilege for users
+Description: Ubuntu Studio Controls
+ Ubuntu Studio Controls is a small application that enables/disables realtime
+ privilege for users.

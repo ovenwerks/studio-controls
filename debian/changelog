@@ -39,6 +39,7 @@ ubuntustudio-controls (1.5) UNRELEASED; urgency=medium
   * Bump debhelper compat to 11, no changes needed.
   * Modernize the copyright file.
   * Make Vcs-* and Homepage current.
+  * Fix the description.
 
  -- Len Ovens <len@ubuntustudio.org>  Wed, 04 Apr 2018 20:31:00 -0700
 
