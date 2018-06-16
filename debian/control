@@ -4,8 +4,9 @@ Priority: optional
 Maintainer: Ubuntu Studio Development Team <ubuntu-studio-devel@lists.ubuntu.com>
 Build-Depends: debhelper (>= 11)
 Standards-Version: 4.1.4
-Vcs-Bzr: https://code.launchpad.net/~ubuntustudio-dev/ubuntustudio-controls/devel
-Homepage: https://wiki.ubuntu.com/UbuntuStudio/UbuntuStudioControls
+Vcs-Git: https://git.launchpad.net/ubuntustudio-controls
+Vcs-Browser: https://git.launchpad.net/ubuntustudio-controls
+Homepage: https://launchpad.net/ubuntustudio-controls
 
 Package: ubuntustudio-controls
 Architecture: all
