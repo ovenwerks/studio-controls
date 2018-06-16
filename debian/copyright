@@ -1,34 +1,30 @@
-This package was debianized by Andrew Hunter <andrew@aehunter.net> on
-Thu, 10 Jan 2008 17:04:04 -0500.
+Format: https://www.debian.org/doc/packaging-manuals/copyright-format/1.0/
+Upstream-Name: ubuntustudio-controls
+Source: https://launchpad.net/ubuntustudio-controls
 
-It was downloaded from https://launchpad.net/ubuntustudio-controls/
+Files: *
+Copyright: 2008 Andrew Hunter <andrew@aehunter.net>
+           2008 Luis de Bethencourt Guimera
+License: GPL-2+
 
-Authors:
+Files: debian/*
+Copyright: 2008 Andrew Hunter <andrew@aehunter.net>
+           2018 Simon Quigley <tsimonq2@ubuntu.com>
+License: GPL-2+
 
-    Kaj Ailomaa <zequence@ubuntu.com>
-
-Copyright:
-
-    Copyright Andrew Hunter, Luis de Bethencourt Guimera 2008
-
-License:
-
-    This package is free software; you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
-    the Free Software Foundation; either version 2 of the License, or
-    (at your option) any later version.
-
-    This package is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General
-    Public License for more details.
-
-    You should have received a copy of the GNU General Public License
-    along with Ubuntu Studio Controls.  If not, see
-    <http://www.gnu.org/licenses/>.
-
-On Debian systems, the complete text of the GNU General
-Public License can be found in `/usr/share/common-licenses/GPL-2'.
-
-The Debian packaging is (C) 2008, Andrew Hunter <andrew@aehunter.net> and
-is licensed under the GPL, see above.al
+License: GPL-2+
+ This package is free software; you can redistribute it and/or modify
+ it under the terms of the GNU General Public License as published by
+ the Free Software Foundation; either version 2 of the License, or
+ (at your option) any later version.
+ .
+ This package is distributed in the hope that it will be useful,
+ but WITHOUT ANY WARRANTY; without even the implied warranty of
+ MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ GNU General Public License for more details.
+ .
+ You should have received a copy of the GNU General Public License
+ along with this program. If not, see <http://www.gnu.org/licenses/>
+ .
+ On Debian systems, the complete text of the GNU General
+ Public License version 2 can be found in "/usr/share/common-licenses/GPL-2".

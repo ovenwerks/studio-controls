@@ -37,6 +37,7 @@ ubuntustudio-controls (1.5) UNRELEASED; urgency=medium
   * Run wrap-and-sort.
   * Update Standards-version to 4.1.4, no changes needed.
   * Bump debhelper compat to 11, no changes needed.
+  * Modernize the copyright file.
 
  -- Len Ovens <len@ubuntustudio.org>  Wed, 04 Apr 2018 20:31:00 -0700
 
