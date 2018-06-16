@@ -20,6 +20,7 @@ Depends: a2jmidid,
          python-gobject,
          python3,
          zita-ajbridge,
+         ${python:Depends},
          ${misc:Depends}
 Conflicts: cadence
 Description: Ubuntu Studio Controls

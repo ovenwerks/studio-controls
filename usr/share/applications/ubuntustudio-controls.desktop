@@ -6,4 +6,5 @@ Exec=ubuntustudio-controls
 Icon=ubuntustudio-controls
 Terminal=false
 Type=Application
-Categories=GTK;System;Settings
+Categories=System;Settings
+Keywords=Audio;Utility;Settings

@@ -430,7 +430,7 @@ def connect_pa():
 		dev_has_pid = True
 
 	if not dev_has_pid:
-		print "no pid, start slave"
+		print ("no pid, start slave")
 		start_slave(d_out)
 		time.sleep(1)
 		
