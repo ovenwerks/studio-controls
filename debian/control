@@ -3,7 +3,7 @@ Section: admin
 Priority: optional
 Maintainer: Ubuntu Studio Development Team <ubuntu-studio-devel@lists.ubuntu.com>
 Build-Depends: debhelper (>=9)
-Standards-Version: 3.9.6.1
+Standards-Version: 4.1.4
 Vcs-Bzr: https://code.launchpad.net/~ubuntustudio-dev/ubuntustudio-controls/devel
 Homepage: https://wiki.ubuntu.com/UbuntuStudio/UbuntuStudioControls
 
