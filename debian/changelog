@@ -43,6 +43,7 @@ ubuntustudio-controls (1.5) UNRELEASED; urgency=medium
 
   [ Len Ovens ]
   * switched autojack to python3 so we just rely one python3
+  * Added man pages
 
  -- Len Ovens <len@ubuntustudio.org>  Wed, 04 Apr 2018 20:31:00 -0700
 
