@@ -41,6 +41,9 @@ ubuntustudio-controls (1.5) UNRELEASED; urgency=medium
   * Make Vcs-* and Homepage current.
   * Fix the description.
 
+  [ Len Ovens ]
+  * switched autojack to python3 so we just rely one python3
+
  -- Len Ovens <len@ubuntustudio.org>  Wed, 04 Apr 2018 20:31:00 -0700
 
 ubuntustudio-controls (1.4) artful; urgency=medium

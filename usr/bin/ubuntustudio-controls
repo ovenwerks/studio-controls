@@ -12,9 +12,7 @@ import resource
 import shutil
 import subprocess
 import glob
-import dbus.service
 import dbus.glib
-import gobject
 import dbus
 
 

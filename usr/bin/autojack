@@ -1,6 +1,6 @@
-#!/usr/bin/python -u
+#!/usr/bin/python3 -u
 
-# jack-usb - Monitors dbus for added audio devices (hot plugged USB audio intefaces)
+# autojack - Monitors dbus for added audio devices (hot plugged USB audio intefaces)
 # on detect it does one of three things:
 #	Makes it the jack device
 #	makes it a jack client (via zita-ajbridge)
@@ -10,7 +10,7 @@
 # name is present in XDEV then slave mode is assumed. If DEV has the
 # device name, then master is chosen.
 #
-# jack-usb also monitors dbus for messages from ubuntustudio-controls to:
+# autojack also monitors dbus for messages from ubuntustudio-controls to:
 #	- stop jack
 #	- re/start jack
 #	- remove a USB device as jack master to allow safe device removal
@@ -20,10 +20,9 @@ import os
 from os.path import expanduser
 import re
 import time
-import dbus.service
-import dbus.glib
-import gobject
+from gi.repository import GLib
 import dbus
+import dbus.mainloop.glib
 import subprocess
 import sys
 import signal
@@ -598,6 +597,7 @@ def ses_cb_ping (*args, **kwargs):
 def main():
 	''' Autojack runs at session start and manages audio for the session.
 	this is the daemon for ubuntustudio-controls'''
+	dbus.mainloop.glib.DBusGMainLoop(set_as_default=True)
 	config_start()
 	import_device_array()
 	system_bus = dbus.SystemBus()
@@ -614,8 +614,9 @@ def main():
 	cmd = "dbus-send --type=signal / org.ubuntustudio.control.event.pong_signal"
 	subprocess.call(cmd, shell = True)
 
-	mainloop = gobject.MainLoop ()
-	mainloop.run ()
+	loop = GLib.MainLoop()
+	loop.run()
+
 
 
 
