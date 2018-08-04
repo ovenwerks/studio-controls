@@ -10,7 +10,6 @@ Homepage: https://launchpad.net/ubuntustudio-controls
 
 Package: ubuntustudio-controls
 Architecture: all
-Section: admin
 Depends: a2jmidid,
          cpufrequtils,
          jackd2,
