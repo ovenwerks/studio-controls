@@ -1,4 +1,4 @@
-ubuntustudio-controls (1.5~ppa1) cosmic; urgency=medium
+ubuntustudio-controls (1.5) cosmic; urgency=medium
 
   [ Len Ovens ]
   * Rewrote so that GUI does not run sudo.
@@ -45,8 +45,9 @@ ubuntustudio-controls (1.5~ppa1) cosmic; urgency=medium
 
   [ Ross Gammon ]
   * Drop duplicate "Section" field in debian/control
+  * New version ready for upload (LP: #1785418)
 
- -- Ross Gammon <rossgammon@debian.org>  Sat, 04 Aug 2018 20:44:08 +0200
+ -- Ross Gammon <rossgammon@debian.org>  Sat, 04 Aug 2018 21:36:33 +0200
 
 ubuntustudio-controls (1.4) artful; urgency=medium
 
