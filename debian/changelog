@@ -47,7 +47,7 @@ ubuntustudio-controls (1.5) cosmic; urgency=medium
   * Drop duplicate "Section" field in debian/control
   * New version ready for upload (LP: #1785418)
 
- -- Ross Gammon <rossgammon@debian.org>  Sat, 04 Aug 2018 21:36:33 +0200
+ -- Simon Quigley <tsimonq2@ubuntu.com>  Sat, 11 Aug 2018 21:30:07 -0500
 
 ubuntustudio-controls (1.4) artful; urgency=medium
 
