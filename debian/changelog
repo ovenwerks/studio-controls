@@ -1,3 +1,9 @@
+ubuntustudio-controls (1.6) UNRELEASED; urgency=medium
+
+  * Make sure /lib files get installed (LP: #1791457)
+
+ -- Len Ovens <len@music>  Sat, 08 Sep 2018 12:42:31 -0700
+
 ubuntustudio-controls (1.5) cosmic; urgency=medium
 
   [ Len Ovens ]
