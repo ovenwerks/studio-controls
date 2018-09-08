@@ -188,7 +188,7 @@ class UbuntuStudioControls:
     # Audio stuff
 
     # first set defaults
-    self.jack = True
+    self.jack = False
     self.driver = "alsa"
     self.sr = "48000"
     self.late = "1024"
