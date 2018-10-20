@@ -14,7 +14,7 @@ import subprocess
 import glob
 import dbus.glib
 import dbus
-
+import time
 
 class SysInfo:
   """Get information about the system"""
@@ -493,22 +493,30 @@ class UbuntuStudioControls:
     self.jack_autostart_check.set_active(True)
     # Write audio setting to ~/.config/autojack
     self.config_save()
+    cmd = "dbus-send --type=signal / org.ubuntustudio.control.event.start_signal"
     if autojack:
-      cmd = "dbus-send --type=signal / org.ubuntustudio.control.event.start_signal"
       subprocess.call(cmd, shell = True)
     else:
-      self.start_autojack()
+      time.sleep(5)
+      if autojack:
+        subprocess.call(cmd, shell = True)
+      else:
+        self.start_autojack()
 
   def cb_jack_stop(self, button):
     global autojack
     self.jack_autostart_check.set_active(False)
     # Write audio setting to ~/.config/autojack
     self.config_save()
+    cmd = "dbus-send --type=signal / org.ubuntustudio.control.event.stop_signal"
     if autojack:
-      cmd = "dbus-send --type=signal / org.ubuntustudio.control.event.stop_signal"
       subprocess.call(cmd, shell = True)
     else:
-      self.start_autojack()
+      time.sleep(5)
+      if autojack:
+        subprocess.call(cmd, shell = True)
+      else:
+        self.start_autojack()
 
   # this belongs to config_save()
   def z_save(self, model, path, d_iter, save_file):
@@ -522,12 +530,16 @@ class UbuntuStudioControls:
     global autojack
     # Write audio setting to ~/.config/autojack
     self.config_save()
+    cmd = "dbus-send --type=signal / org.ubuntustudio.control.event.config_signal"
     if autojack:
       # we should send a message to autojack "config"
-      cmd = "dbus-send --type=signal / org.ubuntustudio.control.event.config_signal"
       subprocess.call(cmd, shell = True)
     else:
-      self.start_autojack()
+      time.sleep(5)
+      if autojack:
+        subprocess.call(cmd, shell = True)
+      else:
+        self.start_autojack()
 
   def config_save(self):
     # Write audio setting to ~/.config/autojack
@@ -556,6 +568,8 @@ class UbuntuStudioControls:
   def start_autojack(self):
     '''start autojack as it has been detected as not running'''
     print("Starting Autojack...")
+    cmd = "dbus-send --type=signal / org.ubuntustudio.control.event.quit_signal"
+    subprocess.call(cmd, shell = True)
     #do it
     home = expanduser("~")
     if not os.path.exists(home+"/.log"):
