@@ -1,3 +1,9 @@
+ubuntustudio-controls (1.7) UNRELEASED; urgency=medium
+
+  * Fix double daemon startup (LP: #1798927)
+
+ -- Len Ovens <len@music>  Sat, 20 Oct 2018 17:04:16 -0700
+
 ubuntustudio-controls (1.6) cosmic; urgency=medium
 
   [ Ross Gammon ]
