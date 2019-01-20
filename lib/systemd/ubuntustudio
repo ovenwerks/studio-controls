@@ -32,12 +32,12 @@ RETVAL=0
 
 logger "$DESC: Setting system settings"
 if check_turbo_avail ; then
-	logger "Set no_turbo $NO_TURBO"
+	logger "$DESC: Set no_turbo $NO_TURBO"
 	echo "${NO_TURBO}" | tee /sys/devices/system/cpu/intel_pstate/no_turbo || \
 		RETVAL=$?
 	logger "$DESC: $RETVAL "
 else
-	log_action_cont_msg "turbo/boost not available"
+	log_action_cont_msg "$DESC: turbo/boost not available"
 	log_action_end_msg $RETVAL
 fi
 
