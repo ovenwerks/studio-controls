@@ -3,56 +3,74 @@
 # Script to change do system side things for ubuntustudio-controls
 #
 #
-AVAILABLE="/sys/devices/system/cpu/cpu0/cpufreq/scaling_available_governors"
-[ -f $AVAILABLE ] || exit 0
-read governors < $AVAILABLE
-GOVERNOR="unset"
+GOVERNOR="ondemand"
+NO_TURBO="0"
 
-# just in case
-/usr/sbin/update-rc.d ubuntustudio defaults
+set_governors() {
+  # do this here in case we hit exit 0 before the end
+  echo "NO_TURBO=$NO_TURBO\n" > /etc/default/ubuntustudio
+  echo "GOVERNOR=${GOVERNOR}\n" >> /etc/default/ubuntustudio
+  AVAILABLE="/sys/devices/system/cpu/cpu0/cpufreq/scaling_available_governors"
+  [ -f $AVAILABLE ] || exit 0
+  read governors < $AVAILABLE
+  case "$GOVERNOR" in
+    performance)
+      case $governors in
+        *performance*)
+          GOVERNOR="performance"
+          ;;
+        *)
+          exit 0
+          ;;
+      esac
+      ;;
+    *)
+      case $governors in
+        *ondemand*)
+          GOVERNOR="ondemand"
+          ;;
+        *powersave*)
+          GOVERNOR="powersave"
+          ;;
+        *)
+          exit 0
+          ;;
+      esac
+    ;;
+  esac
 
+	for CPUFREQ in /sys/devices/system/cpu/cpu*/cpufreq/scaling_governor
+		do
+			[ -f $CPUFREQ ] || continue
+			echo -n $GOVERNOR > $CPUFREQ
+		done
+  #reswrite just in case we corrected something
+  echo "NO_TURBO=$NO_TURBO\n" > /etc/default/ubuntustudio
+  echo "GOVERNOR=${GOVERNOR}\n" >> /etc/default/ubuntustudio
+
+}
+
+# any setting in this file will override the above defaults.
+# ubuntustudio-controls will normally write the defaults file
+if [ -f /etc/default/ubuntustudio ] ; then
+	. /etc/default/ubuntustudio
+fi
 
 case "$1" in
 	performance)
-		/usr/sbin/update-rc.d ondemand disable
-         case $governors in
-              *performance*)
-                    GOVERNOR="performance"
-                    ;;
-               *)
-                    exit 0
-                    ;;
-          esac
-          ;;
-
+    GOVERNOR="performance"
+    set_governors
+    ;;
 
 	ondemand)
-		/usr/sbin/update-rc.d ondemand enable
-		case $governors in
-			*ondemand*)
-				GOVERNOR="ondemand"
-				;;
-			*powersave*)
-				GOVERNOR="powersave"
-				;;
-			*)
-				exit 0
-				;;
-		esac
-
-	;;
+		GOVERNOR="ondemand"
+    set_governors
+		;;
 
 	powersave)
-		/usr/sbin/update-rc.d ondemand enable
-         case $governors in
-               *powersave*)
-                    GOVERNOR="powersave"
-                    ;;
-               *)
-                    exit 0
-                    ;;
-          esac
-	 ;;
+    GOVERNOR="powersave"
+    set_governors
+    ;;
 
 	fix)
 		if [ -f /etc/security/limits.d/audio.conf.disabled ]; then
@@ -66,6 +84,7 @@ case "$1" in
 	boost)
 		if [ -f /sys/devices/system/cpu/intel_pstate/no_turbo ]; then
 			echo "NO_TURBO=0\n" > /etc/default/ubuntustudio
+      echo "GOVERNOR=${GOVERNOR}" >> /etc/default/ubuntustudio
 			echo "0" | tee /sys/devices/system/cpu/intel_pstate/no_turbo
 		fi
 		;;
@@ -73,6 +92,7 @@ case "$1" in
 	noboost)
 		if [ -f /sys/devices/system/cpu/intel_pstate/no_turbo ]; then
 			echo "NO_TURBO=1\n" > /etc/default/ubuntustudio
+      echo "GOVERNOR=${GOVERNOR}" >> /etc/default/ubuntustudio
 			echo "1" | tee /sys/devices/system/cpu/intel_pstate/no_turbo
 		fi
 		;;
@@ -91,13 +111,3 @@ case "$1" in
 	 ;;
 
 	esac
-
-
-	if [ $GOVERNOR != "unset" ]; then
-		for CPUFREQ in /sys/devices/system/cpu/cpu*/cpufreq/scaling_governor
-		do
-			[ -f $CPUFREQ ] || continue
-			echo -n $GOVERNOR > $CPUFREQ
-		done
-	fi
-
