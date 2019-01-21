@@ -27,23 +27,22 @@ fi
 
 # if not enabled then exit gracefully
 [ "$ENABLE" = "true" ] || exit 0
-
 RETVAL=0
 
-logger "$DESC: Setting system settings"
+logger "${DESC}: Setting system settings"
 if check_turbo_avail ; then
-	logger "$DESC: Set no_turbo $NO_TURBO"
+	logger "${DESC}: Set no_turbo ${NO_TURBO}"
 	echo "${NO_TURBO}" | tee /sys/devices/system/cpu/intel_pstate/no_turbo || \
 		RETVAL=$?
-	logger "$DESC: $RETVAL "
+	logger "${DESC}: ${RETVAL} "
 else
-	log_action_cont_msg "$DESC: turbo/boost not available"
-	log_action_end_msg $RETVAL
+	logger "${DESC}: turbo/boost not available"
 fi
 
 AVAILABLE="/sys/devices/system/cpu/cpu0/cpufreq/scaling_available_governors"
 [ -f $AVAILABLE ] || exit 0
 read governors < $AVAILABLE
+
 case "$GOVERNOR" in
   performance)
     case $governors in
@@ -70,10 +69,14 @@ case "$GOVERNOR" in
   ;;
 esac
 
+logger "${DESC}: Using ${GOVERNOR} governor"
+
 for CPUFREQ in /sys/devices/system/cpu/cpu*/cpufreq/scaling_governor
   do
+		logger "${DESC}: setting ${GOVERNOR} for ${CPUFREQ}"
     [ -f $CPUFREQ ] || continue
     echo -n $GOVERNOR > $CPUFREQ
   done
+logger "${DESC}: Governor set finished"
 exit 0
 
