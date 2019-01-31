@@ -78,7 +78,9 @@ case "$1" in
 		elif ! [ -f /etc/security/limits.d/audio.conf ]; then
 			cp /usr/share/ubuntustudio-controls/audio.conf /etc/security/limits.d/audio.conf
 		fi
-		/usr/sbin/adduser `id -nu ${PKEXEC_UID}` audio
+    if [ ${PKEXEC_UID} -gt 999 ]; then
+      /usr/sbin/adduser `id -nu ${PKEXEC_UID}` audio
+    fi
 		;;
 
 	boost)

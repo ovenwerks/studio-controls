@@ -4,6 +4,7 @@ ubuntustudio-controls (1.7) UNRELEASED; urgency=medium
   * Fix governor setting over boot (LP: #1809024)
   * Remove file left over from before
   * Properly ecape variables in logger lines
+  * Do not set group if UID is less than 999
 
  -- Len Ovens <len@music>  Sat, 20 Oct 2018 17:04:16 -0700
 
