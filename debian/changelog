@@ -5,6 +5,7 @@ ubuntustudio-controls (1.7) UNRELEASED; urgency=medium
   * Remove file left over from before
   * Properly ecape variables in logger lines
   * Do not set group if UID is less than 999
+  * Change Latency to Buffer size (LP: #1815240)
 
  -- Len Ovens <len@music>  Sat, 20 Oct 2018 17:04:16 -0700
 

@@ -386,7 +386,7 @@
                         <property name="visible">True</property>
                         <property name="can_focus">False</property>
                         <property name="halign">end</property>
-                        <property name="label" translatable="yes">Jack Latency:</property>
+                        <property name="label" translatable="yes">Jack Buffer Size (Latency):</property>
                       </object>
                       <packing>
                         <property name="left_attach">0</property>
@@ -411,15 +411,15 @@
                         <property name="can_focus">False</property>
                         <property name="active">6</property>
                         <items>
-                          <item id="16" translatable="yes">.67ms (buffer 16)</item>
-                          <item id="32" translatable="yes">1.33ms (buffer 32)</item>
-                          <item id="64" translatable="yes">2.67ms (buffer 64)</item>
-                          <item id="128" translatable="yes">5.33 (buffer 128)</item>
-                          <item id="256" translatable="yes">10.7ms (buffer 256)</item>
-                          <item id="512" translatable="yes">21.3ms (buffer 512)</item>
-                          <item id="1024" translatable="yes">42.7ms (buffer 1024)</item>
-                          <item id="2048" translatable="yes">85.3ms (buffer 2048)</item>
-                          <item id="4096" translatable="yes">171ms (buffer 4096)</item>
+                          <item id="16" translatable="yes">16</item>
+                          <item id="32" translatable="yes">32</item>
+                          <item id="64" translatable="yes">64</item>
+                          <item id="128" translatable="yes">128</item>
+                          <item id="256" translatable="yes">256</item>
+                          <item id="512" translatable="yes">512</item>
+                          <item id="1024" translatable="yes">1024</item>
+                          <item id="2048" translatable="yes">2048</item>
+                          <item id="4096" translatable="yes">4096</item>
                         </items>
                       </object>
                       <packing>
