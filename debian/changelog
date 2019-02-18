@@ -1,5 +1,6 @@
-ubuntustudio-controls (1.7) UNRELEASED; urgency=medium
+ubuntustudio-controls (1.7) disco; urgency=medium
 
+  [ Len Ovens ]
   * Fix double daemon startup (LP: #1798927)
   * Fix governor setting over boot (LP: #1809024)
   * Remove file left over from before
@@ -7,7 +8,7 @@ ubuntustudio-controls (1.7) UNRELEASED; urgency=medium
   * Do not set group if UID is less than 999
   * Change Latency to Buffer size (LP: #1815240)
 
- -- Len Ovens <len@music>  Sat, 20 Oct 2018 17:04:16 -0700
+ -- Ross Gammon <rossgammon@debian.org>  Mon, 18 Feb 2019 21:51:15 +0100
 
 ubuntustudio-controls (1.6) cosmic; urgency=medium
 
