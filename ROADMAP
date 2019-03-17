@@ -8,6 +8,15 @@ Bugs:
 	- dbus service file missing / not working
 
 Features:
+	- Need periods (currently uses 2 but sometimes 3 is better)
+	- needs backend ALSA/FireWire/Dummy
+	- remove auto start jack check box
+	- add Jack running indicator
+	- remove Cadence from autostart and Cadences pulseaudio config
+		Cadence will reinsert these if the user decides to use it again
+		but at least if controls is used PA should get set to stock.
+		Will also have to restart PA as Cadence disables respawn so
+		one start is needed to re-enable that.
 	- adding in stuff from https://github.com/jhernberg/udev-rtirq so that
 		hot plugged USB devices get higher priority.
 	- monitor headphone plug status if PCH is being used for output
