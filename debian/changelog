@@ -8,6 +8,8 @@ ubuntustudio-controls (1.8) eoan; urgency=medium
 
   [ Len Ovens ]
   * Add to ROADMAP next steps
+  * Removed Jack autostart checkbox
+  * Added Jack Running indicator
 
   [ Ross Gammon ]
   * Set check box status correctly from config file (LP: #1826413)

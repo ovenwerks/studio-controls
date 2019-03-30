@@ -6,12 +6,18 @@
 
 Bugs:
 	- dbus service file missing / not working
+	- USB is only device, doesn't work right
+	- any change should write config file and send reconfig signal
+	- add device mixer button
 
 Features:
-	- Need periods (currently uses 2 but sometimes 3 is better)
 	- needs backend ALSA/FireWire/Dummy
-	- remove auto start jack check box
-	- add Jack running indicator
+		Note: BE != alsa should disable some things:
+			USB master disable but USB can still be bridged
+			Jack master needs to be cleared and be text entry
+			Firewire back end should check for availablity of FW
+	Done - remove auto start jack check box
+	Done - add Jack running indicator
 	- remove Cadence from autostart and Cadences pulseaudio config
 		Cadence will reinsert these if the user decides to use it again
 		but at least if controls is used PA should get set to stock.
