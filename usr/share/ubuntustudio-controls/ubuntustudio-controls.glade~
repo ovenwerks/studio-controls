@@ -627,7 +627,6 @@
                           <item translatable="yes">firewire</item>
                           <item translatable="yes">dummy</item>
                         </items>
-                        <signal name="changed" handler="jack_driver_changed" swapped="no"/>
                       </object>
                       <packing>
                         <property name="left_attach">1</property>

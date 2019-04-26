@@ -124,18 +124,19 @@ class UbuntuStudioControls:
     self.message_dialog_rt_info = builder.get_object('message_dialog_rt_info')
     self.message_dialog_changes_info.set_transient_for(self.window_main)
     self.message_dialog_rt_info.set_transient_for(self.window_main)
-    '''Get buttons'''
+    self.button_msg_ok = builder.get_object('button_msg_ok')
+    '''Get buttons for system tab'''
     self.rt_button = builder.get_object('rt_button')
     self.rt_warning = builder.get_object('rt_warning')
     self.combo_governor = builder.get_object('combo_governor')
     self.combo_boost = builder.get_object('combo_boost')
-    self.button_msg_ok = builder.get_object('button_msg_ok')
     '''audio tab stuff'''
     self.jack_device_combo = builder.get_object('jack_device_combo')
     self.jack_usb_dev_combo = builder.get_object('jack_usb_dev_combo')
     self.jack_rate_combo = builder.get_object('jack_rate_combo')
     self.combobox_late = builder.get_object('combobox_late')
     self.combo_periods = builder.get_object('combo_periods')
+    self.combo_backend = builder.get_object('combo_backend')
     self.usb_plug_check = builder.get_object('usb_plug_check')
     self.combo_zita_add = builder.get_object('combo_zita_add')
     self.combo_zita_remove = builder.get_object('combo_zita_remove')
@@ -248,6 +249,7 @@ class UbuntuStudioControls:
     self.jack_rate_combo.set_active_id(self.sr)
     self.combobox_late.set_active_id(self.late)
     self.combo_periods.set_active_id(self.period)
+    self.combo_backend.set_active_id(self.driver)
     if self.usb == "True":
         self.usb_plug_check.set_active(True)
     elif self.usb == "False":
@@ -267,11 +269,14 @@ class UbuntuStudioControls:
     self.combo_output.append("system", "Jack Master")
     self.combo_output.set_active_id("system")
     self.jack_usb_dev_combo.append("", "No USB Master")
-    if self.usbdev == "":
-      self.jack_usb_dev_combo.set_active_id("")
+    if self.driver != "alsa":
+      self.jack_usb_dev_combo.set_sensitive(False)
     else:
-      self.jack_usb_dev_combo.append(self.usbdev, self.usbdev)
-      self.jack_usb_dev_combo.set_active_id(self.usbdev)
+      if self.usbdev == "":
+        self.jack_usb_dev_combo.set_active_id("")
+      else:
+        self.jack_usb_dev_combo.append(self.usbdev, self.usbdev)
+        self.jack_usb_dev_combo.set_active_id(self.usbdev)
 
     usb_save = ""
     pci_save = ""
@@ -319,25 +324,26 @@ class UbuntuStudioControls:
                 if pci_save == "":
                   pci_save = next_id
                 self.jack_device_combo.append(next_id, next_d)
-                # opps need to check for playback able
-                if next_d.find("playback") >= 0:
-                  self.combo_output.append(next_id, next_d)
                 if x == 0 and self.dev == "default":
                   self.dev = next_id
                 if x == 0 and self.dev_desc == "default":
                   self.dev_desc = next_d
-                if x == 0 and self.d_out == "default":
-                  self.d_out = next_id 
                 if self.dev == next_id:
                   self.jack_device_combo.set_active_id(next_id)
                   self.dev_desc = next_d
+                if self.dev != next_id and self.zdev.find(next_id) >= 0:
+                  self.combo_zita_remove.append(next_id, next_d)
                 else:
-                  if self.zdev.find(next_id) >= 0:
-                    self.combo_zita_remove.append(next_id, next_d)
-                  else:
+                  if self.dev != next_id:
                     self.combo_zita_add.append(next_id, next_d)
-                if self.d_out == next_id:
-                  self.combo_output.set_active_id(next_id)
+                # opps need to check for playback able
+                if next_d.find("playback") >= 0:
+                  self.combo_output.append(next_id, next_d)
+                  if x == 0 and self.d_out == "default":
+                    self.d_out = next_id
+                  if self.d_out == next_id:
+                    self.combo_output.set_active_id(next_id)
+
     if pci_save == "":
       self.jack_usb_dev_combo.set_active_id(usb_save)
       self.jack_device_combo.append("100,0,0", "USB device below")
@@ -360,6 +366,7 @@ class UbuntuStudioControls:
       "cb_jack_stop": self.cb_jack_stop,
       "cb_audio_apply": self.cb_audio_apply,
       "jack_device_changed": self.jack_device_changed,
+      "jack_driver_changed": self.jack_driver_changed,
       "usb_master_changed": self.usb_master_changed,
       "usb_master_entered": self.usb_master_entered,
     }
@@ -504,6 +511,20 @@ class UbuntuStudioControls:
     a_id = str(button.get_active_id())
     a_desc = str(button.get_active_text())
     if a_id != "None":
+      self.combo_zita_add.append(self.dev, self.dev_desc)
+      self.dev = a_id
+      self.dev_desc = a_desc
+      model = self.combo_zita_add.get_model()
+      model.foreach(self.dev_ser, a_id)
+      model = self.combo_zita_remove.get_model()
+      model.foreach(self.dev_ser, a_id)
+
+  def jack_driver_changed(self, button):
+    a_driver = str(button.get_active_text())
+    if self.driver == "alsa":
+      temp_dev = self.dev
+    self.driver == a_driver
+    if a_driver != "alsa":
       self.combo_zita_add.append(self.dev, self.dev_desc)
       self.dev = a_id
       self.dev_desc = a_desc
