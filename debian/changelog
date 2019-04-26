@@ -1,3 +1,9 @@
+ubuntustudio-controls (1.7.1) disco; urgency=medium
+
+  * Set check box status correctly from config file (LP: #1826413)
+
+ -- Ross Gammon <rossgammon@debian.org>  Fri, 26 Apr 2019 20:16:59 +0200
+
 ubuntustudio-controls (1.7) disco; urgency=medium
 
   [ Len Ovens ]
