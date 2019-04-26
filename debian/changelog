@@ -1,8 +1,12 @@
-ubuntustudio-controls (1.7) UNRELEASED; urgency=medium
+ubuntustudio-controls (1.8) eoan; urgency=medium
 
+  [ Len Ovens ]
   * Add to ROADMAP next steps
 
- -- Len Ovens <len@ovenwerks.net>  Sun, 17 Mar 2019 08:48:32 -0700
+  [ Ross Gammon ]
+  * Set check box status correctly from config file (LP: #1826413)
+
+ -- Ross Gammon <rossgammon@debian.org>  Fri, 26 Apr 2019 15:34:52 +0200
 
 ubuntustudio-controls (1.7) disco; urgency=medium
 
