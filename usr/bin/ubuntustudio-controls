@@ -247,11 +247,23 @@ class UbuntuStudioControls:
     self.jack_rate_combo.set_active_id(self.sr)
     self.combobox_late.set_active_id(self.late)
     self.combo_periods.set_active_id(self.period)
-    self.usb_plug_check.set_active(self.usb)
+    if self.usb == "True":
+        self.usb_plug_check.set_active(True)
+    elif self.usb == "False":
+        self.usb_plug_check.set_active(False)
     self.combo_out_ports.set_active_id(self.o_port)
-    self.jack_autostart_check.set_active(self.jack)
-    self.jack_midi_check.set_active(self.a2j)
-    self.pulse_check.set_active(self.pulse)
+    if self.jack == "True":
+        self.jack_autostart_check.set_active(True)
+    elif self.jack == "False":
+        self.jack_autostart_check.set_active(False)
+    if self.a2j == "True":
+        self.jack_midi_check.set_active(True)
+    elif self.a2j == "False":
+        self.jack_midi_check.set_active(False)
+    if self.pulse == "True":
+        self.pulse_check.set_active(True)
+    elif self.pulse == "False":
+        self.pulse_check.set_active(False)
 
     self.jack_device_combo.append("default", "default")
     self.jack_device_combo.set_active_id("default")
