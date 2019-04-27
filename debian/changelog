@@ -1,3 +1,9 @@
+ubuntustudio-controls (1.8) UNRELEASED; urgency=medium
+
+  * Default devices must be valid devices (LP: #1822463)
+
+ -- Len Ovens <len@music>  Fri, 26 Apr 2019 23:31:26 -0700
+
 ubuntustudio-controls (1.8) eoan; urgency=medium
 
   [ Len Ovens ]

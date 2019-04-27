@@ -134,7 +134,7 @@ def import_config():
 	global a2j
 	a2j = "True"
 	global dev
-	dev = "default"
+	dev = "0,0,0"
 	global dev_desc
 	dev_desc = "audio device"
 	global d_out

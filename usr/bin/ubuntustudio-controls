@@ -197,9 +197,9 @@ class UbuntuStudioControls:
     self.zdev = ""
     self.pulse = True
     self.a2j = True
-    self.dev = "default"
+    self.dev = "0,0,0"
     self.dev_desc = "default"
-    self.d_out = "default"
+    self.d_out = "system"
     self.o_port = "1"
     self.usb = "slave"
     self.usbdev = ""
@@ -265,8 +265,8 @@ class UbuntuStudioControls:
     elif self.pulse == "False":
         self.pulse_check.set_active(False)
 
-    self.jack_device_combo.append("default", "default")
-    self.jack_device_combo.set_active_id("default")
+    self.jack_device_combo.append("0,0,0", "default")
+    self.jack_device_combo.set_active_id("0,0,0")
     self.combo_output.append("system", "Jack Master")
     self.combo_output.set_active_id("system")
     self.jack_usb_dev_combo.append("", "No USB Master")
@@ -276,6 +276,8 @@ class UbuntuStudioControls:
       self.jack_usb_dev_combo.append(self.usbdev, self.usbdev)
       self.jack_usb_dev_combo.set_active_id(self.usbdev)
 
+    usb_save = ""
+    pci_save = ""
     for x in range(0, 10):
       #card loop
       cname = ""
@@ -312,9 +314,13 @@ class UbuntuStudioControls:
 
               # this block will fit where ever we know sub-ids and description
               if is_usb:
+                if usb_save == "":
+                  usb_save = next_id
                 if next_id != self.usbdev:
                   self.jack_usb_dev_combo.append(next_id, next_d)
               else:
+                if pci_save == "":
+                  pci_save = next_id
                 self.jack_device_combo.append(next_id, next_d)
                 # opps need to check for playback able
                 if next_d.find("playback") >= 0:
@@ -335,7 +341,10 @@ class UbuntuStudioControls:
                     self.combo_zita_add.append(next_id, next_d)
                 if self.d_out == next_id:
                   self.combo_output.set_active_id(next_id)
-
+    if pci_save == "":
+      self.jack_usb_dev_combo.set_active_id(usb_save)
+      self.jack_device_combo.append("100,0,0", "USB device below")
+      self.jack_device_combo.set_active_id("100,0,0")
 
     handlers = {
       "on_window_main_delete_event": self.on_window_main_delete_event,
