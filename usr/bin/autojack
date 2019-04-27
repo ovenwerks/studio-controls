@@ -160,6 +160,8 @@ def import_config():
 					driver = lsplit[1]
 				elif lsplit[0] == "DEV":
 					dev = dev_desc = lsplit[1]
+					if dev == "default":
+						dev = 0,0,0
 				elif lsplit[0] == "RATE":
 					sr = lsplit[1]
 				elif lsplit[0] == "FRAME":
@@ -174,6 +176,8 @@ def import_config():
 					a2j = lsplit[1]
 				elif lsplit[0] == "OUTPUT":
 					d_out = lsplit[1]
+					if d_out == "default":
+						d_out = "system"
 				elif lsplit[0] == "PORTS":
 					o_port = lsplit[1]
 				elif lsplit[0] == "XDEV":
@@ -621,4 +625,4 @@ def main():
 
 
 if __name__ == '__main__':
-    main()
+		main()
