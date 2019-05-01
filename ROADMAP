@@ -6,7 +6,7 @@
 
 Bugs:
 	- dbus service file missing / not working
-	- USB is only device, doesn't work right
+	FIXed - USB is only device, doesn't work right
 	- any change should write config file and send reconfig signal
 	- add device mixer button
 

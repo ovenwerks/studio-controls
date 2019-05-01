@@ -148,6 +148,7 @@ class UbuntuStudioControls:
 
     user_bus = dbus.SessionBus()
     user_bus.add_signal_receiver(self.db_ses_cb, dbus_interface='org.ubuntustudio.control.event', signal_name='pong_signal')
+    user_bus.add_signal_receiver(self.db_new_usb, dbus_interface='org.ubuntustudio.control.event', signal_name='usb_signal')
 
     '''Check if audio.conf and/or audio.conf.disabled exists, returns are true or false'''
     self.rt_file = False
@@ -208,6 +209,7 @@ class UbuntuStudioControls:
 
     global autojack
     autojack = False
+    self.refreshing = False
 
     # read in autojack config file
     home = expanduser("~")
@@ -264,19 +266,94 @@ class UbuntuStudioControls:
     elif self.pulse == "False":
         self.pulse_check.set_active(False)
 
+    self.refresh_dropdowns()
+
+    handlers = {
+      "on_window_main_delete_event": self.on_window_main_delete_event,
+      "on_window_help_delete_event": self.on_window_help_delete_event,
+      "on_main_button_cancel_clicked": self.on_main_button_cancel_clicked,
+      "on_main_button_help_clicked": self.on_main_button_help_clicked,
+      "combo_governor_changed_cb": self.combo_governor_changed_cb,
+      "combo_boost_changed_cb": self.combo_boost_changed_cb,
+      "rt_button_hit": self.rt_button_hit,
+      "on_button_msg_ok_clicked": self.on_button_msg_ok_clicked,
+      "on_button_rt_info_ok_clicked": self.on_button_rt_info_ok_clicked,
+      "on_button_help_ok_clicked": self.on_button_help_ok_clicked,
+      "cb_zita_add": self.cb_zita_add,
+      "cb_zita_remove": self.cb_zita_remove,
+      "cb_jack_start": self.cb_jack_start,
+      "cb_jack_stop": self.cb_jack_stop,
+      "cb_audio_apply": self.cb_audio_apply,
+      "jack_device_changed": self.jack_device_changed,
+      "jack_driver_changed": self.jack_driver_changed,
+      "usb_master_changed": self.usb_master_changed,
+      "usb_master_entered": self.usb_master_entered,
+    }
+    builder.connect_signals(handlers)
+
+    self.rtsetup = RTSetup()
+    self.timeout_id = GLib.timeout_add(3000, self.check_jack_status, None)
+
+  def db_ses_cb(*args, **kwargs):
+    ''' this means we got a responce from autojack, Good'''
+    global autojack
+    autojack = True
+    print ("autojack is running")
+
+  def db_new_usb(*args, **kwargs):
+    ''' Autojack tells us a USB audio device has been plugged in or
+    unplugged. '''
+    global newusb
+    newusb = True
+    print ("autojack sees usb change")
+
+  def check_jack_status(self, user_data):
+    '''check if jack is running
+    then set jack status indicator'''
+
+    try:
+      client = jack.Client('controls', False, True)
+      self.prog_jack.set_text("Jack is Running")
+      self.prog_jack.set_fraction(1.0)
+    except jack.JackError:
+      self.prog_jack.set_text("Jack is Stopped")
+      self.prog_jack.set_fraction(0.0)
+      return True
+    client.close()
+    return True
+
+
+  def refresh_dropdowns(self):
+    '''this call refreshes the device lists for all drop downs
+    that use devices. If backend is not "alsa" then the jack master
+    and USB master are set to default and no usb master. However,
+    all all alsa devices will still be available for bridging and
+    as output device.'''
+
+    self.jack_device_combo.get_model().clear()
     self.jack_device_combo.append("0,0,0", "default")
-    self.jack_device_combo.set_active_id("0,0,0")
+    if self.dev == "0,0,0":
+      self.jack_device_combo.set_active_id("0,0,0")
+
+    self.combo_output.get_model().clear()
     self.combo_output.append("system", "Jack Master")
-    self.combo_output.set_active_id("system")
+    if self.d_out == "system":
+      self.combo_output.set_active_id("system")
+
+    self.jack_usb_dev_combo.get_model().clear()
     self.jack_usb_dev_combo.append("", "No USB Master")
-    if self.driver != "alsa":
-      self.jack_usb_dev_combo.set_sensitive(False)
-    else:
+
+    if self.driver == "alsa":
       if self.usbdev == "":
         self.jack_usb_dev_combo.set_active_id("")
       else:
         self.jack_usb_dev_combo.append(self.usbdev, self.usbdev)
         self.jack_usb_dev_combo.set_active_id(self.usbdev)
+        self.jack_device_combo.append("200,0,0", "USB Jack Master")
+        self.jack_device_combo.set_active_id("200,0,0")
+
+    self.combo_zita_remove.get_model().clear()
+    self.combo_zita_add.get_model().clear()
 
     usb_save = ""
     pci_save = ""
@@ -318,127 +395,40 @@ class UbuntuStudioControls:
               if is_usb:
                 if usb_save == "":
                   usb_save = next_id
-                if next_id != self.usbdev:
+                if next_id != self.usbdev and self.driver == "alsa":
                   self.jack_usb_dev_combo.append(next_id, next_d)
+                
               else:
                 if pci_save == "":
                   pci_save = next_id
-                self.jack_device_combo.append(next_id, next_d)
-                if x == 0 and self.dev == "default":
-                  self.dev = next_id
-                if x == 0 and self.dev_desc == "default":
-                  self.dev_desc = next_d
-                if self.dev == next_id:
-                  self.jack_device_combo.set_active_id(next_id)
-                  self.dev_desc = next_d
+                if self.driver == "alsa":
+                  self.jack_device_combo.append(next_id, next_d)
+                  if self.dev == next_id:
+                    self.jack_device_combo.set_active_id(next_id)
+                    self.dev_desc = next_d
                 if self.dev != next_id and self.zdev.find(next_id) >= 0:
                   self.combo_zita_remove.append(next_id, next_d)
                 else:
                   if self.dev != next_id:
                     self.combo_zita_add.append(next_id, next_d)
                 # opps need to check for playback able
-                if next_d.find("playback") >= 0:
-                  self.combo_output.append(next_id, next_d)
-                  if x == 0 and self.d_out == "default":
-                    self.d_out = next_id
-                  if self.d_out == next_id:
-                    self.combo_output.set_active_id(next_id)
+              if next_d.find("playback") >= 0:
+                self.combo_output.append(next_id, next_d)
+                if self.d_out == next_id:
+                  self.combo_output.set_active_id(next_id)
 
-    if pci_save == "":
+    if pci_save == "" and self.usbdev == "":
+      self.usbdev = usb_save
       self.jack_usb_dev_combo.set_active_id(usb_save)
-      self.jack_device_combo.append("100,0,0", "USB device below")
-      self.jack_device_combo.set_active_id("100,0,0")
-
-    handlers = {
-      "on_window_main_delete_event": self.on_window_main_delete_event,
-      "on_window_help_delete_event": self.on_window_help_delete_event,
-      "on_main_button_cancel_clicked": self.on_main_button_cancel_clicked,
-      "on_main_button_help_clicked": self.on_main_button_help_clicked,
-      "combo_governor_changed_cb": self.combo_governor_changed_cb,
-      "combo_boost_changed_cb": self.combo_boost_changed_cb,
-      "rt_button_hit": self.rt_button_hit,
-      "on_button_msg_ok_clicked": self.on_button_msg_ok_clicked,
-      "on_button_rt_info_ok_clicked": self.on_button_rt_info_ok_clicked,
-      "on_button_help_ok_clicked": self.on_button_help_ok_clicked,
-      "cb_zita_add": self.cb_zita_add,
-      "cb_zita_remove": self.cb_zita_remove,
-      "cb_jack_start": self.cb_jack_start,
-      "cb_jack_stop": self.cb_jack_stop,
-      "cb_audio_apply": self.cb_audio_apply,
-      "jack_device_changed": self.jack_device_changed,
-      "jack_driver_changed": self.jack_driver_changed,
-      "usb_master_changed": self.usb_master_changed,
-      "usb_master_entered": self.usb_master_entered,
-    }
-    builder.connect_signals(handlers)
-
-    self.rtsetup = RTSetup()
-    self.timeout_id = GLib.timeout_add(3000, self.check_jack_status, None)
-
-  def db_ses_cb(*args, **kwargs):
-    ''' this means we got a responce from autojack, Good'''
-    global autojack
-    autojack = True
-    print ("autojack is running")
-
-  def check_jack_status(self, user_data):
-    '''check if jack is running
-    then set jack status indicator'''
-
-    try:
-      client = jack.Client('controls', False, True)
-      self.prog_jack.set_text("Jack is Running")
-      self.prog_jack.set_fraction(1.0)
-    except jack.JackError:
-      self.prog_jack.set_text("Jack is Stopped")
-      self.prog_jack.set_fraction(0.0)
-      return True
-    client.close()
-    return True
+      self.jack_device_combo.append("200,0,0", "USB device below")
+      self.jack_device_combo.set_active_id("200,0,0")
 
   def usb_master_entered(self, button, user):
     '''Before the user drops down refill this as it may have changed'''
-    self.jack_usb_dev_combo.get_model().clear()
-    self.jack_usb_dev_combo.append("", "No USB Master")
-    if self.usbdev == "":
-      self.jack_usb_dev_combo.set_active_id("")
-    else:
-      self.jack_usb_dev_combo.append(self.usbdev, self.usbdev)
-      self.jack_usb_dev_combo.set_active_id(self.usbdev)
-    for x in range(0, 10):
-      #card loop
-      cname = ""
-      next_id = ""
-      next_d = ""
-      if os.path.exists("/proc/asound/card"+str(x)):
-        with open("/proc/asound/card"+str(x)+"/id", "r") as card_file:
-          for line in card_file:
-            #only need one line
-            cname = line.rstrip()
-      if not os.path.exists("/proc/asound/card"+str(x)+"/usbbus"):
-        continue
-      for y in range(0, 10):
-        d_type = ""
-        d_desc = ""
-        if os.path.exists("/proc/asound/card"+str(x)+"/pcm"+str(y)+"p"):
-          d_type = "playback"
-        if os.path.exists("/proc/asound/card"+str(x)+"/pcm"+str(y)+"c"):
-          if d_type == "":
-            d_type = "capture"
-          else:
-            d_type = d_type+" and capture"
-        if d_type != "":
-          for z in range(0, 10):
-            if os.path.exists("/proc/asound/card"+str(x)+"/pcm"+str(y)+d_type[0]+"/sub"+str(z)):
-              with open("/proc/asound/card"+str(x)+"/pcm"+str(y)+d_type[0]+"/sub"+str(z)+"/info", "r") as info_file:
-                for line in info_file:
-                  if re.match("^name:", line.rstrip()):
-                    dname = line.rstrip().split(": ", 1)[1]
-                    next_id = cname+","+str(y)+","+str(z)
-                    next_d = next_id+" "+d_type+" ("+dname+")"
-              #   Have everything we need now
-              if next_id != self.usbdev:
-                self.jack_usb_dev_combo.append(next_id, next_d)
+    if not self.refreshing:
+      self.refreshing = True
+      self.refresh_dropdowns()
+      self.refreshing = False
 
 
   '''Functions for all the gui controls'''
@@ -521,25 +511,25 @@ class UbuntuStudioControls:
 
   def jack_driver_changed(self, button):
     a_driver = str(button.get_active_text())
-    if self.driver == "alsa":
-      temp_dev = self.dev
-    self.driver == a_driver
-    if a_driver != "alsa":
-      self.combo_zita_add.append(self.dev, self.dev_desc)
-      self.dev = a_id
-      self.dev_desc = a_desc
-      model = self.combo_zita_add.get_model()
-      model.foreach(self.dev_ser, a_id)
-      model = self.combo_zita_remove.get_model()
-      model.foreach(self.dev_ser, a_id)
-        
+    self.driver = a_driver
+    if not self.refreshing:
+      self.refreshing = True
+      self.refresh_dropdowns()
+      self.refreshing = False
+
   def usb_master_changed(self, button):
     a_id = str(button.get_active_id())
-    a_desc = str(button.get_active_text())
+    print("usb master changed to: "+str(a_id))
     if a_id != "None":
-      # this needs to change can be none
-      # none = desc: None id: "" (can that work?)
       self.usbdev = a_id
+    else:
+      self.usbdev = ""
+    print("usb master value: "+str(self.usbdev))
+    if not self.refreshing:
+      print("usb master value2: "+str(self.usbdev))
+      self.refreshing = True
+      self.refresh_dropdowns()
+      self.refreshing = False
 
   def cb_jack_start(self, button):
     ''' call back for Jack (re)start button'''
@@ -601,7 +591,7 @@ class UbuntuStudioControls:
     with open(home+"/.config/autojackrc", "w") as rc_file:
       rc_file.write("# file generated by ubuntustudio-controls\n\n")
       rc_file.write("\nJACK="+str(self.jack))
-      rc_file.write("\nDRIVER=alsa")
+      rc_file.write("\nDRIVER="+str(self.combo_backend.get_active_id()))
       rc_file.write("\nDEV="+str(self.jack_device_combo.get_active_id()))
       rc_file.write("\nRATE="+str(self.jack_rate_combo.get_active_id()))
       rc_file.write("\nFRAME="+str(self.combobox_late.get_active_id()))
