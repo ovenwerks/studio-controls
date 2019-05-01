@@ -1,6 +1,9 @@
 ubuntustudio-controls (1.8) UNRELEASED; urgency=medium
 
   * Default devices must be valid devices (LP: #1822463)
+  * Removed Jack autostart checkbox
+  * Added Jack Running indicator
+  * Fixed change log chronology
 
  -- Len Ovens <len@music>  Fri, 26 Apr 2019 23:31:26 -0700
 
@@ -8,8 +11,6 @@ ubuntustudio-controls (1.8) eoan; urgency=medium
 
   [ Len Ovens ]
   * Add to ROADMAP next steps
-  * Removed Jack autostart checkbox
-  * Added Jack Running indicator
 
   [ Ross Gammon ]
   * Set check box status correctly from config file (LP: #1826413)
