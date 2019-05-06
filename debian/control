@@ -16,6 +16,7 @@ Depends: a2jmidid,
          python3-dbus,
          python3-gi,
          python3,
+         python3-jack-client
          zita-ajbridge,
          ${misc:Depends}
 Conflicts: cadence
