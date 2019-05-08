@@ -585,7 +585,6 @@
                       <object class="GtkEventBox" id="usb_master_ebox">
                         <property name="visible">True</property>
                         <property name="can_focus">False</property>
-                        <signal name="enter-notify-event" handler="usb_master_entered" swapped="no"/>
                         <child>
                           <object class="GtkComboBoxText" id="jack_usb_dev_combo">
                             <property name="visible">True</property>
@@ -594,7 +593,6 @@
                             <property name="button_sensitivity">on</property>
                             <property name="active_id">0</property>
                             <signal name="changed" handler="usb_master_changed" swapped="no"/>
-                            <signal name="enter-notify-event" handler="usb_master_entered" swapped="no"/>
                           </object>
                         </child>
                       </object>
@@ -637,6 +635,7 @@
                     </child>
                     <child>
                       <object class="GtkComboBoxText" id="jack_device_combo">
+                        <property name="name">jack_device_combo</property>
                         <property name="visible">True</property>
                         <property name="can_focus">False</property>
                         <property name="active">0</property>
@@ -707,15 +706,48 @@
                       </packing>
                     </child>
                     <child>
-                      <object class="GtkProgressBar" id="prog_jack">
+                      <object class="GtkBox">
                         <property name="visible">True</property>
                         <property name="can_focus">False</property>
-                        <property name="halign">start</property>
-                        <property name="margin_top">5</property>
-                        <property name="margin_bottom">10</property>
-                        <property name="pulse_step">0.5</property>
-                        <property name="text" translatable="yes">Jack status unknown</property>
-                        <property name="show_text">True</property>
+                        <child>
+                          <object class="GtkImage" id="jack_ind">
+                            <property name="visible">True</property>
+                            <property name="can_focus">False</property>
+                            <property name="stock">gtk-stop</property>
+                          </object>
+                          <packing>
+                            <property name="expand">False</property>
+                            <property name="fill">True</property>
+                            <property name="position">0</property>
+                          </packing>
+                        </child>
+                        <child>
+                          <object class="GtkLabel">
+                            <property name="visible">True</property>
+                            <property name="can_focus">False</property>
+                            <property name="label" translatable="yes">  Jack status: </property>
+                          </object>
+                          <packing>
+                            <property name="expand">False</property>
+                            <property name="fill">True</property>
+                            <property name="position">1</property>
+                          </packing>
+                        </child>
+                        <child>
+                          <object class="GtkLabel" id="jack_state">
+                            <property name="visible">True</property>
+                            <property name="can_focus">False</property>
+                            <property name="label" translatable="yes"> unknown</property>
+                            <attributes>
+                              <attribute name="weight" value="semibold"/>
+                            </attributes>
+                          </object>
+                          <packing>
+                            <property name="expand">False</property>
+                            <property name="fill">True</property>
+                            <property name="position">2</property>
+                          </packing>
+                        </child>
                       </object>
                       <packing>
                         <property name="left_attach">0</property>

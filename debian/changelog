@@ -4,6 +4,8 @@ ubuntustudio-controls (1.8) UNRELEASED; urgency=medium
   * Removed Jack autostart checkbox
   * Added Jack Running indicator
   * Fixed change log chronology
+  * Added jack backend setting
+  * Use Jack state on start up
 
  -- Len Ovens <len@music>  Fri, 26 Apr 2019 23:31:26 -0700
 

@@ -142,7 +142,8 @@ class UbuntuStudioControls:
     self.combo_zita_remove = builder.get_object('combo_zita_remove')
     self.combo_output = builder.get_object('combo_output')
     self.combo_out_ports = builder.get_object('combo_out_ports')
-    self.prog_jack = builder.get_object('prog_jack')
+    self.jack_ind = builder.get_object('jack_ind')
+    self.jack_state = builder.get_object('jack_state')
     self.jack_midi_check = builder.get_object('jack_midi_check')
     self.pulse_check = builder.get_object('pulse_check')
 
@@ -197,7 +198,7 @@ class UbuntuStudioControls:
     self.late = "1024"
     self.period = "2"
     self.zframe = "512"
-    self.zdev = ""
+    self.zdev = []
     self.pulse = True
     self.a2j = True
     self.dev = "0,0,0"
@@ -208,8 +209,10 @@ class UbuntuStudioControls:
     self.usbdev = ""
 
     global autojack
+    global newusb
     autojack = False
-    self.refreshing = False
+    newusb = False
+    self.dirty = False
 
     # read in autojack config file
     home = expanduser("~")
@@ -242,11 +245,18 @@ class UbuntuStudioControls:
           elif lsplit[0] == "PORTS":
             self.o_port = lsplit[1]
           elif lsplit[0] == "XDEV":
-            self.zdev = lsplit[1]
+            self.zdev = lsplit[1].strip('"').split()
           elif lsplit[0] == "USBAUTO":
             self.usb = lsplit[1]
           elif lsplit[0] == "USBDEV":
             self.usbdev = lsplit[1]
+
+    try:
+      client = jack.Client('controls', False, True)
+      self.jack = True
+    except jack.JackError:
+      self.jack = False
+    client.close()
 
     self.jack_rate_combo.set_active_id(self.sr)
     self.combobox_late.set_active_id(self.late)
@@ -287,12 +297,11 @@ class UbuntuStudioControls:
       "jack_device_changed": self.jack_device_changed,
       "jack_driver_changed": self.jack_driver_changed,
       "usb_master_changed": self.usb_master_changed,
-      "usb_master_entered": self.usb_master_entered,
     }
     builder.connect_signals(handlers)
 
     self.rtsetup = RTSetup()
-    self.timeout_id = GLib.timeout_add(3000, self.check_jack_status, None)
+    self.timeout_id = GLib.timeout_add(500, self.check_jack_status, None)
 
   def db_ses_cb(*args, **kwargs):
     ''' this means we got a responce from autojack, Good'''
@@ -310,14 +319,22 @@ class UbuntuStudioControls:
   def check_jack_status(self, user_data):
     '''check if jack is running
     then set jack status indicator'''
+    global newusb
+    if newusb:
+      self.dirty = True
+
+    if self.dirty:
+        self.refresh_dropdowns()
+        self.dirty = False
+        newusb = False
 
     try:
       client = jack.Client('controls', False, True)
-      self.prog_jack.set_text("Jack is Running")
-      self.prog_jack.set_fraction(1.0)
+      self.jack_state.set_text(" Running")
+      self.jack_ind.set_from_icon_name("gtk-apply", 0)
     except jack.JackError:
-      self.prog_jack.set_text("Jack is Stopped")
-      self.prog_jack.set_fraction(0.0)
+      self.jack_state.set_text(" Stopped")
+      self.jack_ind.set_from_icon_name("gtk-stop", 0)
       return True
     client.close()
     return True
@@ -353,7 +370,12 @@ class UbuntuStudioControls:
         self.jack_device_combo.set_active_id("200,0,0")
 
     self.combo_zita_remove.get_model().clear()
+    self.combo_zita_remove.append("label", "Remove (connected)")
+    self.combo_zita_remove.set_active_id("label")
+
     self.combo_zita_add.get_model().clear()
+    self.combo_zita_add.append("label", "Add (available)")
+    self.combo_zita_add.set_active_id("label")
 
     usb_save = ""
     pci_save = ""
@@ -406,7 +428,7 @@ class UbuntuStudioControls:
                   if self.dev == next_id:
                     self.jack_device_combo.set_active_id(next_id)
                     self.dev_desc = next_d
-                if self.dev != next_id and self.zdev.find(next_id) >= 0:
+                if self.dev != next_id and self.zdev.count(next_id) > 0:
                   self.combo_zita_remove.append(next_id, next_d)
                 else:
                   if self.dev != next_id:
@@ -422,13 +444,6 @@ class UbuntuStudioControls:
       self.jack_usb_dev_combo.set_active_id(usb_save)
       self.jack_device_combo.append("200,0,0", "USB device below")
       self.jack_device_combo.set_active_id("200,0,0")
-
-  def usb_master_entered(self, button, user):
-    '''Before the user drops down refill this as it may have changed'''
-    if not self.refreshing:
-      self.refreshing = True
-      self.refresh_dropdowns()
-      self.refreshing = False
 
 
   '''Functions for all the gui controls'''
@@ -474,62 +489,39 @@ class UbuntuStudioControls:
   # Audio setup call backs
   def cb_zita_add(self, button):
     a_id = str(button.get_active_id())
-    a_desc = str(button.get_active_text())
     if a_id != "None" and a_id != "label":
-      self.combo_zita_remove.append(a_id, a_desc)
-      self.combo_zita_add.remove(button.get_active())
-      self.combo_zita_add.set_active(0)
+      self.zdev.append(str(a_id))
+      if not self.dirty:
+        self.dirty = True
 
   def cb_zita_remove(self, button):
     a_id = str(button.get_active_id())
-    a_desc = str(button.get_active_text())
     if a_id != "None" and a_id != "label":
-      self.combo_zita_add.append(a_id, a_desc)
-      self.combo_zita_remove.remove(button.get_active())
-      self.combo_zita_remove.set_active(0)
+      self.zdev.remove(str(a_id))
+      if not self.dirty:
+        self.dirty = True
 
-  # this belongs to jack_device_changed
-  def dev_ser(self, model, path, d_iter, dev_id):
-    m_id = str(model.get(d_iter, 1)[0])
-    if m_id == dev_id:
-      del model[d_iter]
-      return 1
-    else:
-      return 0
-  
   def jack_device_changed(self, button):
     a_id = str(button.get_active_id())
     a_desc = str(button.get_active_text())
     if a_id != "None":
-      self.combo_zita_add.append(self.dev, self.dev_desc)
       self.dev = a_id
       self.dev_desc = a_desc
-      model = self.combo_zita_add.get_model()
-      model.foreach(self.dev_ser, a_id)
-      model = self.combo_zita_remove.get_model()
-      model.foreach(self.dev_ser, a_id)
+      if not self.dirty:
+        self.dirty = True
 
   def jack_driver_changed(self, button):
     a_driver = str(button.get_active_text())
     self.driver = a_driver
-    if not self.refreshing:
-      self.refreshing = True
-      self.refresh_dropdowns()
-      self.refreshing = False
+    if not self.dirty:
+      self.dirty = True
 
   def usb_master_changed(self, button):
     a_id = str(button.get_active_id())
-    print("usb master changed to: "+str(a_id))
     if a_id != "None":
       self.usbdev = a_id
-    else:
-      self.usbdev = ""
-    print("usb master value: "+str(self.usbdev))
-    if not self.refreshing:
-      print("usb master value2: "+str(self.usbdev))
-      self.refreshing = True
-      self.refresh_dropdowns()
-      self.refreshing = False
+    if not self.dirty:
+      self.dirty = True
 
   def cb_jack_start(self, button):
     ''' call back for Jack (re)start button'''
@@ -561,13 +553,6 @@ class UbuntuStudioControls:
         subprocess.call(cmd, shell = True)
       else:
         self.start_autojack()
-
-  # this belongs to config_save()
-  def z_save(self, model, path, d_iter, save_file):
-    m_id = str(model.get(d_iter, 1)[0])
-    if m_id != "label" and m_id !="none":
-      save_file.write(m_id+" ")
-    return 0
 
   def cb_audio_apply(self, button):
     '''callback for audio tab apply button'''
@@ -604,9 +589,8 @@ class UbuntuStudioControls:
       rc_file.write("\nPORTS="+str(self.combo_out_ports.get_active_id()))
       rc_file.write("\nUSBAUTO="+str(self.usb_plug_check.get_active()))
       rc_file.write("\nUSBDEV="+self.usbdev)
-      rc_file.write("\nXDEV=\"")
-      model = self.combo_zita_remove.get_model()
-      model.foreach(self.z_save, rc_file)
+      z_dev = str(' '.join(self.zdev))
+      rc_file.write("\nXDEV=\""+z_dev)
       rc_file.write("\"\n# end of auto generated parameters\n")
 
   def start_autojack(self):

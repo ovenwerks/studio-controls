@@ -475,6 +475,10 @@ def msg_cb_new(*args, **kwargs):
 		device = devices[int(audio_if)]
 		#make sure device is USB and is not midi only
 		if device[1] and device[2]:
+			# tell gui devicelist has changed
+			cmd = "dbus-send --type=signal / org.ubuntustudio.control.event.usb_signal"
+			subprocess.call(cmd, shell = True)
+
 			cid = device[0]+",0,0"
 			print("device = "+cid+" play:"+str(device[3][1])+" capture:"+str(device[3][3]))
 			if jack == "True":
@@ -494,6 +498,10 @@ def msg_cb_removed(*args, **kwargs):
 	import_config()
 	
 	if args[0].find("sound-card") >= 0:
+		# tell gui devicelist has changed
+		cmd = "dbus-send --type=signal / org.ubuntustudio.control.event.usb_signal"
+		subprocess.call(cmd, shell = True)
+
 		a_if = args[0].split("sound-card", 1)
 		audio_if = a_if[1].split(".", 1)[0]
 		device = devices[int(audio_if)]

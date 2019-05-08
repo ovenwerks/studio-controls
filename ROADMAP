@@ -7,11 +7,11 @@
 Bugs:
 	- dbus service file missing / not working
 	FIXed - USB is only device, doesn't work right
-	- any change should write config file and send reconfig signal
 	- add device mixer button
+	Fixed - startup should detect if jack running and set internal value True
 
 Features:
-	- needs backend ALSA/FireWire/Dummy
+	Done(ish)- needs backend ALSA/FireWire/Dummy
 		Note: BE != alsa should disable some things:
 			USB master disable but USB can still be bridged
 			Jack master needs to be cleared and be text entry
@@ -27,3 +27,5 @@ Features:
 		hot plugged USB devices get higher priority.
 	- monitor headphone plug status if PCH is being used for output
 		switch to headphones or speakers in alsa.
+	- pulse bridge setup for more than one bridge
+	- pulse profiles for multi-channels devices. (including jack)
