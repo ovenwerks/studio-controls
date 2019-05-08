@@ -254,9 +254,9 @@ class UbuntuStudioControls:
     try:
       client = jack.Client('controls', False, True)
       self.jack = True
+      client.close()
     except jack.JackError:
       self.jack = False
-    client.close()
 
     self.jack_rate_combo.set_active_id(self.sr)
     self.combobox_late.set_active_id(self.late)
