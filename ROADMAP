@@ -10,6 +10,17 @@ Bugs:
 	- add device mixer button
 	Fixed - startup should detect if jack running and set internal value True
 
+	--------------------------8<---------------------
+	/usr/bin/ubuntustudio-controls:15: DeprecationWarning: Importing dbus.glib
+	to use the GLib main loop with dbus-python is deprecated. Instead, use this sequence:
+
+    from dbus.mainloop.glib import DBusGMainLoop
+
+    DBusGMainLoop(set_as_default=True)
+
+	import dbus.glib
+	-------------------------8<------------------------
+
 Features:
 	Done(ish)- needs backend ALSA/FireWire/Dummy
 		Note: BE != alsa should disable some things:
@@ -29,3 +40,4 @@ Features:
 		switch to headphones or speakers in alsa.
 	- pulse bridge setup for more than one bridge
 	- pulse profiles for multi-channels devices. (including jack)
+	- deal with two identical USB decies

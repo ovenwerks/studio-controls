@@ -12,10 +12,13 @@ import resource
 import shutil
 import subprocess
 import glob
-import dbus.glib
+#import dbus.glib
 import dbus
+from dbus.mainloop.glib import DBusGMainLoop
 import time
 import jack
+
+DBusGMainLoop(set_as_default=True)
 
 class SysInfo:
   """Get information about the system"""
