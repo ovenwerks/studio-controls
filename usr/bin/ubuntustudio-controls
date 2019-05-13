@@ -148,7 +148,8 @@ class UbuntuStudioControls:
     self.jack_ind = builder.get_object('jack_ind')
     self.jack_state = builder.get_object('jack_state')
     self.jack_midi_check = builder.get_object('jack_midi_check')
-    self.pulse_check = builder.get_object('pulse_check')
+    self.pulse_in_spin = builder.get_object('pulse_input_spin')
+    self.pulse_out_spin = builder.get_object('pulse_output_spin')
 
     user_bus = dbus.SessionBus()
     user_bus.add_signal_receiver(self.db_ses_cb, dbus_interface='org.ubuntustudio.control.event', signal_name='pong_signal')
@@ -202,7 +203,8 @@ class UbuntuStudioControls:
     self.period = "2"
     self.zframe = "512"
     self.zdev = []
-    self.pulse = True
+    self.pulse_in = 1
+    self.pulse_out = 1
     self.a2j = True
     self.dev = "0,0,0"
     self.dev_desc = "default"
@@ -241,6 +243,12 @@ class UbuntuStudioControls:
             self.period = lsplit[1]
           elif lsplit[0] == "PULSE":
             self.pulse = lsplit[1]
+            self.pulse_in = int(self.pulse == 'True')
+            self.pulse_out = int(self.pulse == 'True')
+          elif lsplit[0] == "PULSE-IN":
+            self.pulse_in = int(lsplit[1])
+          elif lsplit[0] == "PULSE-OUT":
+            self.pulse_out = int(lsplit[1])
           elif lsplit[0] == "A2J":
             self.a2j = lsplit[1]
           elif lsplit[0] == "OUTPUT":
@@ -274,10 +282,10 @@ class UbuntuStudioControls:
         self.jack_midi_check.set_active(True)
     elif self.a2j == "False":
         self.jack_midi_check.set_active(False)
-    if self.pulse == "True":
-        self.pulse_check.set_active(True)
-    elif self.pulse == "False":
-        self.pulse_check.set_active(False)
+    self.pulse_in_spin.set_range(0, 9)
+    self.pulse_out_spin.set_range(0, 9)
+    self.pulse_in_spin.set_value(self.pulse_in)
+    self.pulse_out_spin.set_value(self.pulse_out)
 
     self.refresh_dropdowns()
 
@@ -586,7 +594,8 @@ class UbuntuStudioControls:
       self.zframe = str(int(int(self.combobox_late.get_active_id()) / 2))
       rc_file.write("\nZFRAME="+self.zframe)
       rc_file.write("\nPERIOD="+str(self.combo_periods.get_active_id()))
-      rc_file.write("\nPULSE="+str(self.pulse_check.get_active()))
+      rc_file.write("\nPULSE-IN="+str(int(self.pulse_in_spin.get_value())))
+      rc_file.write("\nPULSE-OUT="+str(int(self.pulse_out_spin.get_value())))
       rc_file.write("\nA2J="+str(self.jack_midi_check.get_active()))
       rc_file.write("\nOUTPUT="+str(self.combo_output.get_active_id()))
       rc_file.write("\nPORTS="+str(self.combo_out_ports.get_active_id()))

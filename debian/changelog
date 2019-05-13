@@ -7,6 +7,7 @@ ubuntustudio-controls (1.8) UNRELEASED; urgency=medium
   * Added jack backend setting
   * Use Jack state on start up
   * Update dbus usage
+  * Allow for more than one pulse-jack bridge
 
  -- Len Ovens <len@music>  Fri, 26 Apr 2019 23:31:26 -0700
 

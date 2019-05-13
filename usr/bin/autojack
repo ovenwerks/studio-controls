@@ -2,7 +2,7 @@
 
 # autojack - Monitors dbus for added audio devices (hot plugged USB audio intefaces)
 # on detect it does one of three things:
-#	Makes it the jack device
+#	makes it the jack device
 #	makes it a jack client (via zita-ajbridge)
 #	nothing
 #
@@ -26,6 +26,7 @@ import dbus.mainloop.glib
 import subprocess
 import sys
 import signal
+import curses
 
 def get_dev_info(x):
 	'''uses audio device number to make a device struture with device
@@ -131,6 +132,10 @@ def import_config():
 	zdev = ""
 	global pulse
 	pulse = "True"
+	global pulse_in
+	pulse_in = 1
+	global pulse_out
+	pulse_out = 1
 	global a2j
 	a2j = "True"
 	global dev
@@ -172,6 +177,12 @@ def import_config():
 					period = lsplit[1]
 				elif lsplit[0] == "PULSE":
 					pulse = lsplit[1]
+					pulse_in = int(pulse == 'True')
+					pulse_out = int(pulse == 'True')
+				elif lsplit[0] == "PULSE-IN":
+					pulse_in = int(lsplit[1])
+				elif lsplit[0] == "PULSE-OUT":
+					pulse_out = int(lsplit[1])
 				elif lsplit[0] == "A2J":
 					a2j = lsplit[1]
 				elif lsplit[0] == "OUTPUT":
@@ -200,6 +211,8 @@ def reconfig():
 	global zframe
 	global zdev
 	global pulse
+	global pulse_in
+	global pulse_out
 	global a2j
 	global dev
 	global dev_desc
@@ -236,6 +249,12 @@ def reconfig():
 					newzframe = lsplit[1]
 				elif lsplit[0] == "PULSE":
 					newpulse = lsplit[1]
+					newpulse_in = int(newpulse == 'True')
+					newpulse_out = int(newpulse == 'True')
+				elif lsplit[0] == "PULSE-IN":
+					newpulse_in = int(lsplit[1])
+				elif lsplit[0] == "PULSE-OUT":
+					newpulse_out = int(lsplit[1])
 				elif lsplit[0] == "A2J":
 					newa2j = lsplit[1]
 				elif lsplit[0] == "OUTPUT":
@@ -255,20 +274,41 @@ def reconfig():
 	if jack == "False":
 		return
 		# no use checking anything else
-	if pulse != newpulse:
-		pulse = newpulse
-		if pulse == "True":
-			cmd = "pactl load-module module-jack-sink client_name=PulseOut channels=2 connect=no"
-			subprocess.call(cmd, shell = True)
+
+	pulse_dirty = False
+	if pulse_in != newpulse_in:
+		pulse_dirty = True
+		disconnect_pa()
+		cmd = "pactl unload-module module-jack-source"
+		subprocess.call(cmd, shell = True)
+
+		pulse_in = newpulse_in
+		if pulse_in > 0:
 			cmd = "pactl load-module module-jack-source client_name=PulseIn channels=2 connect=no"
 			subprocess.call(cmd, shell = True)
-			connect_pa()
-		else:
+		if pulse_in > 1:
+			for i in range(2, (pulse_in + 1)):
+				cmd = "pactl load-module module-jack-source client_name=PulseIn-"+str(i)+" channels=2 connect=no"
+				subprocess.call(cmd, shell = True)
+
+	if pulse_out != newpulse_out:
+		if not pulse_dirty:
+			# only do one disconnect
+			pulse_dirty = True
 			disconnect_pa()
-			cmd = "pactl unload-module module-jack-sink"
+		pulse_out = newpulse_out
+		cmd = "pactl unload-module module-jack-sink"
+		subprocess.call(cmd, shell = True)
+		if pulse_out > 0:
+			cmd = "pactl load-module module-jack-sink client_name=PulseOut channels=2 connect=no"
 			subprocess.call(cmd, shell = True)
-			cmd = "pactl unload-module module-jack-source"
-			subprocess.call(cmd, shell = True)
+		if pulse_out > 1:
+			for i in range(2, (pulse_out + 1)):
+				cmd = "pactl load-module module-jack-sink client_name=PulseOut-"+str(i)+" channels=2 connect=no"
+				subprocess.call(cmd, shell = True)
+
+	if pulse_dirty:
+		connect_pa()
 			
 	# also connect ports if pulse bridged
 	if [d_out, o_port] != [newd_out, newo_port]:
@@ -360,14 +400,25 @@ def config_start():
 	last_master = mdev
 	# maybe check for jack up (need function?)
 	time.sleep(2)
-	if pulse == "True":
-		cmd = "pactl load-module module-jack-sink client_name=PulseOut channels=2 connect=no"
-		subprocess.call(cmd, shell = True)
+
+	if pulse_in > 0:
 		cmd = "pactl load-module module-jack-source client_name=PulseIn channels=2 connect=no"
 		subprocess.call(cmd, shell = True)
+	if pulse_in > 1:
+		for i in range(2, (pulse_in + 1)):
+			cmd = "pactl load-module module-jack-source client_name=PulseIn-"+str(i)+" channels=2 connect=no"
+			subprocess.call(cmd, shell = True)
+	if pulse_out > 0:
+		cmd = "pactl load-module module-jack-sink client_name=PulseOut channels=2 connect=no"
+		subprocess.call(cmd, shell = True)
+	if pulse_out > 1:
+		for i in range(2, (pulse_out + 1)):
+			cmd = "pactl load-module module-jack-sink client_name=PulseOut-"+str(i)+" channels=2 connect=no"
+			subprocess.call(cmd, shell = True)
+
 
 	for cname in zdev.strip('"').strip().split(" "):
-		print("Extra internal: "+cname)
+		#print("Extra internal: "+cname)
 		if cname != "":
 			start_slave(cname)
 
@@ -396,6 +447,8 @@ def connect_pa():
 	global dev
 	global last_master
 	global devices
+	global pulse_in
+	global pulse_out
 	import_device_array()
 	dev_available = False
 	dev_has_in = False
@@ -430,32 +483,38 @@ def connect_pa():
 		dev_has_pid = True
 
 	if not dev_has_pid:
-		print ("no pid, start slave")
+		#print ("no pid, start slave")
 		start_slave(d_out)
 		time.sleep(1)
-		
-	cmd = "jack_connect "+in_name+":capture_1 PulseIn:front-left"
-	subprocess.call(cmd, shell = True)
-	cmd = "jack_connect "+in_name+":capture_2 PulseIn:front-right"
-	subprocess.call(cmd, shell = True)
-	cmd = "jack_connect PulseOut:front-left "+out_name+":playback_"+o_port
-	subprocess.call(cmd, shell = True)
-	cmd = "jack_connect PulseOut:front-right "+out_name+":playback_"+str(int(o_port) + 1)
-	subprocess.call(cmd, shell = True)
+
+	if pulse_in:
+		cmd = "jack_connect "+in_name+":capture_1 PulseIn:front-left"
+		subprocess.call(cmd, shell = True)
+		cmd = "jack_connect "+in_name+":capture_2 PulseIn:front-right"
+		subprocess.call(cmd, shell = True)
+	if pulse_out:
+		cmd = "jack_connect PulseOut:front-left "+out_name+":playback_"+o_port
+		subprocess.call(cmd, shell = True)
+		cmd = "jack_connect PulseOut:front-right "+out_name+":playback_"+str(int(o_port) + 1)
+		subprocess.call(cmd, shell = True)
 
 def disconnect_pa():
 	'''Searches jack ports for Pulse ports and disconnects them. The pa-jack
 	bridge is left running.'''
 	stdoutdata = subprocess.check_output("jack_lsp -c Pulse", shell=True)
-	ports = stdoutdata.split("\n")
-	for line in ports:
+	ports = stdoutdata.split()
+	port1 = ""
+	for linein in ports:
+		line = linein.decode()
 		if len(line):
 			if line[0] == "P":
 				port1 = line
 			else:
 				port2 = line
-				cmd = "jack_disconnect "+port1+" "+port2
-				subprocess.call(cmd, shell = True)
+				if port1:
+					cmd = "jack_disconnect "+port1+" "+port2
+					subprocess.call(cmd, shell = True)
+					port1 = ""
 
 def msg_cb_new(*args, **kwargs):
 	'''call back for udev sensing new device. checks if device is audio.

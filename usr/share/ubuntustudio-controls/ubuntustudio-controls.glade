@@ -2,146 +2,15 @@
 <!-- Generated with glade 3.22.1 -->
 <interface>
   <requires lib="gtk+" version="3.12"/>
-  <object class="GtkTextBuffer" id="current_preset_text">
-    <property name="text" translatable="yes">Default_Audio</property>
+  <object class="GtkAdjustment" id="adjustment1">
+    <property name="upper">100</property>
+    <property name="step_increment">1</property>
+    <property name="page_increment">10</property>
   </object>
-  <object class="GtkTextBuffer" id="help_general_text_buffer">
-    <property name="text" translatable="yes">For a user to be able to run the jack audio server in realtime mode, the system setting "Realtime Audio" needs to be enabled and the user needs to be a member of audio group. This utillity checks this and fixes it if requested.</property>
-  </object>
-  <object class="GtkTextBuffer" id="help_system_text_buffer">
-    <property name="text" translatable="yes">CPU Governor settings can affect low latency audio. Audio works best if the CPU speed is constant. For this to happen, The cpu Governor should be set to "performance" and "boost" should be turned off. These settings can be turned on and off on the fly or be set to take effect from boot. Turning performance off while not using low latency audio may increase battery life on a laptop.</property>
-  </object>
-  <object class="GtkWindow" id="window_help">
-    <property name="width_request">500</property>
-    <property name="can_focus">False</property>
-    <property name="hexpand">True</property>
-    <property name="vexpand">True</property>
-    <property name="title" translatable="yes">Ubuntu Studio Controls Help</property>
-    <property name="resizable">False</property>
-    <property name="destroy_with_parent">True</property>
-    <signal name="delete-event" handler="on_window_help_delete_event" swapped="no"/>
-    <child>
-      <placeholder/>
-    </child>
-    <child>
-      <object class="GtkBox" id="box1">
-        <property name="visible">True</property>
-        <property name="can_focus">False</property>
-        <property name="orientation">vertical</property>
-        <child>
-          <object class="GtkLabel" id="label3">
-            <property name="visible">True</property>
-            <property name="can_focus">False</property>
-            <property name="ypad">8</property>
-            <property name="label" translatable="yes">GENERAL</property>
-          </object>
-          <packing>
-            <property name="expand">False</property>
-            <property name="fill">True</property>
-            <property name="position">0</property>
-          </packing>
-        </child>
-        <child>
-          <object class="GtkTextView" id="help_general_text">
-            <property name="visible">True</property>
-            <property name="can_focus">True</property>
-            <property name="pixels_above_lines">8</property>
-            <property name="pixels_below_lines">8</property>
-            <property name="pixels_inside_wrap">4</property>
-            <property name="editable">False</property>
-            <property name="wrap_mode">word</property>
-            <property name="left_margin">12</property>
-            <property name="right_margin">12</property>
-            <property name="buffer">help_general_text_buffer</property>
-          </object>
-          <packing>
-            <property name="expand">False</property>
-            <property name="fill">False</property>
-            <property name="position">1</property>
-          </packing>
-        </child>
-        <child>
-          <object class="GtkTextView" id="help_system_text">
-            <property name="visible">True</property>
-            <property name="can_focus">True</property>
-            <property name="pixels_above_lines">8</property>
-            <property name="pixels_below_lines">8</property>
-            <property name="pixels_inside_wrap">4</property>
-            <property name="editable">False</property>
-            <property name="wrap_mode">word</property>
-            <property name="left_margin">12</property>
-            <property name="right_margin">12</property>
-            <property name="buffer">help_system_text_buffer</property>
-          </object>
-          <packing>
-            <property name="expand">False</property>
-            <property name="fill">False</property>
-            <property name="position">5</property>
-          </packing>
-        </child>
-        <child>
-          <object class="GtkGrid" id="grid3">
-            <property name="visible">True</property>
-            <property name="can_focus">False</property>
-            <child>
-              <object class="GtkButton" id="button_help_ok">
-                <property name="label" translatable="yes">Ok</property>
-                <property name="width_request">100</property>
-                <property name="visible">True</property>
-                <property name="can_focus">True</property>
-                <property name="receives_default">True</property>
-                <property name="margin_top">8</property>
-                <property name="margin_bottom">8</property>
-                <signal name="clicked" handler="on_button_help_ok_clicked" swapped="no"/>
-              </object>
-              <packing>
-                <property name="left_attach">1</property>
-                <property name="top_attach">0</property>
-              </packing>
-            </child>
-            <child>
-              <object class="GtkFixed" id="fixed3">
-                <property name="visible">True</property>
-                <property name="can_focus">False</property>
-                <property name="hexpand">True</property>
-              </object>
-              <packing>
-                <property name="left_attach">0</property>
-                <property name="top_attach">0</property>
-              </packing>
-            </child>
-            <child>
-              <object class="GtkFixed" id="fixed4">
-                <property name="visible">True</property>
-                <property name="can_focus">False</property>
-                <property name="hexpand">True</property>
-              </object>
-              <packing>
-                <property name="left_attach">2</property>
-                <property name="top_attach">0</property>
-              </packing>
-            </child>
-          </object>
-          <packing>
-            <property name="expand">False</property>
-            <property name="fill">True</property>
-            <property name="position">6</property>
-          </packing>
-        </child>
-      </object>
-    </child>
-  </object>
-  <object class="GtkListStore" id="liststore1">
-    <columns>
-      <!-- column-name username -->
-      <column type="gchararray"/>
-      <!-- column-name fullname -->
-      <column type="gchararray"/>
-      <!-- column-name user_label -->
-      <column type="gchararray"/>
-      <!-- column-name audio_group -->
-      <column type="gboolean"/>
-    </columns>
+  <object class="GtkAdjustment" id="adjustment2">
+    <property name="upper">100</property>
+    <property name="step_increment">1</property>
+    <property name="page_increment">10</property>
   </object>
   <object class="GtkWindow" id="window_main">
     <property name="width_request">400</property>
@@ -648,6 +517,55 @@
                         <property name="width">2</property>
                       </packing>
                     </child>
+                    <child>
+                      <object class="GtkLabel">
+                        <property name="visible">True</property>
+                        <property name="can_focus">False</property>
+                        <property name="halign">end</property>
+                        <property name="label" translatable="yes">Stereo Pulse-Jack Bridges (input -output):</property>
+                      </object>
+                      <packing>
+                        <property name="left_attach">0</property>
+                        <property name="top_attach">9</property>
+                      </packing>
+                    </child>
+                    <child>
+                      <object class="GtkSpinButton" id="pulse_output_spin">
+                        <property name="visible">True</property>
+                        <property name="can_focus">True</property>
+                        <property name="max_length">1</property>
+                        <property name="max_width_chars">1</property>
+                        <property name="input_purpose">number</property>
+                        <property name="adjustment">adjustment2</property>
+                        <property name="climb_rate">1</property>
+                        <property name="snap_to_ticks">True</property>
+                        <property name="numeric">True</property>
+                        <property name="wrap">True</property>
+                      </object>
+                      <packing>
+                        <property name="left_attach">2</property>
+                        <property name="top_attach">9</property>
+                      </packing>
+                    </child>
+                    <child>
+                      <object class="GtkSpinButton" id="pulse_input_spin">
+                        <property name="visible">True</property>
+                        <property name="can_focus">True</property>
+                        <property name="max_length">1</property>
+                        <property name="max_width_chars">1</property>
+                        <property name="text" translatable="yes">0</property>
+                        <property name="input_purpose">number</property>
+                        <property name="adjustment">adjustment1</property>
+                        <property name="climb_rate">1</property>
+                        <property name="snap_to_ticks">True</property>
+                        <property name="numeric">True</property>
+                        <property name="wrap">True</property>
+                      </object>
+                      <packing>
+                        <property name="left_attach">1</property>
+                        <property name="top_attach">9</property>
+                      </packing>
+                    </child>
                   </object>
                   <packing>
                     <property name="expand">False</property>
@@ -660,6 +578,7 @@
                     <property name="visible">True</property>
                     <property name="can_focus">False</property>
                     <property name="margin_bottom">14</property>
+                    <property name="column_homogeneous">True</property>
                     <child>
                       <object class="GtkCheckButton" id="jack_midi_check">
                         <property name="label" translatable="yes">Bridge ALSA to Jack MIDI (turn on a2jmidid)</property>
@@ -672,22 +591,7 @@
                       </object>
                       <packing>
                         <property name="left_attach">0</property>
-                        <property name="top_attach">1</property>
-                      </packing>
-                    </child>
-                    <child>
-                      <object class="GtkCheckButton" id="pulse_check">
-                        <property name="label" translatable="yes">Bridge Pulseaudio to Jack (allows desktop audio to keep working)</property>
-                        <property name="visible">True</property>
-                        <property name="can_focus">True</property>
-                        <property name="receives_default">False</property>
-                        <property name="halign">start</property>
-                        <property name="active">True</property>
-                        <property name="draw_indicator">True</property>
-                      </object>
-                      <packing>
-                        <property name="left_attach">0</property>
-                        <property name="top_attach">2</property>
+                        <property name="top_attach">0</property>
                       </packing>
                     </child>
                     <child>
@@ -702,13 +606,14 @@
                       </object>
                       <packing>
                         <property name="left_attach">0</property>
-                        <property name="top_attach">3</property>
+                        <property name="top_attach">1</property>
                       </packing>
                     </child>
                     <child>
                       <object class="GtkBox">
                         <property name="visible">True</property>
                         <property name="can_focus">False</property>
+                        <property name="halign">end</property>
                         <child>
                           <object class="GtkImage" id="jack_ind">
                             <property name="visible">True</property>
@@ -725,6 +630,7 @@
                           <object class="GtkLabel">
                             <property name="visible">True</property>
                             <property name="can_focus">False</property>
+                            <property name="halign">end</property>
                             <property name="label" translatable="yes">  Jack status: </property>
                           </object>
                           <packing>
@@ -737,6 +643,7 @@
                           <object class="GtkLabel" id="jack_state">
                             <property name="visible">True</property>
                             <property name="can_focus">False</property>
+                            <property name="halign">end</property>
                             <property name="label" translatable="yes"> unknown</property>
                             <attributes>
                               <attribute name="weight" value="semibold"/>
@@ -745,18 +652,28 @@
                           <packing>
                             <property name="expand">False</property>
                             <property name="fill">True</property>
+                            <property name="pack_type">end</property>
                             <property name="position">2</property>
                           </packing>
                         </child>
                       </object>
                       <packing>
-                        <property name="left_attach">0</property>
+                        <property name="left_attach">1</property>
                         <property name="top_attach">0</property>
                       </packing>
                     </child>
+                    <child>
+                      <placeholder/>
+                    </child>
+                    <child>
+                      <placeholder/>
+                    </child>
+                    <child>
+                      <placeholder/>
+                    </child>
                   </object>
                   <packing>
-                    <property name="expand">False</property>
+                    <property name="expand">True</property>
                     <property name="fill">True</property>
                     <property name="position">1</property>
                   </packing>
@@ -1051,5 +968,146 @@ If you want to use this application for administering realtime settings, please 
         </child>
       </object>
     </child>
+  </object>
+  <object class="GtkTextBuffer" id="current_preset_text">
+    <property name="text" translatable="yes">Default_Audio</property>
+  </object>
+  <object class="GtkTextBuffer" id="help_general_text_buffer">
+    <property name="text" translatable="yes">For a user to be able to run the jack audio server in realtime mode, the system setting "Realtime Audio" needs to be enabled and the user needs to be a member of audio group. This utillity checks this and fixes it if requested.</property>
+  </object>
+  <object class="GtkTextBuffer" id="help_system_text_buffer">
+    <property name="text" translatable="yes">CPU Governor settings can affect low latency audio. Audio works best if the CPU speed is constant. For this to happen, The cpu Governor should be set to "performance" and "boost" should be turned off. These settings can be turned on and off on the fly or be set to take effect from boot. Turning performance off while not using low latency audio may increase battery life on a laptop.</property>
+  </object>
+  <object class="GtkWindow" id="window_help">
+    <property name="width_request">500</property>
+    <property name="can_focus">False</property>
+    <property name="hexpand">True</property>
+    <property name="vexpand">True</property>
+    <property name="title" translatable="yes">Ubuntu Studio Controls Help</property>
+    <property name="resizable">False</property>
+    <property name="destroy_with_parent">True</property>
+    <signal name="delete-event" handler="on_window_help_delete_event" swapped="no"/>
+    <child>
+      <placeholder/>
+    </child>
+    <child>
+      <object class="GtkBox" id="box1">
+        <property name="visible">True</property>
+        <property name="can_focus">False</property>
+        <property name="orientation">vertical</property>
+        <child>
+          <object class="GtkLabel" id="label3">
+            <property name="visible">True</property>
+            <property name="can_focus">False</property>
+            <property name="ypad">8</property>
+            <property name="label" translatable="yes">GENERAL</property>
+          </object>
+          <packing>
+            <property name="expand">False</property>
+            <property name="fill">True</property>
+            <property name="position">0</property>
+          </packing>
+        </child>
+        <child>
+          <object class="GtkTextView" id="help_general_text">
+            <property name="visible">True</property>
+            <property name="can_focus">True</property>
+            <property name="pixels_above_lines">8</property>
+            <property name="pixels_below_lines">8</property>
+            <property name="pixels_inside_wrap">4</property>
+            <property name="editable">False</property>
+            <property name="wrap_mode">word</property>
+            <property name="left_margin">12</property>
+            <property name="right_margin">12</property>
+            <property name="buffer">help_general_text_buffer</property>
+          </object>
+          <packing>
+            <property name="expand">False</property>
+            <property name="fill">False</property>
+            <property name="position">1</property>
+          </packing>
+        </child>
+        <child>
+          <object class="GtkTextView" id="help_system_text">
+            <property name="visible">True</property>
+            <property name="can_focus">True</property>
+            <property name="pixels_above_lines">8</property>
+            <property name="pixels_below_lines">8</property>
+            <property name="pixels_inside_wrap">4</property>
+            <property name="editable">False</property>
+            <property name="wrap_mode">word</property>
+            <property name="left_margin">12</property>
+            <property name="right_margin">12</property>
+            <property name="buffer">help_system_text_buffer</property>
+          </object>
+          <packing>
+            <property name="expand">False</property>
+            <property name="fill">False</property>
+            <property name="position">5</property>
+          </packing>
+        </child>
+        <child>
+          <object class="GtkGrid" id="grid3">
+            <property name="visible">True</property>
+            <property name="can_focus">False</property>
+            <child>
+              <object class="GtkButton" id="button_help_ok">
+                <property name="label" translatable="yes">Ok</property>
+                <property name="width_request">100</property>
+                <property name="visible">True</property>
+                <property name="can_focus">True</property>
+                <property name="receives_default">True</property>
+                <property name="margin_top">8</property>
+                <property name="margin_bottom">8</property>
+                <signal name="clicked" handler="on_button_help_ok_clicked" swapped="no"/>
+              </object>
+              <packing>
+                <property name="left_attach">1</property>
+                <property name="top_attach">0</property>
+              </packing>
+            </child>
+            <child>
+              <object class="GtkFixed" id="fixed3">
+                <property name="visible">True</property>
+                <property name="can_focus">False</property>
+                <property name="hexpand">True</property>
+              </object>
+              <packing>
+                <property name="left_attach">0</property>
+                <property name="top_attach">0</property>
+              </packing>
+            </child>
+            <child>
+              <object class="GtkFixed" id="fixed4">
+                <property name="visible">True</property>
+                <property name="can_focus">False</property>
+                <property name="hexpand">True</property>
+              </object>
+              <packing>
+                <property name="left_attach">2</property>
+                <property name="top_attach">0</property>
+              </packing>
+            </child>
+          </object>
+          <packing>
+            <property name="expand">False</property>
+            <property name="fill">True</property>
+            <property name="position">6</property>
+          </packing>
+        </child>
+      </object>
+    </child>
+  </object>
+  <object class="GtkListStore" id="liststore1">
+    <columns>
+      <!-- column-name username -->
+      <column type="gchararray"/>
+      <!-- column-name fullname -->
+      <column type="gchararray"/>
+      <!-- column-name user_label -->
+      <column type="gchararray"/>
+      <!-- column-name audio_group -->
+      <column type="gboolean"/>
+    </columns>
   </object>
 </interface>
