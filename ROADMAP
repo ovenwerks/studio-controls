@@ -5,18 +5,13 @@
  things)
 
 Bugs:
-	FIXed - USB is only device, doesn't work right
-	Fixed - startup should detect if jack running and set internal value True
 
 Features:
-	- add device mixer button
 	Done(ish)- needs backend ALSA/FireWire/Dummy
 		Note: BE != alsa should disable some things:
 			USB master disable but USB can still be bridged
 			Jack master needs to be cleared and be text entry
 			Firewire back end should check for availablity of FW
-	Done - add Jack running indicator
-			could use more work.
 	- remove Cadence from autostart and Cadences pulseaudio config
 		Cadence will reinsert these if the user decides to use it again
 		but at least if controls is used PA should get set to stock.
@@ -26,6 +21,6 @@ Features:
 		hot plugged USB devices get higher priority.
 	- monitor headphone plug status if PCH is being used for output
 		switch to headphones or speakers in alsa.
-	Done- pulse bridge setup for more than one bridge
 	- pulse profiles for multi-channels devices. (including jack)
+		This is really pulse related not -controls
 	- allow to choose no of i/o with dummy backend

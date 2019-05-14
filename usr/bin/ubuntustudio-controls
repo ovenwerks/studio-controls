@@ -302,6 +302,9 @@ class UbuntuStudioControls:
       "on_button_help_ok_clicked": self.on_button_help_ok_clicked,
       "cb_zita_add": self.cb_zita_add,
       "cb_zita_remove": self.cb_zita_remove,
+      "mixer_cb": self.mixer_cb,
+      "pavucontrol_cb": self.pavucontrol_cb,
+      "carla_cb": self.carla_cb,
       "cb_jack_start": self.cb_jack_start,
       "cb_jack_stop": self.cb_jack_stop,
       "cb_audio_apply": self.cb_audio_apply,
@@ -533,6 +536,28 @@ class UbuntuStudioControls:
       self.usbdev = a_id
     if not self.dirty:
       self.dirty = True
+
+  def mixer_cb(self, button):
+    '''callback for mixer button. This starts QASMixer
+    with the device set to whatever is jack master'''
+    if self.usbdev != "":
+      #must be hw:device not hw:device,0,0
+      mixdevice = self.usbdev.split(',', 1)[0]
+    else:
+      mixdevice = self.dev.split(',', 1)[0]
+    cmd = "qasmixer -n --device=hw:"+str(mixdevice)+" &"
+    subprocess.call(cmd, shell = True)
+
+
+  def pavucontrol_cb(self, button):
+    '''callback for pulse control button, opens pavucontrol'''
+    cmd = "pavucontrol &"
+    subprocess.call(cmd, shell = True)
+
+  def carla_cb(self, button):
+    '''callback for carla button, opens carla'''
+    cmd = "carla &"
+    subprocess.call(cmd, shell = True)
 
   def cb_jack_start(self, button):
     ''' call back for Jack (re)start button'''
