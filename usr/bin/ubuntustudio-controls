@@ -147,6 +147,7 @@ class UbuntuStudioControls:
     self.combo_out_ports = builder.get_object('combo_out_ports')
     self.jack_ind = builder.get_object('jack_ind')
     self.jack_state = builder.get_object('jack_state')
+    self.dsp_label = builder.get_object('dsp_label')
     self.jack_midi_check = builder.get_object('jack_midi_check')
     self.pulse_in_spin = builder.get_object('pulse_input_spin')
     self.pulse_out_spin = builder.get_object('pulse_output_spin')
@@ -215,8 +216,12 @@ class UbuntuStudioControls:
 
     global autojack
     global newusb
+    global jack_alive
+    global jack_died
     autojack = False
     newusb = False
+    jack_alive = False
+    jack_died = False
     self.dirty = False
 
     # read in autojack config file
@@ -331,28 +336,52 @@ class UbuntuStudioControls:
     print ("autojack sees usb change")
 
   def check_jack_status(self, user_data):
-    '''check if jack is running
-    then set jack status indicator'''
+    '''Check if jack has died and the client needs to be
+    closed. Check if jack is running then set jack status indicator.
+    Check to see if the device lists have changed
+    and update the gui if so. Updating GUI prevents race with
+    secondary updates caused by updating'''
+    # these variables need to be global as they are used by callbacks
     global newusb
-    if newusb:
-      self.dirty = True
+    global jack_client
+    global jack_alive
+    global jack_died
 
-    if self.dirty:
+    #sent by jackdied() callback
+    if jack_died:
+      jack_client.close()
+      jack_died = False
+
+    #device changed, update GUI
+    if self.dirty or newusb:
         self.refresh_dropdowns()
         self.dirty = False
         newusb = False
 
-    try:
-      client = jack.Client('controls', False, True)
+    if jack_alive:
+      load = jack_client.cpu_load()
+      self.dsp_label.set_text("DSP: "+str(load)[0:4]+"%")
+    else:
+      self.dsp_label.set_text("DSP: 0%")
+      try:
+        jack_client = jack.Client('controls', False, True)
+      except jack.JackError:
+        self.jack_state.set_text(" Stopped")
+        self.jack_ind.set_from_icon_name("gtk-stop", 0)
+        return True
       self.jack_state.set_text(" Running")
       self.jack_ind.set_from_icon_name("gtk-apply", 0)
-    except jack.JackError:
-      self.jack_state.set_text(" Stopped")
-      self.jack_ind.set_from_icon_name("gtk-stop", 0)
-      return True
-    client.close()
+      jack_client.set_shutdown_callback(self.jackdied)
+      jack_alive = True
     return True
 
+  def jackdied(state, why, extra):
+    '''gets called by jack if it is exiting, we can't clean up
+    here... so tell the world jack died with a flag instead'''
+    global jack_alive
+    global jack_died
+    jack_died = True
+    jack_alive = False
 
   def refresh_dropdowns(self):
     '''this call refreshes the device lists for all drop downs
@@ -469,6 +498,10 @@ class UbuntuStudioControls:
     return True
 
   def on_main_button_cancel_clicked(self, button):
+    global jack_alive
+    global jack_client
+    if jack_alive:
+      jack_client.close()
     Gtk.main_quit()
 
   def on_main_button_help_clicked(self, button):

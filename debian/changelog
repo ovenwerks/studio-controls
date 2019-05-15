@@ -9,6 +9,7 @@ ubuntustudio-controls (1.8) UNRELEASED; urgency=medium
   * Update dbus usage
   * Allow for more than one pulse-jack bridge
   * Add QASmixer, Pulse and Carla start buttons
+  * Monitor jack with call back gives less logfile noise
 
  -- Len Ovens <len@music>  Fri, 26 Apr 2019 23:31:26 -0700
 
