@@ -622,8 +622,10 @@ def kill_slave(ldev):
 	for device in devices:
 		if device[0] == dname and device[2]:
 			if device[3 + int(dev)][2]:
+				print("kill "+str(dname)+" sub: "+str(dev)+" PID: "+str(device[3 + int(dev)][2]))
 				os.kill(device[3 + int(dev)][2], signal.SIGKILL)
 			if device[3 + int(dev)][4]:
+				print("kill "+str(dname)+" sub: "+str(dev)+" PID: "+str(device[3 + int(dev)][4]))
 				os.kill(device[3 + int(dev)][4], signal.SIGKILL)
 
 def ses_cb_quit (*args, **kwargs):
