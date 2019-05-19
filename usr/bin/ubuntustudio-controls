@@ -278,15 +278,9 @@ class UbuntuStudioControls:
     self.combobox_late.set_active_id(self.late)
     self.combo_periods.set_active_id(self.period)
     self.combo_backend.set_active_id(self.driver)
-    if self.usb == "True":
-        self.usb_plug_check.set_active(True)
-    elif self.usb == "False":
-        self.usb_plug_check.set_active(False)
+    self.usb_plug_check.set_active(self.usb == "True")
     self.combo_out_ports.set_active_id(self.o_port)
-    if self.a2j == "True":
-        self.jack_midi_check.set_active(True)
-    elif self.a2j == "False":
-        self.jack_midi_check.set_active(False)
+    self.jack_midi_check.set_active(self.a2j == "True")
     self.pulse_in_spin.set_range(0, 9)
     self.pulse_out_spin.set_range(0, 9)
     self.pulse_in_spin.set_value(self.pulse_in)
