@@ -12,7 +12,7 @@ ubuntustudio-controls (1.8) UNRELEASED; urgency=medium
   * Monitor jack with call back gives less logfile noise
   * Make sure autojack is synced with GUI
 
- -- Len Ovens <len@music>  Fri, 26 Apr 2019 23:31:26 -0700
+ -- Len Ovens <len@ubuntustudio.org>  Fri, 26 Apr 2019 23:31:26 -0700
 
 ubuntustudio-controls (1.8) eoan; urgency=medium
 
