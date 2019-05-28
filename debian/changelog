@@ -1,4 +1,4 @@
-ubuntustudio-controls (1.8) eoan; urgency=medium
+ubuntustudio-controls (1.8.1) eoan; urgency=medium
 
   [ Len Ovens ]
   * Default devices must be valid devices (LP: #1822463)
@@ -15,7 +15,7 @@ ubuntustudio-controls (1.8) eoan; urgency=medium
 
  -- Erich Eickmeyer <erich@ericheickmeyer.com>  Tue, 28 May 2019 14:54:22 -0700
 
-ubuntustudio-controls (1.7.1) eoan; urgency=medium
+ubuntustudio-controls (1.8) eoan; urgency=medium
 
   [ Len Ovens ]
   * Add to ROADMAP next steps
