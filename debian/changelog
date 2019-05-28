@@ -1,5 +1,6 @@
-ubuntustudio-controls (1.8) UNRELEASED; urgency=medium
+ubuntustudio-controls (1.8) eoan; urgency=medium
 
+  [ Len Ovens ]
   * Default devices must be valid devices (LP: #1822463)
   * Removed Jack autostart checkbox
   * Added Jack Running indicator
@@ -12,9 +13,9 @@ ubuntustudio-controls (1.8) UNRELEASED; urgency=medium
   * Monitor jack with call back gives less logfile noise
   * Make sure autojack is synced with GUI
 
- -- Len Ovens <len@ubuntustudio.org>  Fri, 26 Apr 2019 23:31:26 -0700
+ -- Erich Eickmeyer <erich@ericheickmeyer.com>  Tue, 28 May 2019 14:54:22 -0700
 
-ubuntustudio-controls (1.8) eoan; urgency=medium
+ubuntustudio-controls (1.7.1) eoan; urgency=medium
 
   [ Len Ovens ]
   * Add to ROADMAP next steps
