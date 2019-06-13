@@ -1,3 +1,9 @@
+ubuntustudio-controls (1.9.1) eoan; urgency=medium
+
+  * Demoted carla from depends to recommends
+
+ -- Erich Eickmeyer <erich@ericheickmeyer.com>  Thu, 13 Jun 2019 11:07:41 -0700
+
 ubuntustudio-controls (1.9) eoan; urgency=medium
 
   [ Len Ovens ]

@@ -20,8 +20,8 @@ Depends: a2jmidid,
          zita-ajbridge,
          qasmixer,
          pavucontrol,
-         carla,
          ${misc:Depends}
+Recommends: carla
 Conflicts: cadence
 Description: Ubuntu Studio Controls
  Ubuntu Studio Controls is a small application that enables/disables realtime
