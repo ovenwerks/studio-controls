@@ -1,4 +1,4 @@
-ubuntustudio-controls (1.8.1) eoan; urgency=medium
+ubuntustudio-controls (1.9) eoan; urgency=medium
 
   [ Len Ovens ]
   * Default devices must be valid devices (LP: #1822463)
