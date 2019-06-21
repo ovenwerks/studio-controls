@@ -89,26 +89,15 @@ class RTSetup:
         gov = "powersave"
       else:
         gov = "ondemand"
-    cmd = "pkexec /usr/sbin/ubuntustudio-system "+gov
-    subprocess.call(cmd, shell = True)
+    subprocess.run(["/usr/bin/pkexec", "/usr/sbin/ubuntustudio-system", gov], shell=False)
 
   def set_boost(self, enable):
     boost_path = "/sys/devices/system/cpu/intel_pstate/no_turbo"
     if os.path.exists(boost_path):
       if enable == True:
-        cmd = "pkexec /usr/sbin/ubuntustudio-system boost"
-        subprocess.call(cmd, shell = True)
+        subprocess.run(["/usr/bin/pkexec", "/usr/sbin/ubuntustudio-system", "boost"], shell=False)
       else:
-        cmd = "pkexec /usr/sbin/ubuntustudio-system noboost"
-        subprocess.call(cmd, shell = True)
-
-
-  def set_user_audio_group(self, users):
-    for user in users:
-      if user[1] == True:
-        subprocess.call(["/usr/sbin/adduser", user[0], "audio"])
-      elif user[1] == False:
-        subprocess.call(["/usr/sbin/deluser", user[0], "audio"])
+        subprocess.run(["/usr/bin/pkexec", "/usr/sbin/ubuntustudio-system", "noboost"], shell=False)
 
 class UbuntuStudioControls:
 
@@ -502,8 +491,7 @@ class UbuntuStudioControls:
     self.window_help.show()
 
   def rt_button_hit(self, button):
-    cmd = "pkexec /usr/sbin/ubuntustudio-system fix"
-    subprocess.call(cmd, shell = True)
+    subprocess.run(["/usr/bin/pkexec", "/usr/sbin/ubuntustudio-system", "fix"], shell=False)
     self.rt_button.set_label("Logout required")
     self.rt_button.set_sensitive(False)
     self.message_dialog_rt_info.show()
@@ -572,64 +560,54 @@ class UbuntuStudioControls:
       mixdevice = self.usbdev.split(',', 1)[0]
     else:
       mixdevice = self.dev.split(',', 1)[0]
-    cmd = "qasmixer -n --device=hw:"+str(mixdevice)+" &"
-    subprocess.call(cmd, shell = True)
+    subprocess.Popen(["/usr/bin/qasmixer", "-n", f"--device=hw:{str(mixdevice)}"], shell=False).pid
 
 
   def pavucontrol_cb(self, button):
     '''callback for pulse control button, opens pavucontrol'''
-    cmd = "pavucontrol &"
-    subprocess.call(cmd, shell = True)
+    subprocess.Popen(["/usr/bin/pavucontrol"], shell=False).pid
 
   def carla_cb(self, button):
     '''callback for carla button, opens carla'''
-    cmd = "carla &"
-    subprocess.call(cmd, shell = True)
+    subprocess.Popen(["/usr/bin/carla"], shell=False).pid
 
   def cb_jack_start(self, button):
     ''' call back for Jack (re)start button'''
     global autojack
     self.jack = "True"
-    # Write audio setting to ~/.config/autojack
     self.config_save()
-    cmd = "dbus-send --type=signal / org.ubuntustudio.control.event.start_signal"
     if autojack:
-      subprocess.call(cmd, shell = True)
+      subprocess.run(["/usr/bin/dbus-send", "--type=signal", "/", "org.ubuntustudio.control.event.start_signal"], shell=False)
     else:
       time.sleep(5)
       if autojack:
-        subprocess.call(cmd, shell = True)
+        subprocess.run(["/usr/bin/dbus-send", "--type=signal", "/", "org.ubuntustudio.control.event.start_signal"], shell=False)
       else:
         self.start_autojack()
 
   def cb_jack_stop(self, button):
     global autojack
-    # Write audio setting to ~/.config/autojack
     self.jack = "False"
     self.config_save()
-    cmd = "dbus-send --type=signal / org.ubuntustudio.control.event.stop_signal"
     if autojack:
-      subprocess.call(cmd, shell = True)
+      subprocess.run(["/usr/bin/dbus-send", "--type=signal", "/", "org.ubuntustudio.control.event.stop_signal"], shell=False)
     else:
       time.sleep(5)
       if autojack:
-        subprocess.call(cmd, shell = True)
+        subprocess.run(["/usr/bin/dbus-send", "--type=signal", "/", "org.ubuntustudio.control.event.stop_signal"], shell=False)
       else:
         self.start_autojack()
 
   def cb_audio_apply(self, button):
     '''callback for audio tab apply button'''
     global autojack
-    # Write audio setting to ~/.config/autojack
     self.config_save()
-    cmd = "dbus-send --type=signal / org.ubuntustudio.control.event.config_signal"
     if autojack:
-      # we should send a message to autojack "config"
-      subprocess.call(cmd, shell = True)
+      subprocess.run(["/usr/bin/dbus-send", "--type=signal", "/", "org.ubuntustudio.control.event.config_signal"], shell=False)
     else:
       time.sleep(5)
       if autojack:
-        subprocess.call(cmd, shell = True)
+        subprocess.run(["/usr/bin/dbus-send", "--type=signal", "/", "org.ubuntustudio.control.event.config_signal"], shell=False)
       else:
         self.start_autojack()
 
@@ -658,19 +636,25 @@ class UbuntuStudioControls:
       rc_file.write("\"\n# end of auto generated parameters\n")
 
   def start_autojack(self):
-    '''start autojack as it has been detected as not running'''
+    '''start autojack as it has been detected as not running.
+    This should only happen directly after a fresh install of
+    -controls'''
     print("Starting Autojack...")
-    cmd = "dbus-send --type=signal / org.ubuntustudio.control.event.quit_signal"
-    subprocess.call(cmd, shell = True)
+    #first tell any old autojack to die
+    subprocess.run(["/usr/bin/dbus-send", "--type=signal", "/", "org.ubuntustudio.control.event.quit_signal"], shell=False)
     #do it
     home = expanduser("~")
+    #make sure the logfile directory exists
     if not os.path.exists(home+"/.log"):
       os.makedirs(home+"/.log")
+    # if there is already a log file rename it to .old
     if os.path.isfile(home+"/.log/autojack.log"):
-      cmd = "mv -f "+home+"/.log/autojack.log "+home+"/.log/autojack.log.old"
-      subprocess.call(cmd, shell = True)
-    cmd = "/usr/bin/autojack >"+home+"/.log/autojack.log 2>&1 < /dev/null &"
-    subprocess.call(cmd, shell = True)
+      #shutil.move(f"{home}/.log/autojack.log", f"{home}/.log/autojack.log.old", copy_function=copy2)
+      os.replace(f"{home}/.log/autojack.log", f"{home}/.log/autojack.log.old")
+    #the old command line shows we are using /dev/null for input
+    # and sending both stdout and stderr to the log file
+    #cmd = "/usr/bin/autojack >"+home+"/.log/autojack.log 2>&1 < /dev/null &"
+    subprocess.Popen(["/usr/bin/autojack"], stdin=subprocess.DEVNULL, stdout=open(f"{home}/.log/autojack.log", 'w'), stderr=subprocess.STDOUT, shell=False).pid
 
     
   def on_button_help_ok_clicked(self, button):
@@ -682,8 +666,7 @@ class UbuntuStudioControls:
   def on_button_rt_info_ok_clicked(self, button):
     self.message_dialog_rt_info.hide()
 
-  cmd = "dbus-send --type=signal / org.ubuntustudio.control.event.ping_signal"
-  subprocess.call(cmd, shell = True)
+  subprocess.run(["/usr/bin/dbus-send", "--type=signal", "/", "org.ubuntustudio.control.event.ping_signal"], shell=False)
 
 
 us = UbuntuStudioControls()
