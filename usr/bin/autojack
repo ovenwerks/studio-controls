@@ -279,17 +279,14 @@ def reconfig():
   if pulse_in != newpulse_in:
     pulse_dirty = True
     disconnect_pa()
-    cmd = "pactl unload-module module-jack-source"
-    subprocess.call(cmd, shell = True)
+    subprocess.run(["/usr/bin/pactl", "unload-module", "module-jackd-source"], shell=False)
 
     pulse_in = newpulse_in
     if pulse_in > 0:
-      cmd = "pactl load-module module-jack-source client_name=PulseIn channels=2 connect=no"
-      subprocess.call(cmd, shell = True)
+      subprocess.run(["/usr/bin/pactl", "load-module", "module-jack-source", "client_name=PulseIn", "channels=2", "connect=no"], shell=False)
     if pulse_in > 1:
       for i in range(2, (pulse_in + 1)):
-        cmd = "pactl load-module module-jack-source client_name=PulseIn-"+str(i)+" channels=2 connect=no"
-        subprocess.call(cmd, shell = True)
+        subprocess.run(["/usr/bin/pactl", "load-module", "module-jack-source", f"client_name=PulseIn-{str(i)}", "channels=2", "connect=no"], shell=False)
 
   if pulse_out != newpulse_out:
     if not pulse_dirty:
@@ -297,15 +294,12 @@ def reconfig():
       pulse_dirty = True
       disconnect_pa()
     pulse_out = newpulse_out
-    cmd = "pactl unload-module module-jack-sink"
-    subprocess.call(cmd, shell = True)
+    subprocess.run(["/usr/bin/pactl", "unload-module", "module-jack-sink"], shell=False)
     if pulse_out > 0:
-      cmd = "pactl load-module module-jack-sink client_name=PulseOut channels=2 connect=no"
-      subprocess.call(cmd, shell = True)
+      subprocess.run(["/usr/bin/pactl", "load-module", "module-jack-sink", "client_name=PulseOut", "channels=2", "connect=no"], shell=False)
     if pulse_out > 1:
       for i in range(2, (pulse_out + 1)):
-        cmd = "pactl load-module module-jack-sink client_name=PulseOut-"+str(i)+" channels=2 connect=no"
-        subprocess.call(cmd, shell = True)
+        subprocess.run(["/usr/bin/pactl", "load-module", "module-jack-sink", f"client_name=PulseOut-{str(i)}", "channels=2", "connect=no"], shell=False)
 
   if pulse_dirty:
     connect_pa()
@@ -321,11 +315,9 @@ def reconfig():
       connect_pa()
   if newa2j != a2j:
     a2j = newa2j
-    cmd = "killall -9 a2jmidid"
-    subprocess.call(cmd, shell = True)
+    subprocess.run(["/usr/bin/killall", "-9", "a2jmidid"], shell=False)
     if a2j == "True":
-      cmd = "a2jmidid -e &"
-      subprocess.call(cmd, shell = True)
+      subprocess.Popen(["/usr/bin/a2jmidid", "-e"], shell=False).pid
   if [usb, zdev] != [newusb, newzdev]:
     import_device_array()
     for device in devices:
@@ -369,50 +361,39 @@ def config_start():
   # to be fully running
   time.sleep(2)
   # Stop jack if running
-  cmd = "killall -9 jackdbus jackd a2jmidid"
-  subprocess.call(cmd, shell = True)
+  subprocess.run(["/usr/bin/killall", "-9", "jackdbus", "jackd", "a2jmidid"], shell=False)
   if jack == "False":
     # restart Pulse
-    cmd = "pulseaudio -k"
-    subprocess.call(cmd, shell = True)
+    subprocess.run(["/usr/bin/pulseaudio", "-k"], shell=False)
     return
 
   # Assume start of session where pulse may be fully loaded
   # get rid of anything that can automatically interfere
-  cmd = "pactl unload-module module-jackdbus-detect"
-  subprocess.call(cmd, shell = True)
-  cmd = "pactl unload-module module-udev-detect"
-  subprocess.call(cmd, shell = True)
-  cmd = "pactl unload-module module-alsa-card"
-  subprocess.call(cmd, shell = True)
+  subprocess.run(["/usr/bin/pactl", "unload-module", "module-jackdbus-detect"], shell=False)
+  subprocess.run(["/usr/bin/pactl", "unload-module", "module-udev-detect"], shell=False)
+  subprocess.run(["/usr/bin/pactl", "unload-module", "module-alsa-card"], shell=False)
   if os.path.exists("/proc/asound/"+usbdev.split(",")[0]) and usbdev != "":
     mdev = usbdev
   else:
     mdev = dev
   # Now start jackdbus with the configured device
-  cmd = "jack_control ds "+driver+" dps capture none dps playback none"
-  subprocess.call(cmd, shell = True)
-  cmd = "jack_control dps device hw:"+mdev+" dps rate "+sr
-  cmd = cmd+" dps period "+late+" dps nperiods "+period+" start"
-  subprocess.call(cmd, shell = True)
+  subprocess.run(["/usr/bin/jack_control", "ds", driver, "dps", "capture", "none", "dps", "playback", "none"], shell=False)
+  subprocess.run(["/usr/bin/jack_control", "dps", "device", f"hw:{mdev}", "dps", "rate", sr], shell=False)
+  subprocess.run(["/usr/bin/jack_control", "dps", "period", late, "dps", "nperiods", period, "start"], shell=False)
   last_master = mdev
   # maybe check for jack up (need function?)
   time.sleep(2)
 
   if pulse_in > 0:
-    cmd = "pactl load-module module-jack-source client_name=PulseIn channels=2 connect=no"
-    subprocess.call(cmd, shell = True)
+    subprocess.run(["/usr/bin/pactl", "load-module", "module-jack-source", "client_name=PulseIn", "channels=2", "connect=no"], shell=False)
   if pulse_in > 1:
     for i in range(2, (pulse_in + 1)):
-      cmd = "pactl load-module module-jack-source client_name=PulseIn-"+str(i)+" channels=2 connect=no"
-      subprocess.call(cmd, shell = True)
+      subprocess.run(["/usr/bin/pactl", "load-module", "module-jack-source", f"client_name=PulseIn-{str(i)}", "channels=2", "connect=no"], shell=False)
   if pulse_out > 0:
-    cmd = "pactl load-module module-jack-sink client_name=PulseOut channels=2 connect=no"
-    subprocess.call(cmd, shell = True)
+    subprocess.run(["/usr/bin/pactl", "load-module", "module-jack-sink", "client_name=PulseOut", "channels=2", "connect=no"], shell=False)
   if pulse_out > 1:
     for i in range(2, (pulse_out + 1)):
-      cmd = "pactl load-module module-jack-sink client_name=PulseOut-"+str(i)+" channels=2 connect=no"
-      subprocess.call(cmd, shell = True)
+      subprocess.run(["/usr/bin/pactl", "load-module", "module-jack-sink", f"client_name=PulseOut-{str(i)}", "channels=2", "connect=no"], shell=False)
 
 
   for cname in zdev.strip('"').strip().split(" "):
@@ -433,8 +414,7 @@ def config_start():
           start_slave(device[0]+",0,0")
 
   if a2j == "True":
-    cmd = "a2jmidid -e &"
-    subprocess.call(cmd, shell = True)
+    subprocess.Popen(["/usr/bin/a2jmidid", "-e"], shell=False).pid
 
 def connect_pa():
   '''connects pulse ports to the correct device ports. May have to
@@ -486,15 +466,11 @@ def connect_pa():
     time.sleep(1)
 
   if pulse_in:
-    cmd = "jack_connect "+in_name+":capture_1 PulseIn:front-left"
-    subprocess.call(cmd, shell = True)
-    cmd = "jack_connect "+in_name+":capture_2 PulseIn:front-right"
-    subprocess.call(cmd, shell = True)
+    subprocess.run(["/usr/bin/jack_connect", f"{in_name}:capture_1", "PulseIn:front-left"], shell=False)
+    subprocess.run(["/usr/bin/jack_connect", f"{in_name}:capture_2", "PulseIn:front-right"], shell=False)
   if pulse_out:
-    cmd = "jack_connect PulseOut:front-left "+out_name+":playback_"+o_port
-    subprocess.call(cmd, shell = True)
-    cmd = "jack_connect PulseOut:front-right "+out_name+":playback_"+str(int(o_port) + 1)
-    subprocess.call(cmd, shell = True)
+    subprocess.run(["/usr/bin/jack_connect", "PulseOut:front-left", f"{out_name}:playback_{o_port}"], shell=False)
+    subprocess.run(["/usr/bin/jack_connect", "PulseOut:front-right", f"{out_name}:playback_{str(int(o_port) + 1)}"], shell=False)
 
 def disconnect_pa():
   '''Searches jack ports for Pulse ports and disconnects them. The pa-jack
@@ -510,9 +486,8 @@ def disconnect_pa():
       else:
         port2 = line
         if port1:
-          cmd = "jack_disconnect "+port1+" "+port2
-          subprocess.call(cmd, shell = True)
-          port1 = ""
+          subprocess.run(["/usr/bin/jack_disconnect", port1, port2], shell=False)
+        port1 = ""
 
 def msg_cb_new(*args, **kwargs):
   '''call back for udev sensing new device. checks if device is audio.
@@ -533,8 +508,7 @@ def msg_cb_new(*args, **kwargs):
     #make sure device is USB and is not midi only
     if device[1] and device[2]:
       # tell gui devicelist has changed
-      cmd = "dbus-send --type=signal / org.ubuntustudio.control.event.usb_signal"
-      subprocess.call(cmd, shell = True)
+      subprocess.run(["/usr/bin/dbus-send", "--type=signal", "/", "org.ubuntustudio.control.event.usb_signal"], shell=False)
 
       cid = device[0]+",0,0"
       print("device = "+cid+" play:"+str(device[3][1])+" capture:"+str(device[3][3]))
@@ -556,8 +530,7 @@ def msg_cb_removed(*args, **kwargs):
 
   if args[0].find("sound-card") >= 0:
     # tell gui devicelist has changed
-    cmd = "dbus-send --type=signal / org.ubuntustudio.control.event.usb_signal"
-    subprocess.call(cmd, shell = True)
+    subprocess.run(["/usr/bin/dbus-send", "--type=signal", "/", "org.ubuntustudio.control.event.usb_signal"], shell=False)
 
     a_if = args[0].split("sound-card", 1)
     audio_if = a_if[1].split(".", 1)[0]
@@ -584,14 +557,11 @@ def change_jack_master(ldev, com):
   global devices
   global last_master
   print("Changing jack master to: "+ldev)
-  cmd = "jack_control ds "+driver+" dps capture none dps playback none"
-  subprocess.call(cmd, shell = True)
-  cmd = "jack_control dps device hw:"+ldev+" dps rate "+sr
-  cmd = cmd+" dps period "+late+" dps nperiods "+period
-  subprocess.call(cmd, shell = True)
-  cmd = "jack_control "+com
+  subprocess.run(["/usr/bin/jack_control", "ds", driver, "dps", "capture", "none", "dps", "playback", "none"], shell=False)
+  subprocess.run(["/usr/bin/jack_control", "dps", "device", f"hw:{ldev}", "dps", "rate", sr], shell=False)
+  subprocess.run(["/usr/bin/jack_control", "dps", "period", late, "dps", "nperiods", period], shell=False)
   time.sleep(3)
-  subprocess.call(cmd, shell = True)
+  subprocess.run(["/usr/bin/jack_control", com], shell=False)
   last_master = ldev
 
 def start_slave(ldev):
@@ -603,13 +573,13 @@ def start_slave(ldev):
   for device in devices:
     if device[0] == dname and device[2] > int(dev):
       if device[3 + int(dev)][1]:
-        cmd = "/usr/bin/zita-j2a -j "+ldev+"-out -d hw:"+ldev+" -r "+sr+" -p "+zframe+" -n "+period+" -c 100 &"
-        procout = subprocess.Popen(cmd.split(), stdout=subprocess.PIPE)
-        device[3+int(dev)][2] = procout.pid
+        #procout = subprocess.Popen(cmd.split(), stdout=subprocess.PIPE)
+        pidout = subprocess.Popen(["/usr/bin/zita-j2a", "-j", f"{ldev}-out", "-d", f"hw:{ldev}", "-r", sr, "-p", zframe, "-n", period, "-c", "100"], shell=False).pid
+        device[3+int(dev)][2] = pidout
       if device[3+int(dev)][3]:
-        cmd = "/usr/bin/zita-a2j -j "+ldev+"-in -d hw:"+ldev+" -r "+sr+" -p "+zframe+" -n "+period+" -c 100 &"
-        procin = subprocess.Popen(cmd.split(), stdout=subprocess.PIPE)
-        device[3 + int(dev)][4] = procin.pid
+        #procin = subprocess.Popen(cmd.split(), stdout=subprocess.PIPE)
+        pidin = subprocess.Popen(["/usr/bin/zita-a2j", "-j", f"{ldev}-in", "-d", f"hw:{ldev}", "-r", sr, "-p", zframe, "-n", period, "-c", "100"], shell=False).pid
+        device[3 + int(dev)][4] = pidin
 
 def kill_slave(ldev):
   ''' takes the device as a parameter and if the device exists
@@ -630,19 +600,15 @@ def ses_cb_quit (*args, **kwargs):
   ''' dbus call back when quit signal caught. This is for use in
   testing and the GUI never sends this. '''
   print("Got quit signal.\n")
-  cmd = "killall -9 jackdbus jackd a2jmidid"
-  subprocess.call(cmd, shell = True)
-  cmd = "pulseaudio -k"
-  subprocess.call(cmd, shell = True)
+  subprocess.run(["/usr/bin/killall", "-9", "jackdbus", "jackd", "a2jmidid"], shell=False)
+  subprocess.run(["/usr/bin/pulseaudio", "-k"], shell=False)
   os._exit(0)
 
 def ses_cb_stop (*args, **kwargs):
   ''' dbus call back when stop signal caught. This stops jack. '''
   print("Got stop signal.\n")
-  cmd = "killall -9 jackdbus jackd a2jmidid"
-  subprocess.call(cmd, shell = True)
-  cmd = "pulseaudio -k"
-  subprocess.call(cmd, shell = True)
+  subprocess.run(["/usr/bin/killall", "-9", "jackdbus", "jackd", "a2jmidid"], shell=False)
+  subprocess.run(["/usr/bin/pulseaudio", "-k"], shell=False)
 
 def ses_cb_start (*args, **kwargs):
   ''' dbus call back when (re)start signal caught'''
@@ -658,8 +624,7 @@ def ses_cb_ping (*args, **kwargs):
   ''' dbus call back when config signal caught '''
   print("Got ping signal.\n")
   time.sleep(3)
-  cmd = "dbus-send --type=signal / org.ubuntustudio.control.event.V2_signal"
-  subprocess.call(cmd, shell = True)
+  subprocess.run(["/usr/bin/dbus-send", "--type=signal", "/", "org.ubuntustudio.control.event.V2_signal"], shell=False)
 
 
 def main():
@@ -679,8 +644,7 @@ def main():
   user_bus.add_signal_receiver(ses_cb_config, dbus_interface='org.ubuntustudio.control.event', signal_name='config_signal')
   user_bus.add_signal_receiver(ses_cb_ping, dbus_interface='org.ubuntustudio.control.event', signal_name='ping_signal')
 
-  cmd = "dbus-send --type=signal / org.ubuntustudio.control.event.pong_signal"
-  subprocess.call(cmd, shell = True)
+  subprocess.run(["/usr/bin/dbus-send", "--type=signal", "/", "org.ubuntustudio.control.event.V2_signal"], shell=False)
 
   loop = GLib.MainLoop()
   loop.run()
