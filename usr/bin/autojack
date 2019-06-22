@@ -38,13 +38,13 @@ def get_dev_info(x):
   cname = ""
   usb = False
   sub = 0
-  if os.path.exists("/proc/asound/card"+str(x)):
-    with open("/proc/asound/card"+str(x)+"/id", "r") as card_file:
+  if os.path.exists(f"/proc/asound/card{str(x)}"):
+    with open(f"/proc/asound/card{str(x)}/id", "r") as card_file:
       for line in card_file:
         #only need one line
         cname = line.rstrip()
 
-  if os.path.exists("/proc/asound/card"+str(x)+"/usbbus"):
+  if os.path.exists(f"/proc/asound/card{str(x)}/usbbus"):
     usb = True
 
   device.append(cname)
@@ -57,18 +57,18 @@ def get_dev_info(x):
     cap_pid = 0
     play = False
     play_pid = 0
-    if os.path.exists("/proc/asound/card"+str(x)+"/pcm"+str(y)+"p"):
+    if os.path.exists(f"/proc/asound/card{str(x)}/pcm{str(y)}p"):
       play = True
-      if os.path.exists("/proc/asound/card"+str(x)+"/pcm"+str(y)+"p/sub0"):
-        with open("/proc/asound/card"+str(x)+"/pcm"+str(y)+"p/sub0/status", "r") as info_file:
+      if os.path.exists(f"/proc/asound/card{str(x)}/pcm{str(y)}p/sub0"):
+        with open(f"/proc/asound/card{str(x)}/pcm{str(y)}p/sub0/status", "r") as info_file:
           for line in info_file:
             if re.match("^owner_pid", line.rstrip()):
               play_pid = int(line.rstrip().split(": ", 1)[1])
 
-    if os.path.exists("/proc/asound/card"+str(x)+"/pcm"+str(y)+"c"):
+    if os.path.exists(f"/proc/asound/card{str(x)}/pcm{str(y)}c"):
       cap = True
-      if os.path.exists("/proc/asound/card"+str(x)+"/pcm"+str(y)+"c/sub0"):
-        with open("/proc/asound/card"+str(x)+"/pcm"+str(y)+"c/sub0/status", "r") as info_file:
+      if os.path.exists(f"/proc/asound/card{str(x)}/pcm{str(y)}c/sub0"):
+        with open(f"/proc/asound/card{str(x)}/pcm{str(y)}c/sub0/status", "r") as info_file:
           for line in info_file:
             if re.match("^owner_pid", line.rstrip()):
               cap_pid = int(line.rstrip().split(": ", 1)[1])
@@ -152,9 +152,9 @@ def import_config():
   usbdev = ""
 
   # read in autojack config file
-  home = expanduser("~")
-  if os.path.isfile(home+"/.config/autojackrc"):
-    with open(home+"/.config/autojackrc", "r") as rc_file:
+  c_file = expanduser("~/.config/autojackrc")
+  if os.path.isfile(c_file):
+    with open(c_file, "r") as rc_file:
       for line in rc_file:
         if re.match("^#", line):
           continue
@@ -222,9 +222,9 @@ def reconfig():
   global usbdev
 
   # read in autojack config file
-  home = expanduser("~")
-  if os.path.isfile(home+"/.config/autojackrc"):
-    with open(home+"/.config/autojackrc", "r") as rc_file:
+  c_file = expanduser("~/.config/autojackrc")
+  if os.path.isfile(c_file):
+    with open(c_file, "r") as rc_file:
       for line in rc_file:
         if re.match("^#", line):
           continue
@@ -279,7 +279,7 @@ def reconfig():
   if pulse_in != newpulse_in:
     pulse_dirty = True
     disconnect_pa()
-    subprocess.run(["/usr/bin/pactl", "unload-module", "module-jackd-source"], shell=False)
+    subprocess.run(["/usr/bin/pactl", "unload-module", "module-jack-source"], shell=False)
 
     pulse_in = newpulse_in
     if pulse_in > 0:
@@ -328,9 +328,9 @@ def reconfig():
         # USB device
         if usb != newusb:
           if newusb == "True":
-            start_slave(device[0]+",0,0")
+            start_slave(f"{device[0]},0,0")
           else:
-            kill_slave(device[0]+",0,0")
+            kill_slave(f"{device[0]},0,0")
       else:
         # not USB device
         if zdev != newzdev:
@@ -339,7 +339,7 @@ def reconfig():
           dev_has_pid = False
           #stop_dev = True
           for i in range(3, (device[2] + 3)):
-            tempname = device[0]+","+str(device[i][0])+",0"
+            tempname = f"{device[0]},{str(device[i][0])},0"
             if device[i][2]:
               dev_has_pid = True
             if tempname in zdev_list:
@@ -372,7 +372,7 @@ def config_start():
   subprocess.run(["/usr/bin/pactl", "unload-module", "module-jackdbus-detect"], shell=False)
   subprocess.run(["/usr/bin/pactl", "unload-module", "module-udev-detect"], shell=False)
   subprocess.run(["/usr/bin/pactl", "unload-module", "module-alsa-card"], shell=False)
-  if os.path.exists("/proc/asound/"+usbdev.split(",")[0]) and usbdev != "":
+  if os.path.exists(f"/proc/asound/{usbdev.split(',')[0]}") and usbdev != "":
     mdev = usbdev
   else:
     mdev = dev
@@ -397,7 +397,6 @@ def config_start():
 
 
   for cname in zdev.strip('"').strip().split(" "):
-    #print("Extra internal: "+cname)
     if cname != "":
       start_slave(cname)
 
@@ -410,8 +409,8 @@ def config_start():
     for device in devices:
       if device[1]:
         #this is a USB device
-        if device[0]+",0,0" != usbdev:
-          start_slave(device[0]+",0,0")
+        if f"{device[0]},0,0" != usbdev:
+          start_slave(f"{device[0]},0,0")
 
   if a2j == "True":
     subprocess.Popen(["/usr/bin/a2jmidid", "-e"], shell=False).pid
@@ -452,10 +451,10 @@ def connect_pa():
     dev_has_pid = True
   elif dev_available == True:
     if dev_has_in:
-      in_name = d_out+"-in"
+      in_name = f"{d_out}-in"
     else:
       in_name = "system"
-    out_name = d_out+"-out"
+    out_name = f"{d_out}-out"
   else:
     in_name = out_name = "system"
     dev_has_pid = True
@@ -510,10 +509,10 @@ def msg_cb_new(*args, **kwargs):
       # tell gui devicelist has changed
       subprocess.run(["/usr/bin/dbus-send", "--type=signal", "/", "org.ubuntustudio.control.event.usb_signal"], shell=False)
 
-      cid = device[0]+",0,0"
-      print("device = "+cid+" play:"+str(device[3][1])+" capture:"+str(device[3][3]))
+      cid = f"{device[0]},0,0"
+      print(f"device = {cid} play:{str(device[3][1])} capture:{str(device[3][3])}")
       if jack == "True":
-        if usbdev == device[0] + ",0,0":
+        if usbdev == f"{device[0]},0,0":
           change_jack_master(cid, "sm")
           time.sleep(1)
           start_slave(dev)
@@ -535,9 +534,9 @@ def msg_cb_removed(*args, **kwargs):
     a_if = args[0].split("sound-card", 1)
     audio_if = a_if[1].split(".", 1)[0]
     device = devices[int(audio_if)]
-    print("sound card: hw:"+audio_if+" removed")
+    print(f"sound card: hw:{audio_if} removed")
     # XXXX needs to add device and sub
-    cid = device[0] + ",0,0"
+    cid = f"{device[0]},0,0"
     if jack == "True":
       if not device[1]:
         # not a usb device
@@ -556,7 +555,7 @@ def change_jack_master(ldev, com):
   # this could be inlined as it is only used in one place any more
   global devices
   global last_master
-  print("Changing jack master to: "+ldev)
+  print(f"Changing jack master to: {ldev}")
   subprocess.run(["/usr/bin/jack_control", "ds", driver, "dps", "capture", "none", "dps", "playback", "none"], shell=False)
   subprocess.run(["/usr/bin/jack_control", "dps", "device", f"hw:{ldev}", "dps", "rate", sr], shell=False)
   subprocess.run(["/usr/bin/jack_control", "dps", "period", late, "dps", "nperiods", period], shell=False)
@@ -573,11 +572,9 @@ def start_slave(ldev):
   for device in devices:
     if device[0] == dname and device[2] > int(dev):
       if device[3 + int(dev)][1]:
-        #procout = subprocess.Popen(cmd.split(), stdout=subprocess.PIPE)
         pidout = subprocess.Popen(["/usr/bin/zita-j2a", "-j", f"{ldev}-out", "-d", f"hw:{ldev}", "-r", sr, "-p", zframe, "-n", period, "-c", "100"], shell=False).pid
         device[3+int(dev)][2] = pidout
       if device[3+int(dev)][3]:
-        #procin = subprocess.Popen(cmd.split(), stdout=subprocess.PIPE)
         pidin = subprocess.Popen(["/usr/bin/zita-a2j", "-j", f"{ldev}-in", "-d", f"hw:{ldev}", "-r", sr, "-p", zframe, "-n", period, "-c", "100"], shell=False).pid
         device[3 + int(dev)][4] = pidin
 
@@ -590,10 +587,10 @@ def kill_slave(ldev):
   for device in devices:
     if device[0] == dname and device[2]:
       if device[3 + int(dev)][2]:
-        print("kill "+str(dname)+" sub: "+str(dev)+" PID: "+str(device[3 + int(dev)][2]))
+        print(f"kill {str(dname)} sub: {str(dev)} PID: {str(device[3 + int(dev)][2])}")
         os.kill(device[3 + int(dev)][2], signal.SIGKILL)
       if device[3 + int(dev)][4]:
-        print("kill "+str(dname)+" sub: "+str(dev)+" PID: "+str(device[3 + int(dev)][4]))
+        print(f"kill {str(dname)} sub: {str(dev)} PID: {str(device[3 + int(dev)][4])}")
         os.kill(device[3 + int(dev)][4], signal.SIGKILL)
 
 def ses_cb_quit (*args, **kwargs):
