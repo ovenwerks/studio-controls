@@ -651,7 +651,7 @@ class UbuntuStudioControls:
     #the old command line shows we are using /dev/null for input
     # and sending both stdout and stderr to the log file
     #cmd = "/usr/bin/autojack >"+home+"/.log/autojack.log 2>&1 < /dev/null &"
-    subprocess.Popen(["/usr/bin/autojack"], stdin=subprocess.DEVNULL, stdout=open(f"{home}/.log/autojack.log", 'w'), stderr=subprocess.STDOUT, shell=False).pid
+    subprocess.Popen(["/usr/bin/autojack"], stdin=subprocess.DEVNULL, stdout=open(f"{logpath}/autojack.log", 'w'), stderr=subprocess.STDOUT, shell=False).pid
 
     
   def on_button_help_ok_clicked(self, button):
