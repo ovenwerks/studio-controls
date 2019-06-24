@@ -5,13 +5,27 @@
  things)
 
 Bugs:
+	- Backends All use different commands to do the same things
+		- add the rest of the supported backends
 
 Features:
-	Done(ish)- needs backend ALSA/FireWire/Dummy
+	- allow to choose no of i/o with dummy (all) backend
+	- Allow USB bridging to be inputs only
+		for badly designed input devices with hanging
+		outputs.
+	- monitor headphone plug status if PCH is being used for output
+		switch to headphones or speakers in alsa. use alsa level/mute
+		controls but add hook for user script. This will involve
+		moving autojackrc into .config/autojack/ so new V3 for ping.
+		So two commits.
+	- needs backend ALSA/FireWire/Dummy
 		Note: BE != alsa should disable some things:
 			USB master disable but USB can still be bridged
 			Jack master needs to be cleared and be text entry
 			Firewire back end should check for availablity of FW
+	- add use of internals (net manager, audio and net adapters)
+		option to use audioadapter instead of zita bridge?
+		that may only work for one device, zita can do many.
 	- remove Cadence from autostart and Cadences pulseaudio config
 		Cadence will reinsert these if the user decides to use it again
 		but at least if controls is used PA should get set to stock.
@@ -19,8 +33,5 @@ Features:
 		one start is needed to re-enable that.
 	- adding in stuff from https://github.com/jhernberg/udev-rtirq so that
 		hot plugged USB devices get higher priority.
-	- monitor headphone plug status if PCH is being used for output
-		switch to headphones or speakers in alsa.
 	- pulse profiles for multi-channels devices. (including jack)
 		This is really pulse related not -controls
-	- allow to choose no of i/o with dummy backend

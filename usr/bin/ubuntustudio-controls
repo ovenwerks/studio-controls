@@ -137,6 +137,8 @@ class UbuntuStudioControls:
     self.jack_state = builder.get_object('jack_state')
     self.dsp_label = builder.get_object('dsp_label')
     self.jack_midi_check = builder.get_object('jack_midi_check')
+    self.chan_in_spin = builder.get_object('chan_in_spin')
+    self.chan_out_spin = builder.get_object('chan_out_spin')
     self.pulse_in_spin = builder.get_object('pulse_input_spin')
     self.pulse_out_spin = builder.get_object('pulse_output_spin')
 
@@ -187,6 +189,8 @@ class UbuntuStudioControls:
     # first set defaults
     self.jack = False
     self.driver = "alsa"
+    self.chan_in = 0
+    self.chan_out = 0
     self.sr = "48000"
     self.late = "1024"
     self.period = "2"
@@ -226,6 +230,10 @@ class UbuntuStudioControls:
             self.driver = lsplit[1]
           elif lsplit[0] == "DEV":
             self.dev = self.dev_desc = lsplit[1]
+          elif lsplit[0] == "CHAN-IN":
+            self.chan_in = int(lsplit[1])
+          elif lsplit[0] == "CHAN-OUT":
+            self.chan_out = int(lsplit[1])
           elif lsplit[0] == "RATE":
             self.sr = lsplit[1]
           elif lsplit[0] == "FRAME":
@@ -269,6 +277,10 @@ class UbuntuStudioControls:
     self.usb_plug_check.set_active(self.usb == "True")
     self.combo_out_ports.set_active_id(self.o_port)
     self.jack_midi_check.set_active(self.a2j == "True")
+    self.chan_in_spin.set_range(0, 128)
+    self.chan_out_spin.set_range(0, 128)
+    self.chan_in_spin.set_value(self.chan_in)
+    self.chan_out_spin.set_value(self.chan_out)
     self.pulse_in_spin.set_range(0, 9)
     self.pulse_out_spin.set_range(0, 9)
     self.pulse_in_spin.set_value(self.pulse_in)
@@ -372,6 +384,24 @@ class UbuntuStudioControls:
     all all alsa devices will still be available for bridging and
     as output device.'''
 
+    if self.driver == "alsa":
+      self.jack_device_combo.set_sensitive(True)
+      self.jack_usb_dev_combo.set_sensitive(True)
+      self.chan_in_spin.set_sensitive(False)
+      self.chan_out_spin.set_sensitive(False)
+      self.combo_periods.set_sensitive(True)
+    elif self.driver == "firewire":
+      self.jack_device_combo.set_sensitive(False)
+      self.jack_usb_dev_combo.set_sensitive(False)
+      self.chan_in_spin.set_sensitive(False)
+      self.chan_out_spin.set_sensitive(False)
+      self.combo_periods.set_sensitive(True)
+    elif self.driver == "dummy":
+      self.jack_device_combo.set_sensitive(False)
+      self.jack_usb_dev_combo.set_sensitive(False)
+      self.chan_in_spin.set_sensitive(True)
+      self.chan_out_spin.set_sensitive(True)
+      self.combo_periods.set_sensitive(False)
     self.jack_device_combo.get_model().clear()
     self.jack_device_combo.append("0,0,0", "default")
     if self.dev == "0,0,0":
@@ -617,6 +647,8 @@ class UbuntuStudioControls:
       rc_file.write(f"\nJACK={str(self.jack)}")
       rc_file.write(f"\nDRIVER={str(self.combo_backend.get_active_id())}")
       rc_file.write(f"\nDEV={str(self.jack_device_combo.get_active_id())}")
+      rc_file.write(f"\nCHAN-IN={str(int(self.chan_in_spin.get_value()))}")
+      rc_file.write(f"\nCHAN-OUT={str(int(self.chan_out_spin.get_value()))}")
       rc_file.write(f"\nRATE={str(self.jack_rate_combo.get_active_id())}")
       rc_file.write(f"\nFRAME={str(self.combobox_late.get_active_id())}")
       self.zframe = str(int(int(self.combobox_late.get_active_id()) / 2))

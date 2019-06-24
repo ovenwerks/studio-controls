@@ -1,6 +1,8 @@
 ubuntustudio-controls (1.9.1) UNRELEASED; urgency=medium
 
   * Change all subprocess from string to array and shell=False
+  * Add ability to set i/o channel count
+  * Made sure each backend only sends parameters it can handle
 
  -- Len Ovens <len@ubuntustudio.org>  Fri, 21 Jun 2019 13:32:47 -0700
 

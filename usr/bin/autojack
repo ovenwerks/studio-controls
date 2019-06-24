@@ -120,6 +120,12 @@ def import_config():
   jack = "False"
   global driver
   driver = "alsa"
+  global dev
+  dev = "0,0,0"
+  global chan_in
+  chan_in = 0
+  global chan_out
+  chan_out = 0
   global sr
   sr = "48000"
   global late
@@ -138,8 +144,6 @@ def import_config():
   pulse_out = 1
   global a2j
   a2j = "True"
-  global dev
-  dev = "0,0,0"
   global dev_desc
   dev_desc = "audio device"
   global d_out
@@ -167,6 +171,10 @@ def import_config():
           dev = dev_desc = lsplit[1]
           if dev == "default":
             dev = 0,0,0
+        elif lsplit[0] == "CHAN-IN":
+          chan_in = lsplit[1]
+        elif lsplit[0] == "CHAN-OUT":
+          chan_out = lsplit[1]
         elif lsplit[0] == "RATE":
           sr = lsplit[1]
         elif lsplit[0] == "FRAME":
@@ -235,6 +243,10 @@ def reconfig():
           newdriver = lsplit[1]
         elif lsplit[0] == "DEV":
           newdev = dev_desc = lsplit[1]
+        elif lsplit[0] == "CHAN-IN":
+          newchan_in = lsplit[1]
+        elif lsplit[0] == "CHAN-OUT":
+          newchan_out = lsplit[1]
         elif lsplit[0] == "RATE":
           newsr = lsplit[1]
         elif lsplit[0] == "FRAME":
@@ -265,8 +277,8 @@ def reconfig():
           newzdev = lsplit[1]
         elif lsplit[0] == "USBAUTO":
           newusb = lsplit[1]
-  oldlist = [jack, driver, sr, late, period, dev, usbdev]
-  newlist = [newjack, newdriver, newsr, newlate, newperiod, newdev, newusbdev]
+  oldlist = [jack, driver, chan_in, chan_out, sr, late, period, dev, usbdev]
+  newlist = [newjack, newdriver, newchan_in, newchan_out, newsr, newlate, newperiod, newdev, newusbdev]
   if newlist != oldlist:
     config_start()
     return
@@ -377,9 +389,24 @@ def config_start():
   else:
     mdev = dev
   # Now start jackdbus with the configured device
-  subprocess.run(["/usr/bin/jack_control", "ds", driver, "dps", "capture", "none", "dps", "playback", "none"], shell=False)
-  subprocess.run(["/usr/bin/jack_control", "dps", "device", f"hw:{mdev}", "dps", "rate", sr], shell=False)
-  subprocess.run(["/usr/bin/jack_control", "dps", "period", late, "dps", "nperiods", period, "start"], shell=False)
+  # the commands are all different so...
+  # XXXX Add Chan_in/out...
+  if driver == "alsa":
+    subprocess.run(["/usr/bin/jack_control", "ds", "alsa", "dps", "capture", "none", "dps", "playback", "none"], shell=False)
+    subprocess.run(["/usr/bin/jack_control", "dps", "device", f"hw:{mdev}", "dps", "rate", sr], shell=False)
+    subprocess.run(["/usr/bin/jack_control", "dps", "period", late, "dps", "nperiods", period, "start"], shell=False)
+  elif driver == "firewire":
+    subprocess.run(["/usr/bin/jack_control", "ds", "firewire"], shell=False)
+    subprocess.run(["/usr/bin/jack_control", "dps", "device", f"hw:{mdev}", "dps", "rate", sr], shell=False)
+    subprocess.run(["/usr/bin/jack_control", "dps", "period", late, "dps", "nperiods", period, "start"], shell=False)
+  elif driver == "dummy":
+    subprocess.run(["/usr/bin/jack_control", "ds", "dummy"], shell=False)
+    subprocess.run(["/usr/bin/jack_control", "dps", "rate", sr, "dps" "period", late], shell=False)
+    subprocess.run(["/usr/bin/jack_control", "dps", "capture", chan_in, "dps", "playback", chan_out, "start"], shell=False)
+  else:
+    #we should never get here
+    print("programming error! if you find this in your log file please file"+
+              "a bug report about: Driver not found")
   last_master = mdev
   # maybe check for jack up (need function?)
   time.sleep(2)
@@ -474,7 +501,7 @@ def connect_pa():
 def disconnect_pa():
   '''Searches jack ports for Pulse ports and disconnects them. The pa-jack
   bridge is left running.'''
-  stdoutdata = subprocess.check_output("jack_lsp -c Pulse", shell=True)
+  stdoutdata = subprocess.check_output(["/usr/bin/jack_lsp", "-c", "Pulse"], shell=False)
   ports = stdoutdata.split()
   port1 = ""
   for linein in ports:
@@ -554,7 +581,12 @@ def change_jack_master(ldev, com):
   ''' does a switch master to ldev '''
   # this could be inlined as it is only used in one place any more
   global devices
+  global driver
   global last_master
+  # firewire, dummy can not be used here, alsa only
+  # XXXXX but need to add chan_in and chan_out
+  if driver != "alsa":
+    return
   print(f"Changing jack master to: {ldev}")
   subprocess.run(["/usr/bin/jack_control", "ds", driver, "dps", "capture", "none", "dps", "playback", "none"], shell=False)
   subprocess.run(["/usr/bin/jack_control", "dps", "device", f"hw:{ldev}", "dps", "rate", sr], shell=False)
