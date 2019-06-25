@@ -636,6 +636,7 @@
                         <property name="halign">start</property>
                         <property name="active">True</property>
                         <property name="draw_indicator">True</property>
+                        <signal name="toggled" handler="usb_plug_cb" swapped="no"/>
                       </object>
                       <packing>
                         <property name="left_attach">0</property>
@@ -703,9 +704,25 @@
                         </child>
                       </object>
                       <packing>
-                        <property name="left_attach">1</property>
+                        <property name="left_attach">2</property>
                         <property name="top_attach">0</property>
                       </packing>
+                    </child>
+                    <child>
+                      <object class="GtkCheckButton" id="usb_single_ck">
+                        <property name="label" translatable="yes">USB device bridge is input only</property>
+                        <property name="visible">True</property>
+                        <property name="can_focus">True</property>
+                        <property name="receives_default">False</property>
+                        <property name="draw_indicator">True</property>
+                      </object>
+                      <packing>
+                        <property name="left_attach">1</property>
+                        <property name="top_attach">1</property>
+                      </packing>
+                    </child>
+                    <child>
+                      <placeholder/>
                     </child>
                     <child>
                       <placeholder/>

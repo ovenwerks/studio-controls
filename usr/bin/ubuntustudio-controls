@@ -129,6 +129,7 @@ class UbuntuStudioControls:
     self.combo_periods = builder.get_object('combo_periods')
     self.combo_backend = builder.get_object('combo_backend')
     self.usb_plug_check = builder.get_object('usb_plug_check')
+    self.usb_single_ck = builder.get_object('usb_single_ck')
     self.combo_zita_add = builder.get_object('combo_zita_add')
     self.combo_zita_remove = builder.get_object('combo_zita_remove')
     self.combo_output = builder.get_object('combo_output')
@@ -143,7 +144,7 @@ class UbuntuStudioControls:
     self.pulse_out_spin = builder.get_object('pulse_output_spin')
 
     user_bus = dbus.SessionBus()
-    user_bus.add_signal_receiver(self.db_ses_cb, dbus_interface='org.ubuntustudio.control.event', signal_name='V2_signal')
+    user_bus.add_signal_receiver(self.db_ses_cb, dbus_interface='org.ubuntustudio.control.event', signal_name='V2_1_signal')
     user_bus.add_signal_receiver(self.db_new_usb, dbus_interface='org.ubuntustudio.control.event', signal_name='usb_signal')
 
     '''Check if audio.conf and/or audio.conf.disabled exists, returns are true or false'''
@@ -203,7 +204,8 @@ class UbuntuStudioControls:
     self.dev_desc = "default"
     self.d_out = "system"
     self.o_port = "1"
-    self.usb = "slave"
+    self.usb = "True"
+    self.usb_single = "False"
     self.usbdev = ""
 
     global autojack
@@ -260,6 +262,8 @@ class UbuntuStudioControls:
             self.zdev = lsplit[1].strip('"').split()
           elif lsplit[0] == "USBAUTO":
             self.usb = lsplit[1]
+          elif lsplit[0] == "USB-SINGLE":
+            self.usb_single = lsplit[1]
           elif lsplit[0] == "USBDEV":
             self.usbdev = lsplit[1]
 
@@ -275,6 +279,12 @@ class UbuntuStudioControls:
     self.combo_periods.set_active_id(self.period)
     self.combo_backend.set_active_id(self.driver)
     self.usb_plug_check.set_active(self.usb == "True")
+    if self.usb == "True":
+      self.usb_single_ck.set_sensitive(True)
+      self.usb_single_ck.set_active(self.usb_single == "True")
+    else:
+      self.usb_single_ck.set_sensitive(False)
+      self.usb_single_ck.set_active(self.usb_single == "True")
     self.combo_out_ports.set_active_id(self.o_port)
     self.jack_midi_check.set_active(self.a2j == "True")
     self.chan_in_spin.set_range(0, 128)
@@ -310,6 +320,7 @@ class UbuntuStudioControls:
       "jack_device_changed": self.jack_device_changed,
       "jack_driver_changed": self.jack_driver_changed,
       "usb_master_changed": self.usb_master_changed,
+      "usb_plug_cb": self.usb_plug_cb,
     }
     builder.connect_signals(handlers)
 
@@ -581,6 +592,10 @@ class UbuntuStudioControls:
     if not self.dirty:
       self.dirty = True
 
+  def usb_plug_cb(self, widget):
+    a_id = widget.get_active()
+    self.usb_single_ck.set_sensitive(a_id)
+
   def mixer_cb(self, button):
     '''callback for mixer button. This starts QASMixer
     with the device set to whatever is jack master'''
@@ -660,6 +675,7 @@ class UbuntuStudioControls:
       rc_file.write(f"\nOUTPUT={str(self.combo_output.get_active_id())}")
       rc_file.write(f"\nPORTS={str(self.combo_out_ports.get_active_id())}")
       rc_file.write(f"\nUSBAUTO={str(self.usb_plug_check.get_active())}")
+      rc_file.write(f"\nUSB-SINGLE={str(self.usb_single_ck.get_active())}")
       rc_file.write(f"\nUSBDEV={self.usbdev}")
       rc_file.write(f"\nXDEV=\"{str(' '.join(self.zdev))}")
       rc_file.write("\"\n# end of auto generated parameters\n")

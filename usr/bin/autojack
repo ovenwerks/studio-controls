@@ -152,6 +152,8 @@ def import_config():
   o_port = "0"
   global usb
   usb = "True"
+  global usb_single
+  usb_single = "False"
   global usbdev
   usbdev = ""
 
@@ -203,6 +205,8 @@ def import_config():
           zdev = lsplit[1]
         elif lsplit[0] == "USBAUTO":
           usb = lsplit[1]
+        elif lsplit[0] == "USB-SINGLE":
+          usb_single = lsplit[1]
         elif lsplit[0] == "USBDEV":
           usbdev = lsplit[1]
 
@@ -227,6 +231,7 @@ def reconfig():
   global d_out
   global o_port
   global usb
+  global usb_single
   global usbdev
 
   # read in autojack config file
@@ -277,6 +282,8 @@ def reconfig():
           newzdev = lsplit[1]
         elif lsplit[0] == "USBAUTO":
           newusb = lsplit[1]
+        elif lsplit[0] == "USB-SINGLE":
+          newusb_single = lsplit[1]
   oldlist = [jack, driver, chan_in, chan_out, sr, late, period, dev, usbdev]
   newlist = [newjack, newdriver, newchan_in, newchan_out, newsr, newlate, newperiod, newdev, newusbdev]
   if newlist != oldlist:
@@ -330,7 +337,7 @@ def reconfig():
     subprocess.run(["/usr/bin/killall", "-9", "a2jmidid"], shell=False)
     if a2j == "True":
       subprocess.Popen(["/usr/bin/a2jmidid", "-e"], shell=False).pid
-  if [usb, zdev] != [newusb, newzdev]:
+  if [usb, usb_single, zdev] != [newusb, newusb_single, newzdev]:
     import_device_array()
     for device in devices:
       if device[3][2] and device[3][2] == device[3][4]:
@@ -338,11 +345,10 @@ def reconfig():
         continue
       if device[1]:
         # USB device
-        if usb != newusb:
+        if usb != newusb or usb_single != newusb_single:
+          kill_slave(f"{device[0]},0,0")
           if newusb == "True":
             start_slave(f"{device[0]},0,0")
-          else:
-            kill_slave(f"{device[0]},0,0")
       else:
         # not USB device
         if zdev != newzdev:
@@ -361,6 +367,7 @@ def reconfig():
               kill_slave(tempname)
 
     usb = newusb
+    usb_single = newusb_single
     zdev = newzdev
 
 
@@ -599,13 +606,19 @@ def start_slave(ldev):
   ''' takes the audio device as a parameter and starts a bridge
   from that device to jack '''
   global devices
+  global usb_single
   import_device_array()
   dname, dev, sub = ldev.split(",", 2)
   for device in devices:
     if device[0] == dname and device[2] > int(dev):
       if device[3 + int(dev)][1]:
-        pidout = subprocess.Popen(["/usr/bin/zita-j2a", "-j", f"{ldev}-out", "-d", f"hw:{ldev}", "-r", sr, "-p", zframe, "-n", period, "-c", "100"], shell=False).pid
-        device[3+int(dev)][2] = pidout
+        if device[1]:
+          if usb_single == "False":
+            pidout = subprocess.Popen(["/usr/bin/zita-j2a", "-j", f"{ldev}-out", "-d", f"hw:{ldev}", "-r", sr, "-p", zframe, "-n", period, "-c", "100"], shell=False).pid
+            device[3+int(dev)][2] = pidout
+        else:
+          pidout = subprocess.Popen(["/usr/bin/zita-j2a", "-j", f"{ldev}-out", "-d", f"hw:{ldev}", "-r", sr, "-p", zframe, "-n", period, "-c", "100"], shell=False).pid
+          device[3+int(dev)][2] = pidout
       if device[3+int(dev)][3]:
         pidin = subprocess.Popen(["/usr/bin/zita-a2j", "-j", f"{ldev}-in", "-d", f"hw:{ldev}", "-r", sr, "-p", zframe, "-n", period, "-c", "100"], shell=False).pid
         device[3 + int(dev)][4] = pidin
@@ -653,7 +666,7 @@ def ses_cb_ping (*args, **kwargs):
   ''' dbus call back when config signal caught '''
   print("Got ping signal.\n")
   time.sleep(3)
-  subprocess.run(["/usr/bin/dbus-send", "--type=signal", "/", "org.ubuntustudio.control.event.V2_signal"], shell=False)
+  subprocess.run(["/usr/bin/dbus-send", "--type=signal", "/", "org.ubuntustudio.control.event.V2_1_signal"], shell=False)
 
 
 def main():
@@ -673,7 +686,7 @@ def main():
   user_bus.add_signal_receiver(ses_cb_config, dbus_interface='org.ubuntustudio.control.event', signal_name='config_signal')
   user_bus.add_signal_receiver(ses_cb_ping, dbus_interface='org.ubuntustudio.control.event', signal_name='ping_signal')
 
-  subprocess.run(["/usr/bin/dbus-send", "--type=signal", "/", "org.ubuntustudio.control.event.V2_signal"], shell=False)
+  subprocess.run(["/usr/bin/dbus-send", "--type=signal", "/", "org.ubuntustudio.control.event.V2_1_signal"], shell=False)
 
   loop = GLib.MainLoop()
   loop.run()
