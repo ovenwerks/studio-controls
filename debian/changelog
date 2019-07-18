@@ -1,11 +1,12 @@
-ubuntustudio-controls (1.9.1) UNRELEASED; urgency=medium
+ubuntustudio-controls (1.10) eoan; urgency=medium
 
+  [Len Ovens]
   * Change all subprocess from string to array and shell=False
   * Add ability to set i/o channel count
   * Made sure each backend only gets parameters it can handle
   * Allow auto bridged USB devices to be input only
 
- -- Len Ovens <len@ubuntustudio.org>  Fri, 21 Jun 2019 13:32:47 -0700
+ -- Erich Eickmeyer <erich@ericheickmeyer.com>  Thu, 18 Jul 2019 14:18:25 -0700
 
 ubuntustudio-controls (1.9.1) eoan; urgency=medium
 
