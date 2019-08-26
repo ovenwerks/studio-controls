@@ -1,3 +1,9 @@
+ubuntustudio-controls (1.10) UNRELEASED; urgency=medium
+
+  * Fix devices with no name cause crash (LP: #1841451)
+
+ -- Len Ovens <len@ubuntustudio.org>  Mon, 26 Aug 2019 10:41:32 -0700
+
 ubuntustudio-controls (1.10) eoan; urgency=medium
 
   [Len Ovens]
