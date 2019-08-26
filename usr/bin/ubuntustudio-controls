@@ -144,7 +144,7 @@ class UbuntuStudioControls:
     self.pulse_out_spin = builder.get_object('pulse_output_spin')
 
     user_bus = dbus.SessionBus()
-    user_bus.add_signal_receiver(self.db_ses_cb, dbus_interface='org.ubuntustudio.control.event', signal_name='V2_1_signal')
+    user_bus.add_signal_receiver(self.db_ses_cb, dbus_interface='org.ubuntustudio.control.event', signal_name='V2_2_signal')
     user_bus.add_signal_receiver(self.db_new_usb, dbus_interface='org.ubuntustudio.control.event', signal_name='usb_signal')
 
     '''Check if audio.conf and/or audio.conf.disabled exists, returns are true or false'''

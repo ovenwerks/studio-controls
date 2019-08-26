@@ -689,7 +689,7 @@ def main():
   user_bus.add_signal_receiver(ses_cb_config, dbus_interface='org.ubuntustudio.control.event', signal_name='config_signal')
   user_bus.add_signal_receiver(ses_cb_ping, dbus_interface='org.ubuntustudio.control.event', signal_name='ping_signal')
 
-  subprocess.run(["/usr/bin/dbus-send", "--type=signal", "/", "org.ubuntustudio.control.event.V2_1_signal"], shell=False)
+  subprocess.run(["/usr/bin/dbus-send", "--type=signal", "/", "org.ubuntustudio.control.event.V2_2_signal"], shell=False)
 
   loop = GLib.MainLoop()
   loop.run()
