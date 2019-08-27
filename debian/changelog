@@ -1,9 +1,10 @@
-ubuntustudio-controls (1.10) UNRELEASED; urgency=medium
+ubuntustudio-controls (1.11) eoan; urgency=medium
 
+  [ Len Ovens ]
   * Fix devices with no name cause crash (LP: #1841451)
-  * Raise version check for autojack to make sure new one is started
+  * Raise version check for autojack to make sure new one is started 
 
- -- Len Ovens <len@ubuntustudio.org>  Mon, 26 Aug 2019 10:41:32 -0700
+ -- Erich Eickmeyer <erich@ericheickmeyer.com>  Tue, 27 Aug 2019 09:50:10 -0500
 
 ubuntustudio-controls (1.10) eoan; urgency=medium
 
