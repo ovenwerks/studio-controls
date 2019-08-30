@@ -1,3 +1,9 @@
+ubuntustudio-controls (1.11) UNRELEASED; urgency=medium
+
+  * Don't run Carla if it is not installed (LP: #1842012)
+
+ -- Len Ovens <len@ubuntustudio.org>  Thu, 29 Aug 2019 19:35:43 -0700
+
 ubuntustudio-controls (1.11) eoan; urgency=medium
 
   [ Len Ovens ]

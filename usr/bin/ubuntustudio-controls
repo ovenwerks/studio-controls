@@ -616,7 +616,10 @@ class UbuntuStudioControls:
 
   def carla_cb(self, button):
     '''callback for carla button, opens carla'''
-    subprocess.Popen(["/usr/bin/carla"], shell=False).pid
+    if os.path.isfile("/usr/bin/carla") and os.access("/usr/bin/carla", os.X_OK):
+      subprocess.Popen(["/usr/bin/carla"], shell=False).pid
+    else:
+      button.set_label ("Please Install Carla First")
 
   def cb_jack_start(self, button):
     ''' call back for Jack (re)start button'''
