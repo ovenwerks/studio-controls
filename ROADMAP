@@ -5,12 +5,18 @@
  things)
 
 Bugs:
-	- Backends All use different commands to do the same things
-		- add the rest of the supported backends
+	Fixed - Backends All use different commands to do the same things
+	fixed - zita needs to read in all rates
 
 Features:
-	- allow to choose no of i/o with dummy (all) backend
-	- Allow USB bridging to be inputs only
+	- logrotate for shorter log files
+	- add drawing tablet support
+		- start with setting size and setting buttons
+	- add the rest of the supported backends
+	- add button to system page to select between lowlatency or generic
+		kernel as default.
+	Done - allow to choose no of i/o with dummy (all) backend
+	Done - Allow USB bridging to be inputs only
 		for badly designed input devices with hanging
 		outputs.
 	- monitor headphone plug status if PCH is being used for output

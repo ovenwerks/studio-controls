@@ -597,6 +597,8 @@ def change_jack_master(ldev, com):
   # XXXXX but need to add chan_in and chan_out
   if driver != "alsa":
     return
+  if ldev == last_master:
+    return
   print(f"Changing jack master to: {ldev}")
   subprocess.run(["/usr/bin/jack_control", "ds", driver, "dps", "capture", "none", "dps", "playback", "none"], shell=False)
   subprocess.run(["/usr/bin/jack_control", "dps", "device", f"hw:{ldev}", "dps", "rate", sr], shell=False)
@@ -605,25 +607,88 @@ def change_jack_master(ldev, com):
   subprocess.run(["/usr/bin/jack_control", com], shell=False)
   last_master = ldev
 
+def get_card_rate(filename, usb):
+  ''' Takes a filename and searches for lines that include the word:
+  Rates or rates. From each of those lines any numbers are takes and
+  compared to the list of rates already found and added to that list if
+  it is not already there. The return is the closest rate to jack
+  master sample rate'''
+  global sr
+  dsr = sr
+  full_list = []
+  if os.path.isfile (filename):
+    with open(filename, "r") as card_file:
+      for line in card_file:
+        srlist = []
+        if 'Rates' in line:
+          srlist = line.rstrip().split()
+        elif 'rates' in line:
+          srlist = line.rstrip().split()
+        if srlist != []:
+          for word in srlist:
+            word = word.strip(',')
+            if word.isdigit():
+              if word not in full_list:
+                full_list.append(word)
+    # full_list should have a list of all sample rates
+    esr = lsr = 0
+    hsr = 1000000
+    if not usb:
+      hsr = 48000
+      lsr = 44100
+    for word in full_list:
+      if int(word) > hsr:
+        continue
+      if int(word) < lsr:
+        continue
+      if int(word) < int(sr):
+        if int(word) > lsr:
+          lsr = int(word)
+      elif int(word) > int(sr):
+        if int(word) < hsr:
+          hsr = int(word)
+      elif int(word) == int(sr):
+        esr = int(word)
+    if not esr:
+      if hsr < int(sr):
+        dsr = str(hsr)
+      elif lsr > int(sr):
+        dsr = str(lsr)
+      elif (hsr - int(sr)) < (int(sr) - lsr):
+        dsr = str(hsr)
+      else:
+        dsr = str(lsr)
+  return dsr
+
 def start_slave(ldev):
   ''' takes the audio device as a parameter and starts a bridge
   from that device to jack '''
   global devices
   global usb_single
+  global sr
+  dsr = sr
   import_device_array()
   dname, dev, sub = ldev.split(",", 2)
   for device in devices:
     if device[0] == dname and device[2] > int(dev):
       if device[3 + int(dev)][1]:
         if device[1]:
+          # this is usb devices we should find /proc/dname/stream?
+          if os.path.isfile (f"/proc/asound/{dname}/stream0"):
+            dsr = get_card_rate (f"/proc/asound/{dname}/stream0", True)
+          print(f"Got {dsr} as the closest rate to {sr}")
           if usb_single == "False":
-            pidout = subprocess.Popen(["/usr/bin/zita-j2a", "-j", f"{ldev}-out", "-d", f"hw:{ldev}", "-r", sr, "-p", zframe, "-n", period, "-c", "100"], shell=False).pid
+            pidout = subprocess.Popen(["/usr/bin/zita-j2a", "-j", f"{ldev}-out", "-d", f"hw:{ldev}", "-r", dsr, "-p", zframe, "-n", period, "-c", "100"], shell=False).pid
             device[3+int(dev)][2] = pidout
         else:
-          pidout = subprocess.Popen(["/usr/bin/zita-j2a", "-j", f"{ldev}-out", "-d", f"hw:{ldev}", "-r", sr, "-p", zframe, "-n", period, "-c", "100"], shell=False).pid
+          # this is internal and so we look at /proc/dname/codec* if it is a file
+          if os.path.isfile (f"/proc/asound/{dname}/codec#0"):
+            dsr = get_card_rate (f"/proc/asound/{dname}/codec#0", False)
+          print(f"Got {dsr} as the closest rate to {sr}")
+          pidout = subprocess.Popen(["/usr/bin/zita-j2a", "-j", f"{ldev}-out", "-d", f"hw:{ldev}", "-r", dsr, "-p", zframe, "-n", period, "-c", "100"], shell=False).pid
           device[3+int(dev)][2] = pidout
       if device[3+int(dev)][3]:
-        pidin = subprocess.Popen(["/usr/bin/zita-a2j", "-j", f"{ldev}-in", "-d", f"hw:{ldev}", "-r", sr, "-p", zframe, "-n", period, "-c", "100"], shell=False).pid
+        pidin = subprocess.Popen(["/usr/bin/zita-a2j", "-j", f"{ldev}-in", "-d", f"hw:{ldev}", "-r", dsr, "-p", zframe, "-n", period, "-c", "100"], shell=False).pid
         device[3 + int(dev)][4] = pidin
 
 def kill_slave(ldev):
@@ -669,7 +734,7 @@ def ses_cb_ping (*args, **kwargs):
   ''' dbus call back when config signal caught '''
   print("Got ping signal.\n")
   time.sleep(3)
-  subprocess.run(["/usr/bin/dbus-send", "--type=signal", "/", "org.ubuntustudio.control.event.V2_1_signal"], shell=False)
+  subprocess.run(["/usr/bin/dbus-send", "--type=signal", "/", "org.ubuntustudio.control.event.V3_0_signal"], shell=False)
 
 
 def main():
