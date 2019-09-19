@@ -673,6 +673,8 @@ class UbuntuStudioControls:
       rc_file.write(f"\nRATE={str(self.jack_rate_combo.get_active_id())}")
       rc_file.write(f"\nFRAME={str(self.combobox_late.get_active_id())}")
       self.zframe = str(int(int(self.combobox_late.get_active_id()) / 2))
+      if int(self.zframe) < 128:
+        self.zframe = str(64)
       rc_file.write(f"\nZFRAME={self.zframe}")
       rc_file.write(f"\nPERIOD={str(self.combo_periods.get_active_id())}")
       rc_file.write(f"\nPULSE-IN={str(int(self.pulse_in_spin.get_value()))}")
