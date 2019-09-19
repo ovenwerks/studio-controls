@@ -1,8 +1,9 @@
-ubuntustudio-controls (1.11.3) UNRELEASED; urgency=medium
+ubuntustudio-controls (1.11.3) eoan; urgency=medium
 
-  * The zita bridge should not have a latency less than 64 samples (LP #1844706)
+  [ Len Ovens ]
+  * The zita bridge should not have a latency less than 64 samples (LP #1844706) 
 
- -- Len Ovens <len@ubuntustudio.org>  Thu, 19 Sep 2019 09:16:56 -0700
+ -- Erich Eickmeyer <erich@ericheickmeyer.com>  Thu, 19 Sep 2019 10:17:47 -0700
 
 ubuntustudio-controls (1.11.2) eoan; urgency=medium
 
