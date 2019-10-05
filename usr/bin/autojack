@@ -161,7 +161,9 @@ def import_config():
   usbdev = ""
 
   # read in autojack config file
-  c_file = expanduser("~/.config/autojackrc")
+  c_file = expanduser("~/.config/autojack/autojackrc")
+  if not os.path.isfile(c_file):
+    c_file = expanduser("~/.config/autojackrc")
   if os.path.isfile(c_file):
     with open(c_file, "r") as rc_file:
       for line in rc_file:
@@ -238,7 +240,9 @@ def reconfig():
   global usbdev
 
   # read in autojack config file
-  c_file = expanduser("~/.config/autojackrc")
+  c_file = expanduser("~/.config/autojack/autojackrc")
+  if not os.path.isfile(c_file):
+    c_file = expanduser("~/.config/autojackrc")
   if os.path.isfile(c_file):
     with open(c_file, "r") as rc_file:
       for line in rc_file:
@@ -727,7 +731,7 @@ def ses_cb_ping (*args, **kwargs):
   ''' dbus call back when config signal caught '''
   print(f"{time.asctime()} Got ping signal.\n")
   time.sleep(3)
-  subprocess.run(["/usr/bin/dbus-send", "--type=signal", "/", "org.ubuntustudio.control.event.V3_0_signal"], shell=False)
+  subprocess.run(["/usr/bin/dbus-send", "--type=signal", "/", "org.ubuntustudio.control.event.V3_1_signal"], shell=False)
 
 
 def main():
@@ -747,7 +751,7 @@ def main():
   user_bus.add_signal_receiver(ses_cb_config, dbus_interface='org.ubuntustudio.control.event', signal_name='config_signal')
   user_bus.add_signal_receiver(ses_cb_ping, dbus_interface='org.ubuntustudio.control.event', signal_name='ping_signal')
 
-  subprocess.run(["/usr/bin/dbus-send", "--type=signal", "/", "org.ubuntustudio.control.event.V2_2_signal"], shell=False)
+  subprocess.run(["/usr/bin/dbus-send", "--type=signal", "/", "org.ubuntustudio.control.event.V3_1_signal"], shell=False)
 
   loop = GLib.MainLoop()
   loop.run()
