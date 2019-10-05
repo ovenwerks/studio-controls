@@ -533,6 +533,8 @@ def msg_cb_new(*args, **kwargs):
   global usbdev
   global devices
   global dev
+  global driver
+  global last_master
   import_config()
 
   if args[0].find("sound-card") >= 0:
@@ -543,18 +545,25 @@ def msg_cb_new(*args, **kwargs):
     device = devices[int(audio_if)]
     #make sure device is USB and is not midi only
     if device[1] and device[2]:
-      # tell gui devicelist has changed
+      # tell gui devicelist has changed so it can up date device dropdowns
       subprocess.run(["/usr/bin/dbus-send", "--type=signal", "/", "org.ubuntustudio.control.event.usb_signal"], shell=False)
 
       cid = f"{device[0]},0,0"
-      print(f"device = {cid} play:{str(device[3][1])} capture:{str(device[3][3])}")
-      if jack == "True":
-        if usbdev == f"{device[0]},0,0":
-          change_jack_master(cid, "sm")
+      print(f"{time.asctime()} device = {cid} play:{str(device[3][1])} capture:{str(device[3][3])}")
+      if cid == last_master:
+        # spurious indication, ignore
+        print(f"{time.asctime()} We already have that device - spurious signal, ignoring")
+        return
+      if jack == "True" and driver == "alsa":
+        if usbdev == cid:
+          #change_jack_master(cid, "sm")
+          print(f"{time.asctime()} Changing jack master to: {cid}")
+          config_start()
+          last_master = cid
           time.sleep(1)
           start_slave(dev)
           time.sleep(1)
-          connect_pa()
+          #connect_pa()
         elif usb == "True":
           start_slave(cid)
 
@@ -570,9 +579,13 @@ def msg_cb_removed(*args, **kwargs):
 
     a_if = args[0].split("sound-card", 1)
     audio_if = a_if[1].split(".", 1)[0]
+    print(f"{time.asctime()} sound card: hw:{audio_if} removed")
+    if os.path.exists(f"/proc/asound/card{str(audio_if)}"):
+      #Hmm, I guess it hasn't really gone, false alarm
+      print(f"{time.asctime()} Device is still here - signal ignored")
+      return
+
     device = devices[int(audio_if)]
-    print(f"sound card: hw:{audio_if} removed")
-    # XXXX needs to add device and sub
     cid = f"{device[0]},0,0"
     if jack == "True":
       if not device[1]:
@@ -586,26 +599,6 @@ def msg_cb_removed(*args, **kwargs):
       elif usb == "True":
         kill_slave(cid)
     import_device_array()
-
-def change_jack_master(ldev, com):
-  ''' does a switch master to ldev '''
-  # this could be inlined as it is only used in one place any more
-  global devices
-  global driver
-  global last_master
-  # firewire, dummy can not be used here, alsa only
-  # XXXXX but need to add chan_in and chan_out
-  if driver != "alsa":
-    return
-  if ldev == last_master:
-    return
-  print(f"Changing jack master to: {ldev}")
-  subprocess.run(["/usr/bin/jack_control", "ds", driver, "dps", "capture", "none", "dps", "playback", "none"], shell=False)
-  subprocess.run(["/usr/bin/jack_control", "dps", "device", f"hw:{ldev}", "dps", "rate", sr], shell=False)
-  subprocess.run(["/usr/bin/jack_control", "dps", "period", late, "dps", "nperiods", period], shell=False)
-  time.sleep(3)
-  subprocess.run(["/usr/bin/jack_control", com], shell=False)
-  last_master = ldev
 
 def get_card_rate(filename, usb):
   ''' Takes a filename and searches for lines that include the word:
@@ -676,7 +669,7 @@ def start_slave(ldev):
           # this is usb devices we should find /proc/dname/stream?
           if os.path.isfile (f"/proc/asound/{dname}/stream0"):
             dsr = get_card_rate (f"/proc/asound/{dname}/stream0", True)
-          print(f"Got {dsr} as the closest rate to {sr}")
+          print(f"{time.asctime()} Got {dsr} as the closest rate to {sr}")
           if usb_single == "False":
             pidout = subprocess.Popen(["/usr/bin/zita-j2a", "-j", f"{ldev}-out", "-d", f"hw:{ldev}", "-r", dsr, "-p", zframe, "-n", period, "-c", "100"], shell=False).pid
             device[3+int(dev)][2] = pidout
@@ -684,7 +677,7 @@ def start_slave(ldev):
           # this is internal and so we look at /proc/dname/codec* if it is a file
           if os.path.isfile (f"/proc/asound/{dname}/codec#0"):
             dsr = get_card_rate (f"/proc/asound/{dname}/codec#0", False)
-          print(f"Got {dsr} as the closest rate to {sr}")
+          print(f"{time.asctime()} Got {dsr} as the closest rate to {sr}")
           pidout = subprocess.Popen(["/usr/bin/zita-j2a", "-j", f"{ldev}-out", "-d", f"hw:{ldev}", "-r", dsr, "-p", zframe, "-n", period, "-c", "100"], shell=False).pid
           device[3+int(dev)][2] = pidout
       if device[3+int(dev)][3]:
@@ -700,39 +693,39 @@ def kill_slave(ldev):
   for device in devices:
     if device[0] == dname and device[2]:
       if device[3 + int(dev)][2]:
-        print(f"kill {str(dname)} sub: {str(dev)} PID: {str(device[3 + int(dev)][2])}")
+        print(f"{time.asctime()} kill {str(dname)} sub: {str(dev)} PID: {str(device[3 + int(dev)][2])}")
         os.kill(device[3 + int(dev)][2], signal.SIGKILL)
       if device[3 + int(dev)][4]:
-        print(f"kill {str(dname)} sub: {str(dev)} PID: {str(device[3 + int(dev)][4])}")
+        print(f"{time.asctime()} kill {str(dname)} sub: {str(dev)} PID: {str(device[3 + int(dev)][4])}")
         os.kill(device[3 + int(dev)][4], signal.SIGKILL)
 
 def ses_cb_quit (*args, **kwargs):
   ''' dbus call back when quit signal caught. This is for use in
   testing and the GUI never sends this. '''
-  print("Got quit signal.\n")
+  print(f"{time.asctime()} Got quit signal.\n")
   subprocess.run(["/usr/bin/killall", "-9", "jackdbus", "jackd", "a2jmidid"], shell=False)
   subprocess.run(["/usr/bin/pulseaudio", "-k"], shell=False)
   os._exit(0)
 
 def ses_cb_stop (*args, **kwargs):
   ''' dbus call back when stop signal caught. This stops jack. '''
-  print("Got stop signal.\n")
+  print(f"{time.asctime()} Got stop signal.\n")
   subprocess.run(["/usr/bin/killall", "-9", "jackdbus", "jackd", "a2jmidid"], shell=False)
   subprocess.run(["/usr/bin/pulseaudio", "-k"], shell=False)
 
 def ses_cb_start (*args, **kwargs):
   ''' dbus call back when (re)start signal caught'''
-  print("Got start signal.\n")
+  print(f"{time.asctime()} Got start signal.\n")
   config_start()
 
 def ses_cb_config (*args, **kwargs):
   ''' dbus call back when config signal caught '''
-  print("Got config signal.\n")
+  print(f"{time.asctime()} Got config signal.\n")
   reconfig()
 
 def ses_cb_ping (*args, **kwargs):
   ''' dbus call back when config signal caught '''
-  print("Got ping signal.\n")
+  print(f"{time.asctime()} Got ping signal.\n")
   time.sleep(3)
   subprocess.run(["/usr/bin/dbus-send", "--type=signal", "/", "org.ubuntustudio.control.event.V3_0_signal"], shell=False)
 

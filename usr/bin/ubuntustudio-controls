@@ -199,7 +199,7 @@ class UbuntuStudioControls:
     self.zdev = []
     self.pulse_in = 1
     self.pulse_out = 1
-    self.a2j = True
+    self.a2j = "True"
     self.dev = "0,0,0"
     self.dev_desc = "default"
     self.d_out = "system"
