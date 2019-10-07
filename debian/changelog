@@ -1,4 +1,4 @@
-ubuntustudio-controls (1.11.3ubuntu1) UNRELEASED; urgency=medium
+ubuntustudio-controls (1.11.3) UNRELEASED; urgency=medium
 
   * Check if device really has gone on device removed signal
   * Save last valid internal device
