@@ -7,6 +7,7 @@ ubuntustudio-controls (1.11.3) UNRELEASED; urgency=medium
 
   [ Brian Hechinger ]
   *  NO-OP: Updated formatting for PEP8
+  * Converted config file handling from home-grown to configparser 
 
  -- Len Ovens <len@ubuntustudio.org>  Sat, 05 Oct 2019 10:50:22 -0700
 

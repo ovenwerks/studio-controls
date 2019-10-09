@@ -17,6 +17,7 @@ import dbus
 from dbus.mainloop.glib import DBusGMainLoop
 import time
 import jack
+import configparser
 
 DBusGMainLoop(set_as_default=True)
 
@@ -103,6 +104,11 @@ class RTSetup:
 
 
 class UbuntuStudioControls:
+    config = configparser.ConfigParser()
+    def_config = config['DEFAULT']
+    config_path = "~/.config/autojack"
+    config_file = "{path}/autojackrc".format(path=config_path)
+    old_config_file = "~/.config/autojackrc"
 
     def __init__(self):
         '''Activate the SysInfo class'''
@@ -194,25 +200,26 @@ class UbuntuStudioControls:
         # Audio stuff
 
         # first set defaults
-        self.jack = False
-        self.driver = "alsa"
-        self.chan_in = 0
-        self.chan_out = 0
-        self.sr = "48000"
-        self.late = "1024"
-        self.period = "2"
-        self.zframe = "512"
-        self.zdev = []
-        self.pulse_in = 1
-        self.pulse_out = 1
-        self.a2j = "True"
-        self.dev = "0,0,0"
-        self.dev_desc = "default"
-        self.d_out = "system"
-        self.o_port = "1"
-        self.usb = "True"
-        self.usb_single = "False"
-        self.usbdev = ""
+        self.config['DEFAULT'] = {
+            'JACK': 'False',
+            'DRIVER': "alsa",
+            'CHAN-IN': '0',
+            'CHAN-OUT': '0',
+            'RATE': "48000",
+            'FRAME': "1024",
+            'PERIOD': "2",
+            'ZFRAME': "512",
+            'XDEV': "",
+            'PULSE-IN': '1',
+            'PULSE-OUT': '1',
+            'A2J': "True",
+            'DEV': "0,0,0",
+            'OUTPUT': "system",
+            'PORTS': "1",
+            'USBAUTO': "True",
+            'USB-SINGLE': "False",
+            'USBDEV': "",
+        }
 
         global autojack
         global newusb
@@ -225,84 +232,93 @@ class UbuntuStudioControls:
         self.dirty = False
 
         # read in autojack config file
-        c_file = expanduser("~/.config/autojack/autojackrc")
-        if not os.path.isfile(c_file):
-            c_file = expanduser("~/.config/autojackrc")
+        c_file = expanduser(self.config_file)
+        self.zdev = self.def_config['XDEV'].strip('"').split()
         if os.path.isfile(c_file):
-            with open(c_file, "r") as rc_file:
-                for line in rc_file:
-                    if re.match("^#", line):
-                        continue
-                    lsplit = line.rstrip().split("=", 1)
-                    if lsplit[0] == "JACK":
-                        self.jack = lsplit[1]
-                    elif lsplit[0] == "DRIVER":
-                        self.driver = lsplit[1]
-                    elif lsplit[0] == "DEV":
-                        self.dev = self.dev_desc = lsplit[1]
-                    elif lsplit[0] == "CHAN-IN":
-                        self.chan_in = int(lsplit[1])
-                    elif lsplit[0] == "CHAN-OUT":
-                        self.chan_out = int(lsplit[1])
-                    elif lsplit[0] == "RATE":
-                        self.sr = lsplit[1]
-                    elif lsplit[0] == "FRAME":
-                        self.late = lsplit[1]
-                    elif lsplit[0] == "ZFRAME":
-                        self.zframe = lsplit[1]
-                    elif lsplit[0] == "PERIOD":
-                        self.period = lsplit[1]
-                    elif lsplit[0] == "PULSE":
-                        self.pulse = lsplit[1]
-                        self.pulse_in = int(self.pulse == 'True')
-                        self.pulse_out = int(self.pulse == 'True')
-                    elif lsplit[0] == "PULSE-IN":
-                        self.pulse_in = int(lsplit[1])
-                    elif lsplit[0] == "PULSE-OUT":
-                        self.pulse_out = int(lsplit[1])
-                    elif lsplit[0] == "A2J":
-                        self.a2j = lsplit[1]
-                    elif lsplit[0] == "OUTPUT":
-                        self.d_out = lsplit[1]
-                    elif lsplit[0] == "PORTS":
-                        self.o_port = lsplit[1]
-                    elif lsplit[0] == "XDEV":
-                        self.zdev = lsplit[1].strip('"').split()
-                    elif lsplit[0] == "USBAUTO":
-                        self.usb = lsplit[1]
-                    elif lsplit[0] == "USB-SINGLE":
-                        self.usb_single = lsplit[1]
-                    elif lsplit[0] == "USBDEV":
-                        self.usbdev = lsplit[1]
+            # New config file exists, read it in
+            self.config.read(c_file)
+            # 'XDEV': "",  # self.zdev config['XDEV'] = lsplit[1].strip('"').split() Come back to this one
+            self.zdev = self.def_config['XDEV'].strip('"').split()
+        else:
+            # New file did not exist, let's check for a legacy file
+            c_file = expanduser(self.old_config_file)
+            if os.path.isfile(c_file):
+                # Found the legacy config, let's load it
+                with open(c_file, "r") as rc_file:
+                    for line in rc_file:
+                        if re.match("^#", line):
+                            continue
+                        lsplit = line.rstrip().split("=", 1)
+                        if lsplit[0] == "JACK":
+                            self.def_config['JACK'] = lsplit[1]
+                        elif lsplit[0] == "DRIVER":
+                            self.def_config['DRIVER'] = lsplit[1]
+                        elif lsplit[0] == "DEV":
+                            self.def_config['DEV'] = self.dev_desc = lsplit[1]
+                        elif lsplit[0] == "CHAN-IN":
+                            self.def_config['CHAN-IN'] = lsplit[1]
+                        elif lsplit[0] == "CHAN-OUT":
+                            self.def_config['CHAN-OUT'] = lsplit[1]
+                        elif lsplit[0] == "RATE":
+                            self.def_config['RATE'] = lsplit[1]
+                        elif lsplit[0] == "FRAME":
+                            self.def_config['FRAME'] = lsplit[1]
+                        elif lsplit[0] == "ZFRAME":
+                            self.def_config['ZFRAME'] = lsplit[1]
+                        elif lsplit[0] == "PERIOD":
+                            self.def_config['PERIOD'] = lsplit[1]
+                        elif lsplit[0] == "PULSE":
+                            pulse = lsplit[1]
+                            self.def_config['PULSE-IN'] = str(int(pulse == 'True'))
+                            self.def_config['PULSE-OUT'] = str(int(pulse == 'True'))
+                        elif lsplit[0] == "PULSE-IN":
+                            self.def_config['PULSE-IN'] = lsplit[1]
+                        elif lsplit[0] == "PULSE-OUT":
+                            self.def_config['PULSE-OUT'] = lsplit[1]
+                        elif lsplit[0] == "A2J":
+                            self.def_config['A2J'] = lsplit[1]
+                        elif lsplit[0] == "OUTPUT":
+                            self.def_config['OUTPUT'] = lsplit[1]
+                        elif lsplit[0] == "PORTS":
+                            self.def_config['PORTS'] = lsplit[1]
+                        elif lsplit[0] == "XDEV":
+                            self.def_config['XDEV'] = lsplit[1].strip('"')
+                            self.zdev = self.def_config['XDEV'].strip('"').split()
+                        elif lsplit[0] == "USBAUTO":
+                            self.def_config['USBAUTO'] = lsplit[1]
+                        elif lsplit[0] == "USB-SINGLE":
+                            self.def_config['USB-SINGLE'] = lsplit[1]
+                        elif lsplit[0] == "USBDEV":
+                            self.def_config['USBDEV'] = lsplit[1]
 
         try:
             client = jack.Client('controls', False, True)
-            self.jack = True
+            self.def_config['JACK'] = "True"
             client.close()
         except jack.JackError:
-            self.jack = False
+            self.def_config['JACK'] = "False"
 
-        self.jack_rate_combo.set_active_id(self.sr)
-        self.combobox_late.set_active_id(self.late)
-        self.combo_periods.set_active_id(self.period)
-        self.combo_backend.set_active_id(self.driver)
-        self.usb_plug_check.set_active(self.usb == "True")
-        if self.usb == "True":
+        self.jack_rate_combo.set_active_id(self.def_config['RATE'])
+        self.combobox_late.set_active_id(self.def_config['FRAME'])
+        self.combo_periods.set_active_id(self.def_config['PERIOD'])
+        self.combo_backend.set_active_id(self.def_config['DRIVER'])
+        self.usb_plug_check.set_active(self.def_config['USBAUTO'] == "True")
+        if self.def_config['USBAUTO'] == "True":
             self.usb_single_ck.set_sensitive(True)
-            self.usb_single_ck.set_active(self.usb_single == "True")
+            self.usb_single_ck.set_active(self.def_config['USB-SINGLE'] == "True")
         else:
             self.usb_single_ck.set_sensitive(False)
-            self.usb_single_ck.set_active(self.usb_single == "True")
-        self.combo_out_ports.set_active_id(self.o_port)
-        self.jack_midi_check.set_active(self.a2j == "True")
+            self.usb_single_ck.set_active(self.def_config['USB-SINGLE'] == "True")
+        self.combo_out_ports.set_active_id(self.def_config['PORTS'])
+        self.jack_midi_check.set_active(self.def_config['A2J'] == "True")
         self.chan_in_spin.set_range(0, 128)
         self.chan_out_spin.set_range(0, 128)
-        self.chan_in_spin.set_value(self.chan_in)
-        self.chan_out_spin.set_value(self.chan_out)
+        self.chan_in_spin.set_value(self.def_config.getint('CHAN-IN'))
+        self.chan_out_spin.set_value(self.def_config.getint('CHAN-OUT'))
         self.pulse_in_spin.set_range(0, 9)
         self.pulse_out_spin.set_range(0, 9)
-        self.pulse_in_spin.set_value(self.pulse_in)
-        self.pulse_out_spin.set_value(self.pulse_out)
+        self.pulse_in_spin.set_value(self.def_config.getint('PULSE-IN'))
+        self.pulse_out_spin.set_value(self.def_config.getint('PULSE-OUT'))
 
         self.refresh_dropdowns()
 
@@ -403,19 +419,19 @@ class UbuntuStudioControls:
         all all alsa devices will still be available for bridging and
         as output device.'''
 
-        if self.driver == "alsa":
+        if self.def_config['DRIVER'] == "alsa":
             self.jack_device_combo.set_sensitive(True)
             self.jack_usb_dev_combo.set_sensitive(True)
             self.chan_in_spin.set_sensitive(False)
             self.chan_out_spin.set_sensitive(False)
             self.combo_periods.set_sensitive(True)
-        elif self.driver == "firewire":
+        elif self.def_config['DRIVER'] == "firewire":
             self.jack_device_combo.set_sensitive(False)
             self.jack_usb_dev_combo.set_sensitive(False)
             self.chan_in_spin.set_sensitive(False)
             self.chan_out_spin.set_sensitive(False)
             self.combo_periods.set_sensitive(True)
-        elif self.driver == "dummy":
+        elif self.def_config['DRIVER'] == "dummy":
             self.jack_device_combo.set_sensitive(False)
             self.jack_usb_dev_combo.set_sensitive(False)
             self.chan_in_spin.set_sensitive(True)
@@ -423,23 +439,23 @@ class UbuntuStudioControls:
             self.combo_periods.set_sensitive(False)
         self.jack_device_combo.get_model().clear()
         self.jack_device_combo.append("0,0,0", "default")
-        if self.dev == "0,0,0":
+        if self.def_config['DEV'] == "0,0,0":
             self.jack_device_combo.set_active_id("0,0,0")
 
         self.combo_output.get_model().clear()
         self.combo_output.append("system", "Jack Master")
-        if self.d_out == "system":
+        if self.def_config['OUTPUT'] == "system":
             self.combo_output.set_active_id("system")
 
         self.jack_usb_dev_combo.get_model().clear()
         self.jack_usb_dev_combo.append("", "No USB Master")
 
-        if self.driver == "alsa":
-            if self.usbdev == "":
+        if self.def_config['DRIVER'] == "alsa":
+            if self.def_config['USBDEV'] == "":
                 self.jack_usb_dev_combo.set_active_id("")
             else:
-                self.jack_usb_dev_combo.append(self.usbdev, self.usbdev)
-                self.jack_usb_dev_combo.set_active_id(self.usbdev)
+                self.jack_usb_dev_combo.append(self.def_config['USBDEV'], self.def_config['USBDEV'])
+                self.jack_usb_dev_combo.set_active_id(self.def_config['USBDEV'])
                 self.jack_device_combo.append("200,0,0", "USB Jack Master")
                 self.jack_device_combo.set_active_id("200,0,0")
 
@@ -495,29 +511,29 @@ class UbuntuStudioControls:
                             if is_usb:
                                 if usb_save == "":
                                     usb_save = next_id
-                                if next_id != self.usbdev and self.driver == "alsa":
+                                if next_id != self.def_config['USBDEV'] and self.def_config['DRIVER'] == "alsa":
                                     self.jack_usb_dev_combo.append(next_id, next_d)
 
                             else:
                                 if pci_save == "":
                                     pci_save = next_id
-                                if self.driver == "alsa":
+                                if self.def_config['DRIVER'] == "alsa":
                                     self.jack_device_combo.append(next_id, next_d)
-                                    if self.usbdev == "" and self.dev == next_id:
+                                    if self.def_config['USBDEV'] == "" and self.def_config['DEV'] == next_id:
                                         self.jack_device_combo.set_active_id(next_id)
                                         self.dev_desc = next_d
-                                if self.dev != next_id and self.zdev.count(next_id) > 0:
+                                if self.def_config['DEV'] != next_id and self.zdev.count(next_id) > 0:
                                     self.combo_zita_remove.append(next_id, next_d)
                                 else:
-                                    if self.dev != next_id:
+                                    if self.def_config['DEV'] != next_id:
                                         self.combo_zita_add.append(next_id, next_d)
                             if next_d.find("playback") >= 0:
                                 self.combo_output.append(next_id, next_d)
-                                if self.d_out == next_id:
+                                if self.def_config['OUTPUT'] == next_id:
                                     self.combo_output.set_active_id(next_id)
 
-        if pci_save == "" and self.usbdev == "":
-            self.usbdev = usb_save
+        if pci_save == "" and self.def_config['USBDEV'] == "":
+            self.def_config['USBDEV'] = usb_save
             self.jack_usb_dev_combo.set_active_id(usb_save)
             self.jack_device_combo.append("200,0,0", "USB device below")
             self.jack_device_combo.set_active_id("200,0,0")
@@ -585,21 +601,21 @@ class UbuntuStudioControls:
         a_id = str(button.get_active_id())
         a_desc = str(button.get_active_text())
         if a_id != "None" and a_id != "200,0,0":
-            self.dev = a_id
+            self.def_config['DEV'] = a_id
             self.dev_desc = a_desc
             if not self.dirty:
                 self.dirty = True
 
     def jack_driver_changed(self, button):
         a_driver = str(button.get_active_text())
-        self.driver = a_driver
+        self.def_config['DRIVER'] = a_driver
         if not self.dirty:
             self.dirty = True
 
     def usb_master_changed(self, button):
         a_id = str(button.get_active_id())
         if a_id != "None":
-            self.usbdev = a_id
+            self.def_config['USBDEV'] = a_id
         if not self.dirty:
             self.dirty = True
 
@@ -610,11 +626,11 @@ class UbuntuStudioControls:
     def mixer_cb(self, button):
         '''callback for mixer button. This starts QASMixer
         with the device set to whatever is jack master'''
-        if self.usbdev != "":
+        if self.def_config['USBDEV'] != "":
             # must be hw:device not hw:device,0,0
-            mixdevice = self.usbdev.split(',', 1)[0]
+            mixdevice = self.def_config['USBDEV'].split(',', 1)[0]
         else:
-            mixdevice = self.dev.split(',', 1)[0]
+            mixdevice = self.def_config['DEV'].split(',', 1)[0]
         subprocess.Popen(["/usr/bin/qasmixer", "-n", f"--device=hw:{str(mixdevice)}"], shell=False).pid
 
     def pavucontrol_cb(self, button):
@@ -631,7 +647,7 @@ class UbuntuStudioControls:
     def cb_jack_start(self, button):
         ''' call back for Jack (re)start button'''
         global autojack
-        self.jack = "True"
+        self.def_config['JACK'] = "True"
         self.config_save()
         if autojack:
             subprocess.run(["/usr/bin/dbus-send", "--type=signal", "/", "org.ubuntustudio.control.event.start_signal"],
@@ -647,7 +663,7 @@ class UbuntuStudioControls:
 
     def cb_jack_stop(self, button):
         global autojack
-        self.jack = "False"
+        self.def_config['JACK'] = "False"
         self.config_save()
         if autojack:
             subprocess.run(["/usr/bin/dbus-send", "--type=signal", "/", "org.ubuntustudio.control.event.stop_signal"],
@@ -679,38 +695,34 @@ class UbuntuStudioControls:
 
     def config_save(self):
         ''' Write audio setting to ~/.config/autojack/autojackrc'''
-        c_file = expanduser("~/.config/autojack/autojackrc")
+        c_file = expanduser(self.config_file)
         if not os.path.isfile(c_file):
             # either first run or old version
-            c_dir = expanduser("~/.config/autojack")
+            c_dir = expanduser(self.config_path)
             if not os.path.isdir(c_dir):
                 os.makedirs(c_dir)
-            if os.path.isfile(expanduser("~/.config/autojackrc")):
-                os.remove(expanduser("~/.config/autojackrc"))
-        with open(expanduser("~/.config/autojack/autojackrc"), "w") as rc_file:
-            rc_file.write("# file generated by ubuntustudio-controls\n\n")
-            rc_file.write(f"\nJACK={str(self.jack)}")
-            rc_file.write(f"\nDRIVER={str(self.combo_backend.get_active_id())}")
-            rc_file.write(f"\nDEV={str(self.dev)}")
-            rc_file.write(f"\nCHAN-IN={str(int(self.chan_in_spin.get_value()))}")
-            rc_file.write(f"\nCHAN-OUT={str(int(self.chan_out_spin.get_value()))}")
-            rc_file.write(f"\nRATE={str(self.jack_rate_combo.get_active_id())}")
-            rc_file.write(f"\nFRAME={str(self.combobox_late.get_active_id())}")
-            self.zframe = str(int(int(self.combobox_late.get_active_id()) / 2))
-            if int(self.zframe) < 128:
-                self.zframe = str(64)
-            rc_file.write(f"\nZFRAME={self.zframe}")
-            rc_file.write(f"\nPERIOD={str(self.combo_periods.get_active_id())}")
-            rc_file.write(f"\nPULSE-IN={str(int(self.pulse_in_spin.get_value()))}")
-            rc_file.write(f"\nPULSE-OUT={str(int(self.pulse_out_spin.get_value()))}")
-            rc_file.write(f"\nA2J={str(self.jack_midi_check.get_active())}")
-            rc_file.write(f"\nOUTPUT={str(self.combo_output.get_active_id())}")
-            rc_file.write(f"\nPORTS={str(self.combo_out_ports.get_active_id())}")
-            rc_file.write(f"\nUSBAUTO={str(self.usb_plug_check.get_active())}")
-            rc_file.write(f"\nUSB-SINGLE={str(self.usb_single_ck.get_active())}")
-            rc_file.write(f"\nUSBDEV={self.usbdev}")
-            rc_file.write(f"\nXDEV=\"{str(' '.join(self.zdev))}")
-            rc_file.write("\"\n# end of auto generated parameters\n")
+            if os.path.isfile(expanduser(self.old_config_file)):
+                os.remove(expanduser(self.old_config_file))
+        with open(expanduser(self.config_file), "w") as rc_file:
+            self.def_config['DRIVER'] = str(self.combo_backend.get_active_id())
+            self.def_config['CHAN-IN'] = str(int(self.chan_in_spin.get_value()))
+            self.def_config['CHAN-OUT'] = str(int(self.chan_out_spin.get_value()))
+            self.def_config['RATE'] = str(self.jack_rate_combo.get_active_id())
+            self.def_config['FRAME'] = str(self.combobox_late.get_active_id())
+            zframe = str(int(int(self.combobox_late.get_active_id()) / 2))
+            if int(zframe) < 128:
+                zframe = str(64)
+            self.def_config['ZFRAME'] = zframe
+            self.def_config['PERIOD'] = str(self.combo_periods.get_active_id())
+            self.def_config['PULSE-IN'] = str(int(self.pulse_in_spin.get_value()))
+            self.def_config['PULSE-OUT'] = str(int(self.pulse_out_spin.get_value()))
+            self.def_config['A2J'] = str(self.jack_midi_check.get_active())
+            self.def_config['OUTPUT'] = str(self.combo_output.get_active_id())
+            self.def_config['PORTS'] = str(self.combo_out_ports.get_active_id())
+            self.def_config['USBAUTO'] = str(self.usb_plug_check.get_active())
+            self.def_config['USB-SINGLE'] = str(self.usb_single_ck.get_active())
+            self.def_config['XDEV'] = ' '.join(self.zdev)
+            self.config.write(rc_file)
 
     def start_autojack(self):
         '''start autojack as it has been detected as not running.
