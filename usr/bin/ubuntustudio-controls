@@ -1,6 +1,7 @@
 #!/usr/bin/python3
 
 import gi
+
 gi.require_version('Gtk', '3.0')
 from gi.repository import Gtk, GLib
 import os
@@ -19,9 +20,10 @@ import jack
 
 DBusGMainLoop(set_as_default=True)
 
+
 class SysInfo:
     """Get information about the system"""
-    
+
     # get info about if rtaccess is setup right
     def user_audio(self):
         """Checks if current user is in the audio group, or not"""
@@ -73,6 +75,7 @@ class SysInfo:
 
     # Audio stuff
 
+
 class RTSetup:
     # defs for doing things
     def __init__(self):
@@ -97,6 +100,7 @@ class RTSetup:
                 subprocess.run(["/usr/bin/pkexec", "/usr/sbin/ubuntustudio-system", "boost"], shell=False)
             else:
                 subprocess.run(["/usr/bin/pkexec", "/usr/sbin/ubuntustudio-system", "noboost"], shell=False)
+
 
 class UbuntuStudioControls:
 
@@ -144,8 +148,10 @@ class UbuntuStudioControls:
         self.pulse_out_spin = builder.get_object('pulse_output_spin')
 
         user_bus = dbus.SessionBus()
-        user_bus.add_signal_receiver(self.db_ses_cb, dbus_interface='org.ubuntustudio.control.event', signal_name='V3_1_signal')
-        user_bus.add_signal_receiver(self.db_new_usb, dbus_interface='org.ubuntustudio.control.event', signal_name='usb_signal')
+        user_bus.add_signal_receiver(self.db_ses_cb, dbus_interface='org.ubuntustudio.control.event',
+                                     signal_name='V3_1_signal')
+        user_bus.add_signal_receiver(self.db_new_usb, dbus_interface='org.ubuntustudio.control.event',
+                                     signal_name='usb_signal')
 
         '''Check if audio.conf and/or audio.conf.disabled exists, returns are true or false'''
         self.rt_file = False
@@ -333,14 +339,14 @@ class UbuntuStudioControls:
         ''' this means we got a responce from autojack, Good'''
         global autojack
         autojack = True
-        print ("autojack is running")
+        print("autojack is running")
 
     def db_new_usb(*args, **kwargs):
         ''' Autojack tells us a USB audio device has been plugged in or
         unplugged. '''
         global newusb
         newusb = True
-        print ("autojack sees usb change")
+        print("autojack sees usb change")
 
     def check_jack_status(self, user_data):
         '''Check if jack has died and the client needs to be
@@ -354,16 +360,16 @@ class UbuntuStudioControls:
         global jack_alive
         global jack_died
 
-        #sent by jackdied() callback
+        # sent by jackdied() callback
         if jack_died:
             jack_client.close()
             jack_died = False
 
-        #device changed, update GUI
+        # device changed, update GUI
         if self.dirty or newusb:
-                self.refresh_dropdowns()
-                self.dirty = False
-                newusb = False
+            self.refresh_dropdowns()
+            self.dirty = False
+            newusb = False
 
         if jack_alive:
             load = jack_client.cpu_load()
@@ -448,7 +454,7 @@ class UbuntuStudioControls:
         usb_save = ""
         pci_save = ""
         for x in range(0, 10):
-            #card loop
+            # card loop
             cname = ""
             next_id = ""
             next_d = ""
@@ -457,7 +463,7 @@ class UbuntuStudioControls:
                 if os.path.isfile(f"/proc/asound/card{str(x)}/id"):
                     with open(f"/proc/asound/card{str(x)}/id", "r") as card_file:
                         for line in card_file:
-                            #only need one line
+                            # only need one line
                             cname = line.rstrip()
                 else:
                     cname = str(x)
@@ -476,7 +482,8 @@ class UbuntuStudioControls:
                 if d_type != "":
                     for z in range(0, 10):
                         if os.path.exists(f"/proc/asound/card{str(x)}/pcm{str(y)}{d_type[0]}/sub{str(z)}"):
-                            with open(f"/proc/asound/card{str(x)}/pcm{str(y)}{d_type[0]}/sub{str(z)}/info", "r") as info_file:
+                            with open(f"/proc/asound/card{str(x)}/pcm{str(y)}{d_type[0]}/sub{str(z)}/info",
+                                      "r") as info_file:
                                 for line in info_file:
                                     if re.match("^name:", line.rstrip()):
                                         dname = line.rstrip().split(": ", 1)[1]
@@ -490,7 +497,7 @@ class UbuntuStudioControls:
                                     usb_save = next_id
                                 if next_id != self.usbdev and self.driver == "alsa":
                                     self.jack_usb_dev_combo.append(next_id, next_d)
-                                
+
                             else:
                                 if pci_save == "":
                                     pci_save = next_id
@@ -515,8 +522,8 @@ class UbuntuStudioControls:
             self.jack_device_combo.append("200,0,0", "USB device below")
             self.jack_device_combo.set_active_id("200,0,0")
 
-
     '''Functions for all the gui controls'''
+
     def on_window_main_delete_event(self, *args):
         Gtk.main_quit(*args)
 
@@ -604,12 +611,11 @@ class UbuntuStudioControls:
         '''callback for mixer button. This starts QASMixer
         with the device set to whatever is jack master'''
         if self.usbdev != "":
-            #must be hw:device not hw:device,0,0
+            # must be hw:device not hw:device,0,0
             mixdevice = self.usbdev.split(',', 1)[0]
         else:
             mixdevice = self.dev.split(',', 1)[0]
         subprocess.Popen(["/usr/bin/qasmixer", "-n", f"--device=hw:{str(mixdevice)}"], shell=False).pid
-
 
     def pavucontrol_cb(self, button):
         '''callback for pulse control button, opens pavucontrol'''
@@ -620,7 +626,7 @@ class UbuntuStudioControls:
         if os.path.isfile("/usr/bin/carla") and os.access("/usr/bin/carla", os.X_OK):
             subprocess.Popen(["/usr/bin/carla"], shell=False).pid
         else:
-            button.set_label ("Please Install Carla First")
+            button.set_label("Please Install Carla First")
 
     def cb_jack_start(self, button):
         ''' call back for Jack (re)start button'''
@@ -628,11 +634,14 @@ class UbuntuStudioControls:
         self.jack = "True"
         self.config_save()
         if autojack:
-            subprocess.run(["/usr/bin/dbus-send", "--type=signal", "/", "org.ubuntustudio.control.event.start_signal"], shell=False)
+            subprocess.run(["/usr/bin/dbus-send", "--type=signal", "/", "org.ubuntustudio.control.event.start_signal"],
+                           shell=False)
         else:
             time.sleep(5)
             if autojack:
-                subprocess.run(["/usr/bin/dbus-send", "--type=signal", "/", "org.ubuntustudio.control.event.start_signal"], shell=False)
+                subprocess.run(
+                    ["/usr/bin/dbus-send", "--type=signal", "/", "org.ubuntustudio.control.event.start_signal"],
+                    shell=False)
             else:
                 self.start_autojack()
 
@@ -641,11 +650,14 @@ class UbuntuStudioControls:
         self.jack = "False"
         self.config_save()
         if autojack:
-            subprocess.run(["/usr/bin/dbus-send", "--type=signal", "/", "org.ubuntustudio.control.event.stop_signal"], shell=False)
+            subprocess.run(["/usr/bin/dbus-send", "--type=signal", "/", "org.ubuntustudio.control.event.stop_signal"],
+                           shell=False)
         else:
             time.sleep(5)
             if autojack:
-                subprocess.run(["/usr/bin/dbus-send", "--type=signal", "/", "org.ubuntustudio.control.event.stop_signal"], shell=False)
+                subprocess.run(
+                    ["/usr/bin/dbus-send", "--type=signal", "/", "org.ubuntustudio.control.event.stop_signal"],
+                    shell=False)
             else:
                 self.start_autojack()
 
@@ -654,11 +666,14 @@ class UbuntuStudioControls:
         global autojack
         self.config_save()
         if autojack:
-            subprocess.run(["/usr/bin/dbus-send", "--type=signal", "/", "org.ubuntustudio.control.event.config_signal"], shell=False)
+            subprocess.run(["/usr/bin/dbus-send", "--type=signal", "/", "org.ubuntustudio.control.event.config_signal"],
+                           shell=False)
         else:
             time.sleep(5)
             if autojack:
-                subprocess.run(["/usr/bin/dbus-send", "--type=signal", "/", "org.ubuntustudio.control.event.config_signal"], shell=False)
+                subprocess.run(
+                    ["/usr/bin/dbus-send", "--type=signal", "/", "org.ubuntustudio.control.event.config_signal"],
+                    shell=False)
             else:
                 self.start_autojack()
 
@@ -702,19 +717,20 @@ class UbuntuStudioControls:
         This should only happen directly after a fresh install of
         -controls'''
         print("Starting Autojack...")
-        #first tell any old autojack to die
-        subprocess.run(["/usr/bin/dbus-send", "--type=signal", "/", "org.ubuntustudio.control.event.quit_signal"], shell=False)
-        #do it
+        # first tell any old autojack to die
+        subprocess.run(["/usr/bin/dbus-send", "--type=signal", "/", "org.ubuntustudio.control.event.quit_signal"],
+                       shell=False)
+        # do it
         logpath = expanduser("~/.log")
-        #make sure the logfile directory exists
+        # make sure the logfile directory exists
         if not os.path.exists(logpath):
             os.makedirs(logpath)
         # if there is already a log file rename it to .old
         if os.path.isfile(f"{logpath}/autojack.log"):
             os.replace(f"{logpath}/autojack.log", f"{logpath}/autojack.log.old")
-        subprocess.Popen(["/usr/bin/autojack"], stdin=subprocess.DEVNULL, stdout=open(f"{logpath}/autojack.log", 'w'), stderr=subprocess.STDOUT, shell=False).pid
+        subprocess.Popen(["/usr/bin/autojack"], stdin=subprocess.DEVNULL, stdout=open(f"{logpath}/autojack.log", 'w'),
+                         stderr=subprocess.STDOUT, shell=False).pid
 
-        
     def on_button_help_ok_clicked(self, button):
         self.window_help.hide()
 
@@ -724,7 +740,8 @@ class UbuntuStudioControls:
     def on_button_rt_info_ok_clicked(self, button):
         self.message_dialog_rt_info.hide()
 
-    subprocess.run(["/usr/bin/dbus-send", "--type=signal", "/", "org.ubuntustudio.control.event.ping_signal"], shell=False)
+    subprocess.run(["/usr/bin/dbus-send", "--type=signal", "/", "org.ubuntustudio.control.event.ping_signal"],
+                   shell=False)
 
 
 us = UbuntuStudioControls()

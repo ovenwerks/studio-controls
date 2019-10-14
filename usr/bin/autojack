@@ -28,6 +28,7 @@ import sys
 import signal
 import curses
 
+
 def get_dev_info(x):
     '''uses audio device number to make a device struture with device
     info. The info includes: Device name, USB?, number of subdevices and
@@ -42,7 +43,7 @@ def get_dev_info(x):
         if os.path.isfile(f"/proc/asound/card{str(x)}/id"):
             with open(f"/proc/asound/card{str(x)}/id", "r") as card_file:
                 for line in card_file:
-                    #only need one line
+                    # only need one line
                     cname = line.rstrip()
         else:
             cname = str(x)
@@ -87,6 +88,7 @@ def get_dev_info(x):
     # change this to create a list, USB cards may have devices and subdevices
     return device
 
+
 def import_device_array():
     '''creates an array of device structures as per get_dev_info(), from
     device 0 to the highest number device currently on the system. Missing
@@ -110,12 +112,13 @@ def import_device_array():
         cards_file.close
     ndevs += 1
     for x in range(0, ndevs):
-        #card loop
+        # card loop
         device = []
         device = get_dev_info(x)
         devices.append(device)
         del device
-    #print(devices)
+    # print(devices)
+
 
 def import_config():
     ''' sets default parmeters, then reads values from configuration file'''
@@ -177,7 +180,7 @@ def import_config():
                 elif lsplit[0] == "DEV":
                     dev = dev_desc = lsplit[1]
                     if dev == "default":
-                        dev = 0,0,0
+                        dev = 0, 0, 0
                 elif lsplit[0] == "CHAN-IN":
                     chan_in = lsplit[1]
                 elif lsplit[0] == "CHAN-OUT":
@@ -214,6 +217,7 @@ def import_config():
                     usb_single = lsplit[1]
                 elif lsplit[0] == "USBDEV":
                     usbdev = lsplit[1]
+
 
 def reconfig():
     '''reads values from configuration file and changes run to match. This tries
@@ -309,10 +313,12 @@ def reconfig():
 
         pulse_in = newpulse_in
         if pulse_in > 0:
-            subprocess.run(["/usr/bin/pactl", "load-module", "module-jack-source", "client_name=PulseIn", "channels=2", "connect=no"], shell=False)
+            subprocess.run(["/usr/bin/pactl", "load-module", "module-jack-source", "client_name=PulseIn", "channels=2",
+                            "connect=no"], shell=False)
         if pulse_in > 1:
             for i in range(2, (pulse_in + 1)):
-                subprocess.run(["/usr/bin/pactl", "load-module", "module-jack-source", f"client_name=PulseIn-{str(i)}", "channels=2", "connect=no"], shell=False)
+                subprocess.run(["/usr/bin/pactl", "load-module", "module-jack-source", f"client_name=PulseIn-{str(i)}",
+                                "channels=2", "connect=no"], shell=False)
 
     if pulse_out != newpulse_out:
         if not pulse_dirty:
@@ -322,10 +328,12 @@ def reconfig():
         pulse_out = newpulse_out
         subprocess.run(["/usr/bin/pactl", "unload-module", "module-jack-sink"], shell=False)
         if pulse_out > 0:
-            subprocess.run(["/usr/bin/pactl", "load-module", "module-jack-sink", "client_name=PulseOut", "channels=2", "connect=no"], shell=False)
+            subprocess.run(["/usr/bin/pactl", "load-module", "module-jack-sink", "client_name=PulseOut", "channels=2",
+                            "connect=no"], shell=False)
         if pulse_out > 1:
             for i in range(2, (pulse_out + 1)):
-                subprocess.run(["/usr/bin/pactl", "load-module", "module-jack-sink", f"client_name=PulseOut-{str(i)}", "channels=2", "connect=no"], shell=False)
+                subprocess.run(["/usr/bin/pactl", "load-module", "module-jack-sink", f"client_name=PulseOut-{str(i)}",
+                                "channels=2", "connect=no"], shell=False)
 
     if pulse_dirty:
         connect_pa()
@@ -362,7 +370,7 @@ def reconfig():
                     zdev_list = newzdev.strip('"').strip().split(" ")
                     tempname = "nothing"
                     dev_has_pid = False
-                    #stop_dev = True
+                    # stop_dev = True
                     for i in range(3, (device[2] + 3)):
                         tempname = f"{device[0]},{str(device[i][0])},0"
                         if device[i][2]:
@@ -376,7 +384,6 @@ def reconfig():
         usb = newusb
         usb_single = newusb_single
         zdev = newzdev
-
 
 
 def config_start():
@@ -406,36 +413,47 @@ def config_start():
     # the commands are all different so...
     # XXXX Add Chan_in/out...
     if driver == "alsa":
-        subprocess.run(["/usr/bin/jack_control", "ds", "alsa", "dps", "capture", "none", "dps", "playback", "none"], shell=False)
+        subprocess.run(["/usr/bin/jack_control", "ds", "alsa", "dps", "capture", "none", "dps", "playback", "none"],
+                       shell=False)
         subprocess.run(["/usr/bin/jack_control", "dps", "device", f"hw:{mdev}", "dps", "rate", sr], shell=False)
-        subprocess.run(["/usr/bin/jack_control", "dps", "period", late, "dps", "nperiods", period, "start"], shell=False)
+        subprocess.run(["/usr/bin/jack_control", "dps", "period", late, "dps", "nperiods", period, "start"],
+                       shell=False)
     elif driver == "firewire":
         subprocess.run(["/usr/bin/jack_control", "ds", "firewire"], shell=False)
         subprocess.run(["/usr/bin/jack_control", "dps", "device", f"hw:{mdev}", "dps", "rate", sr], shell=False)
-        subprocess.run(["/usr/bin/jack_control", "dps", "period", late, "dps", "nperiods", period, "start"], shell=False)
+        subprocess.run(["/usr/bin/jack_control", "dps", "period", late, "dps", "nperiods", period, "start"],
+                       shell=False)
     elif driver == "dummy":
         subprocess.run(["/usr/bin/jack_control", "ds", "dummy"], shell=False)
         subprocess.run(["/usr/bin/jack_control", "dps", "rate", sr, "dps" "period", late], shell=False)
-        subprocess.run(["/usr/bin/jack_control", "dps", "capture", chan_in, "dps", "playback", chan_out, "start"], shell=False)
+        subprocess.run(["/usr/bin/jack_control", "dps", "capture", chan_in, "dps", "playback", chan_out, "start"],
+                       shell=False)
     else:
-        #we should never get here
-        print("programming error! if you find this in your log file please file"+
-                            "a bug report about: Driver not found")
+        # we should never get here
+        print("programming error! if you find this in your log file please file" +
+              "a bug report about: Driver not found")
     last_master = mdev
     # maybe check for jack up (need function?)
     time.sleep(2)
 
     if pulse_in > 0:
-        subprocess.run(["/usr/bin/pactl", "load-module", "module-jack-source", "client_name=PulseIn", "channels=2", "connect=no"], shell=False)
+        subprocess.run(
+            ["/usr/bin/pactl", "load-module", "module-jack-source", "client_name=PulseIn", "channels=2", "connect=no"],
+            shell=False)
     if pulse_in > 1:
         for i in range(2, (pulse_in + 1)):
-            subprocess.run(["/usr/bin/pactl", "load-module", "module-jack-source", f"client_name=PulseIn-{str(i)}", "channels=2", "connect=no"], shell=False)
+            subprocess.run(
+                ["/usr/bin/pactl", "load-module", "module-jack-source", f"client_name=PulseIn-{str(i)}", "channels=2",
+                 "connect=no"], shell=False)
     if pulse_out > 0:
-        subprocess.run(["/usr/bin/pactl", "load-module", "module-jack-sink", "client_name=PulseOut", "channels=2", "connect=no"], shell=False)
+        subprocess.run(
+            ["/usr/bin/pactl", "load-module", "module-jack-sink", "client_name=PulseOut", "channels=2", "connect=no"],
+            shell=False)
     if pulse_out > 1:
         for i in range(2, (pulse_out + 1)):
-            subprocess.run(["/usr/bin/pactl", "load-module", "module-jack-sink", f"client_name=PulseOut-{str(i)}", "channels=2", "connect=no"], shell=False)
-
+            subprocess.run(
+                ["/usr/bin/pactl", "load-module", "module-jack-sink", f"client_name=PulseOut-{str(i)}", "channels=2",
+                 "connect=no"], shell=False)
 
     for cname in zdev.strip('"').strip().split(" "):
         if cname != "":
@@ -449,12 +467,13 @@ def config_start():
         import_device_array()
         for device in devices:
             if device[1]:
-                #this is a USB device
+                # this is a USB device
                 if f"{device[0]},0,0" != usbdev:
                     start_slave(f"{device[0]},0,0")
 
     if a2j == "True":
         subprocess.Popen(["/usr/bin/a2jmidid", "-e"], shell=False).pid
+
 
 def connect_pa():
     '''connects pulse ports to the correct device ports. May have to
@@ -501,7 +520,7 @@ def connect_pa():
         dev_has_pid = True
 
     if not dev_has_pid:
-        #print ("no pid, start slave")
+        # print ("no pid, start slave")
         start_slave(d_out)
         time.sleep(1)
 
@@ -510,7 +529,9 @@ def connect_pa():
         subprocess.run(["/usr/bin/jack_connect", f"{in_name}:capture_2", "PulseIn:front-right"], shell=False)
     if pulse_out:
         subprocess.run(["/usr/bin/jack_connect", "PulseOut:front-left", f"{out_name}:playback_{o_port}"], shell=False)
-        subprocess.run(["/usr/bin/jack_connect", "PulseOut:front-right", f"{out_name}:playback_{str(int(o_port) + 1)}"], shell=False)
+        subprocess.run(["/usr/bin/jack_connect", "PulseOut:front-right", f"{out_name}:playback_{str(int(o_port) + 1)}"],
+                       shell=False)
+
 
 def disconnect_pa():
     '''Searches jack ports for Pulse ports and disconnects them. The pa-jack
@@ -528,6 +549,7 @@ def disconnect_pa():
                 if port1:
                     subprocess.run(["/usr/bin/jack_disconnect", port1, port2], shell=False)
                 port1 = ""
+
 
 def msg_cb_new(*args, **kwargs):
     '''call back for udev sensing new device. checks if device is audio.
@@ -547,10 +569,11 @@ def msg_cb_new(*args, **kwargs):
         a_if = args[0].split("sound-card", 1)
         audio_if = a_if[1].split(".", 1)[0]
         device = devices[int(audio_if)]
-        #make sure device is USB and is not midi only
+        # make sure device is USB and is not midi only
         if device[1] and device[2]:
             # tell gui devicelist has changed so it can up date device dropdowns
-            subprocess.run(["/usr/bin/dbus-send", "--type=signal", "/", "org.ubuntustudio.control.event.usb_signal"], shell=False)
+            subprocess.run(["/usr/bin/dbus-send", "--type=signal", "/", "org.ubuntustudio.control.event.usb_signal"],
+                           shell=False)
 
             cid = f"{device[0]},0,0"
             print(f"{time.asctime()} device = {cid} play:{str(device[3][1])} capture:{str(device[3][3])}")
@@ -560,16 +583,17 @@ def msg_cb_new(*args, **kwargs):
                 return
             if jack == "True" and driver == "alsa":
                 if usbdev == cid:
-                    #change_jack_master(cid, "sm")
+                    # change_jack_master(cid, "sm")
                     print(f"{time.asctime()} Changing jack master to: {cid}")
                     config_start()
                     last_master = cid
                     time.sleep(1)
                     start_slave(dev)
                     time.sleep(1)
-                    #connect_pa()
+                    # connect_pa()
                 elif usb == "True":
                     start_slave(cid)
+
 
 def msg_cb_removed(*args, **kwargs):
     ''' dbus call back when a USB device removal has been detected by udev '''
@@ -579,13 +603,14 @@ def msg_cb_removed(*args, **kwargs):
 
     if args[0].find("sound-card") >= 0:
         # tell gui devicelist has changed
-        subprocess.run(["/usr/bin/dbus-send", "--type=signal", "/", "org.ubuntustudio.control.event.usb_signal"], shell=False)
+        subprocess.run(["/usr/bin/dbus-send", "--type=signal", "/", "org.ubuntustudio.control.event.usb_signal"],
+                       shell=False)
 
         a_if = args[0].split("sound-card", 1)
         audio_if = a_if[1].split(".", 1)[0]
         print(f"{time.asctime()} sound card: hw:{audio_if} removed")
         if os.path.exists(f"/proc/asound/card{str(audio_if)}"):
-            #Hmm, I guess it hasn't really gone, false alarm
+            # Hmm, I guess it hasn't really gone, false alarm
             print(f"{time.asctime()} Device is still here - signal ignored")
             return
 
@@ -604,6 +629,7 @@ def msg_cb_removed(*args, **kwargs):
                 kill_slave(cid)
         import_device_array()
 
+
 def get_card_rate(filename, usb):
     ''' Takes a filename and searches for lines that include the word:
     Rates or rates. From each of those lines any numbers are takes and
@@ -613,7 +639,7 @@ def get_card_rate(filename, usb):
     global sr
     dsr = sr
     full_list = []
-    if os.path.isfile (filename):
+    if os.path.isfile(filename):
         with open(filename, "r") as card_file:
             for line in card_file:
                 srlist = []
@@ -657,6 +683,7 @@ def get_card_rate(filename, usb):
                 dsr = str(lsr)
     return dsr
 
+
 def start_slave(ldev):
     ''' takes the audio device as a parameter and starts a bridge
     from that device to jack '''
@@ -671,22 +698,29 @@ def start_slave(ldev):
             if device[3 + int(dev)][1]:
                 if device[1]:
                     # this is usb devices we should find /proc/dname/stream?
-                    if os.path.isfile (f"/proc/asound/{dname}/stream0"):
-                        dsr = get_card_rate (f"/proc/asound/{dname}/stream0", True)
+                    if os.path.isfile(f"/proc/asound/{dname}/stream0"):
+                        dsr = get_card_rate(f"/proc/asound/{dname}/stream0", True)
                     print(f"{time.asctime()} Got {dsr} as the closest rate to {sr}")
                     if usb_single == "False":
-                        pidout = subprocess.Popen(["/usr/bin/zita-j2a", "-j", f"{ldev}-out", "-d", f"hw:{ldev}", "-r", dsr, "-p", zframe, "-n", period, "-c", "100"], shell=False).pid
-                        device[3+int(dev)][2] = pidout
+                        pidout = subprocess.Popen(
+                            ["/usr/bin/zita-j2a", "-j", f"{ldev}-out", "-d", f"hw:{ldev}", "-r", dsr, "-p", zframe,
+                             "-n", period, "-c", "100"], shell=False).pid
+                        device[3 + int(dev)][2] = pidout
                 else:
                     # this is internal and so we look at /proc/dname/codec* if it is a file
-                    if os.path.isfile (f"/proc/asound/{dname}/codec#0"):
-                        dsr = get_card_rate (f"/proc/asound/{dname}/codec#0", False)
+                    if os.path.isfile(f"/proc/asound/{dname}/codec#0"):
+                        dsr = get_card_rate(f"/proc/asound/{dname}/codec#0", False)
                     print(f"{time.asctime()} Got {dsr} as the closest rate to {sr}")
-                    pidout = subprocess.Popen(["/usr/bin/zita-j2a", "-j", f"{ldev}-out", "-d", f"hw:{ldev}", "-r", dsr, "-p", zframe, "-n", period, "-c", "100"], shell=False).pid
-                    device[3+int(dev)][2] = pidout
-            if device[3+int(dev)][3]:
-                pidin = subprocess.Popen(["/usr/bin/zita-a2j", "-j", f"{ldev}-in", "-d", f"hw:{ldev}", "-r", dsr, "-p", zframe, "-n", period, "-c", "100"], shell=False).pid
+                    pidout = subprocess.Popen(
+                        ["/usr/bin/zita-j2a", "-j", f"{ldev}-out", "-d", f"hw:{ldev}", "-r", dsr, "-p", zframe, "-n",
+                         period, "-c", "100"], shell=False).pid
+                    device[3 + int(dev)][2] = pidout
+            if device[3 + int(dev)][3]:
+                pidin = subprocess.Popen(
+                    ["/usr/bin/zita-a2j", "-j", f"{ldev}-in", "-d", f"hw:{ldev}", "-r", dsr, "-p", zframe, "-n", period,
+                     "-c", "100"], shell=False).pid
                 device[3 + int(dev)][4] = pidin
+
 
 def kill_slave(ldev):
     ''' takes the device as a parameter and if the device exists
@@ -703,7 +737,8 @@ def kill_slave(ldev):
                 print(f"{time.asctime()} kill {str(dname)} sub: {str(dev)} PID: {str(device[3 + int(dev)][4])}")
                 os.kill(device[3 + int(dev)][4], signal.SIGKILL)
 
-def ses_cb_quit (*args, **kwargs):
+
+def ses_cb_quit(*args, **kwargs):
     ''' dbus call back when quit signal caught. This is for use in
     testing and the GUI never sends this. '''
     print(f"{time.asctime()} Got quit signal.\n")
@@ -711,27 +746,32 @@ def ses_cb_quit (*args, **kwargs):
     subprocess.run(["/usr/bin/pulseaudio", "-k"], shell=False)
     os._exit(0)
 
-def ses_cb_stop (*args, **kwargs):
+
+def ses_cb_stop(*args, **kwargs):
     ''' dbus call back when stop signal caught. This stops jack. '''
     print(f"{time.asctime()} Got stop signal.\n")
     subprocess.run(["/usr/bin/killall", "-9", "jackdbus", "jackd", "a2jmidid"], shell=False)
     subprocess.run(["/usr/bin/pulseaudio", "-k"], shell=False)
 
-def ses_cb_start (*args, **kwargs):
+
+def ses_cb_start(*args, **kwargs):
     ''' dbus call back when (re)start signal caught'''
     print(f"{time.asctime()} Got start signal.\n")
     config_start()
 
-def ses_cb_config (*args, **kwargs):
+
+def ses_cb_config(*args, **kwargs):
     ''' dbus call back when config signal caught '''
     print(f"{time.asctime()} Got config signal.\n")
     reconfig()
 
-def ses_cb_ping (*args, **kwargs):
+
+def ses_cb_ping(*args, **kwargs):
     ''' dbus call back when config signal caught '''
     print(f"{time.asctime()} Got ping signal.\n")
     time.sleep(3)
-    subprocess.run(["/usr/bin/dbus-send", "--type=signal", "/", "org.ubuntustudio.control.event.V3_1_signal"], shell=False)
+    subprocess.run(["/usr/bin/dbus-send", "--type=signal", "/", "org.ubuntustudio.control.event.V3_1_signal"],
+                   shell=False)
 
 
 def main():
@@ -742,22 +782,27 @@ def main():
     import_device_array()
     system_bus = dbus.SystemBus()
     system_bus.add_signal_receiver(msg_cb_new, dbus_interface='org.freedesktop.systemd1.Manager', signal_name='UnitNew')
-    system_bus.add_signal_receiver(msg_cb_removed, dbus_interface='org.freedesktop.systemd1.Manager', signal_name='UnitRemoved')
+    system_bus.add_signal_receiver(msg_cb_removed, dbus_interface='org.freedesktop.systemd1.Manager',
+                                   signal_name='UnitRemoved')
 
     user_bus = dbus.SessionBus()
-    user_bus.add_signal_receiver(ses_cb_quit, dbus_interface='org.ubuntustudio.control.event', signal_name='quit_signal')
-    user_bus.add_signal_receiver(ses_cb_stop, dbus_interface='org.ubuntustudio.control.event', signal_name='stop_signal')
-    user_bus.add_signal_receiver(ses_cb_start, dbus_interface='org.ubuntustudio.control.event', signal_name='start_signal')
-    user_bus.add_signal_receiver(ses_cb_config, dbus_interface='org.ubuntustudio.control.event', signal_name='config_signal')
-    user_bus.add_signal_receiver(ses_cb_ping, dbus_interface='org.ubuntustudio.control.event', signal_name='ping_signal')
+    user_bus.add_signal_receiver(ses_cb_quit, dbus_interface='org.ubuntustudio.control.event',
+                                 signal_name='quit_signal')
+    user_bus.add_signal_receiver(ses_cb_stop, dbus_interface='org.ubuntustudio.control.event',
+                                 signal_name='stop_signal')
+    user_bus.add_signal_receiver(ses_cb_start, dbus_interface='org.ubuntustudio.control.event',
+                                 signal_name='start_signal')
+    user_bus.add_signal_receiver(ses_cb_config, dbus_interface='org.ubuntustudio.control.event',
+                                 signal_name='config_signal')
+    user_bus.add_signal_receiver(ses_cb_ping, dbus_interface='org.ubuntustudio.control.event',
+                                 signal_name='ping_signal')
 
-    subprocess.run(["/usr/bin/dbus-send", "--type=signal", "/", "org.ubuntustudio.control.event.V3_1_signal"], shell=False)
+    subprocess.run(["/usr/bin/dbus-send", "--type=signal", "/", "org.ubuntustudio.control.event.V3_1_signal"],
+                   shell=False)
 
     loop = GLib.MainLoop()
     loop.run()
 
 
-
-
 if __name__ == '__main__':
-        main()
+    main()
