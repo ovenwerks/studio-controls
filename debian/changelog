@@ -1,8 +1,12 @@
 ubuntustudio-controls (1.11.3) UNRELEASED; urgency=medium
 
+  [ Len Ovens ]
   * Check if device really has gone on device removed signal
   * Save last valid internal device
   * Move config file to it's own sub directory to allow more files
+
+  [ Brian Hechinger ]
+  *  NO-OP: Updated formatting for PEP8
 
  -- Len Ovens <len@ubuntustudio.org>  Sat, 05 Oct 2019 10:50:22 -0700
 
