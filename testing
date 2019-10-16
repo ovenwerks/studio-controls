@@ -1,0 +1,21 @@
+TESTING Controls:
+=================
+
+At present, controls should be tested for:
+	- defaults are correct (no config file)
+		both in running instance (autojack autostarts)
+			- check pavucontrol shows devices and sends sound through
+		and in GUI
+      - not in performance
+      - boost (if available) is on
+      Audio should show correct defaults
+	- config file in ~/.config/autojackrc is read and used.
+		in running instance
+		In GUI
+		when gui saves this file should vanish
+	- config file in ~/.config/autojack/autojackrc
+		in running instance
+      start jack
+      change everything make sure whats actually runnig echoes config
+		in GUI
+      Gui should show last config change

@@ -4,6 +4,7 @@ ubuntustudio-controls (1.11.3) UNRELEASED; urgency=medium
   * Check if device really has gone on device removed signal
   * Save last valid internal device
   * Move config file to it's own sub directory to allow more files
+  * Refactor PA bridging
 
   [ Brian Hechinger ]
   *  NO-OP: Updated formatting for PEP8
