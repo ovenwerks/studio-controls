@@ -1,0 +1,11 @@
+Ubuntustudio-controls version 1.11.3
+
+New for this version
+- Bug fixes: check if device removed signal is true
+		Save last valid internal device so removing USB device
+		allows controls to switch to something sane.
+- moved config file to it's own directory so that we can add
+		more files like post start scripts.
+- Converted config file to use configparser for less accident prone
+		maintenance.
+- Declutter audio setup GUI by splitting it into three tabs
