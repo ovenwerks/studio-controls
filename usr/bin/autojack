@@ -535,6 +535,10 @@ def msg_cb_new(*args, **kwargs):
     global last_master
     global def_config
 
+    if def_config['JACK'] == "False":
+        # then we don't care
+        return
+
     import_config()
 
     if args[0].find("sound-card") >= 0:
@@ -574,6 +578,10 @@ def msg_cb_removed(*args, **kwargs):
     global devices
     global last_master
     global def_config
+
+    if def_config['JACK'] == "False":
+        # then we don't care
+        return
 
     import_config()
 
@@ -758,7 +766,9 @@ def ses_cb_ping(*args, **kwargs):
 def main():
     ''' Autojack runs at session start and manages audio for the session.
     this is the daemon for ubuntustudio-controls'''
+    global last_master
     dbus.mainloop.glib.DBusGMainLoop(set_as_default=True)
+    last_master = ""
     config_start()
     import_device_array()
     system_bus = dbus.SystemBus()
