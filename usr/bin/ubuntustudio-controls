@@ -132,27 +132,34 @@ class UbuntuStudioControls:
         self.combo_governor = builder.get_object('combo_governor')
         self.combo_boost = builder.get_object('combo_boost')
         '''audio tab stuff'''
+        '''master'''
         self.jack_device_combo = builder.get_object('jack_device_combo')
         self.jack_usb_dev_combo = builder.get_object('jack_usb_dev_combo')
+        self.chan_in_spin = builder.get_object('chan_in_spin')
+        self.chan_out_spin = builder.get_object('chan_out_spin')
         self.jack_rate_combo = builder.get_object('jack_rate_combo')
         self.combobox_late = builder.get_object('combobox_late')
         self.combo_periods = builder.get_object('combo_periods')
         self.combo_backend = builder.get_object('combo_backend')
+        self.jack_midi_check = builder.get_object('jack_midi_check')
+        self.jack_ind = builder.get_object('jack_ind')
+        self.jack_state = builder.get_object('jack_state')
+        self.dsp_label = builder.get_object('dsp_label')
+        self.xrun_lab = builder.get_object('xrun_lab')
+
+        '''extra'''
         self.usb_plug_check = builder.get_object('usb_plug_check')
         self.usb_single_ck = builder.get_object('usb_single_ck')
         self.combo_zita_add = builder.get_object('combo_zita_add')
         self.combo_zita_remove = builder.get_object('combo_zita_remove')
+
+        '''pulse'''
         self.combo_output = builder.get_object('combo_output')
         self.combo_out_ports = builder.get_object('combo_out_ports')
-        self.jack_ind = builder.get_object('jack_ind')
-        self.jack_state = builder.get_object('jack_state')
-        self.dsp_label = builder.get_object('dsp_label')
-        self.jack_midi_check = builder.get_object('jack_midi_check')
-        self.chan_in_spin = builder.get_object('chan_in_spin')
-        self.chan_out_spin = builder.get_object('chan_out_spin')
         self.pulse_in_spin = builder.get_object('pulse_input_spin')
         self.pulse_out_spin = builder.get_object('pulse_output_spin')
 
+        '''Dbus monitoring'''
         user_bus = dbus.SessionBus()
         user_bus.add_signal_receiver(self.db_ses_cb, dbus_interface='org.ubuntustudio.control.event',
                                      signal_name='V3_1_signal')
@@ -225,6 +232,8 @@ class UbuntuStudioControls:
         global newusb
         global jack_alive
         global jack_died
+        global xrun_count
+        xrun_count = 0
         autojack = False
         newusb = False
         jack_alive = False
@@ -345,6 +354,7 @@ class UbuntuStudioControls:
             "jack_driver_changed": self.jack_driver_changed,
             "usb_master_changed": self.usb_master_changed,
             "usb_plug_cb": self.usb_plug_cb,
+            "xrun_reset": self.xrun_reset,
         }
         builder.connect_signals(handlers)
 
@@ -375,9 +385,11 @@ class UbuntuStudioControls:
         global jack_client
         global jack_alive
         global jack_died
+        global xrun_count
 
         # sent by jackdied() callback
         if jack_died:
+            jack_client.deactivate()
             jack_client.close()
             jack_died = False
 
@@ -390,17 +402,22 @@ class UbuntuStudioControls:
         if jack_alive:
             load = jack_client.cpu_load()
             self.dsp_label.set_text(f"DSP: {str(load)[0:4]}%")
+            self.xrun_lab.set_text(f" {str(xrun_count)}")
         else:
             self.dsp_label.set_text("DSP: 0%")
+            self.xrun_lab.set_text(" 0")
             try:
                 jack_client = jack.Client('controls', False, True)
             except jack.JackError:
                 self.jack_state.set_text(" Stopped")
                 self.jack_ind.set_from_icon_name("gtk-stop", 0)
+                self.xrun_lab.set_text(" 0")
                 return True
             self.jack_state.set_text(" Running")
             self.jack_ind.set_from_icon_name("gtk-apply", 0)
             jack_client.set_shutdown_callback(self.jackdied)
+            jack_client.set_xrun_callback(self.jackxrun)
+            jack_client.activate()
             jack_alive = True
         return True
 
@@ -411,6 +428,14 @@ class UbuntuStudioControls:
         global jack_died
         jack_died = True
         jack_alive = False
+
+    def jackxrun(xruntime, extra):
+        global xrun_count
+        xrun_count = xrun_count + 1
+
+    def xrun_reset(self, button):
+        global xrun_count
+        xrun_count = 0
 
     def refresh_dropdowns(self):
         '''this call refreshes the device lists for all drop downs
