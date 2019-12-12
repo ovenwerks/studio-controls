@@ -132,6 +132,15 @@ def import_config():
     global config_path
     global config_file
     global zdev
+    global pulse_in
+    global pulse_out
+    global p_in_con
+    global p_out_con
+    zdev = []
+    pulse_in = []
+    pulse_out = []
+    p_in_con = []
+    p_out_con = []
 
     config = configparser.ConfigParser()
     def_config = config['DEFAULT']
@@ -150,12 +159,12 @@ def import_config():
         'PERIOD': "2",
         'ZFRAME': "512",
         'XDEV': "",
-        'PULSE-IN': "1",
-        'PULSE-OUT': "1",
+        'PULSE-IN': "pulse_in",
+        'PULSE-OUT': "pulse_out",
+        'PJ-IN-CON': 'system:capture_1',
+        'PJ-OUT-CON': 'system:playback_1',
         'A2J': "True",
         'DEV': "0,0,0",
-        'OUTPUT': "system",
-        'PORTS': "1",
         'USBAUTO': "True",
         'USB-SINGLE': "False",
         'USBDEV': "",
@@ -164,11 +173,9 @@ def import_config():
 
     # read in autojack config file
     c_file = expanduser(config_file)
-    zdev = def_config['XDEV'].strip('"').split()
     if os.path.isfile(c_file):
         # New config file exists, read it in
         config.read(c_file)
-        zdev = def_config['XDEV'].strip('"').split()
     else:
         # New file did not exist, let's check for a legacy file
         c_file = expanduser(old_config_file)
@@ -198,19 +205,28 @@ def import_config():
                     elif lsplit[0] == "PERIOD":
                         def_config['PERIOD'] = lsplit[1]
                     elif lsplit[0] == "PULSE":
-                        def_config['PULSE'] = lsplit[1]
-                        def_config['PULSE-IN'] = str(int(def_config['PULSE'] == 'True'))
-                        def_config['PULSE-OUT'] = str(int(def_config['PULSE'] == 'True'))
+                        pulse = lsplit[1]
+                        if pulse == 'True':
+                            def_config['PULSE-IN'] = 'pulse_in'
+                            def_config['PULSE-OUT'] = 'pulse_out'
+                        else:
+                            def_config['PULSE-IN'] = ''
+                            def_config['PULSE-OUT'] = ''
                     elif lsplit[0] == "PULSE-IN":
-                        def_config['PULSE-IN'] = lsplit[1]
+                        pin = lsplit[1]
+                        if pin:
+                            def_config['PULSE-IN'] = 'pulse_in'
                     elif lsplit[0] == "PULSE-OUT":
-                        def_config['PULSE-OUT'] = lsplit[1]
+                        pout = lsplit[1]
+                        if pout:
+                            def_config['PULSE-OUT'] = 'pulse_out'
                     elif lsplit[0] == "A2J":
                         def_config['A2J'] = lsplit[1]
                     elif lsplit[0] == "OUTPUT":
-                        def_config['OUTPUT'] = lsplit[1]
+                        def_config['PJ-IN-CON'] = f"{lsplit[1]}:capture_1"
+                        def_config['PJ-OUT-CON'] = f"{lsplit[1]}:playback_"
                     elif lsplit[0] == "PORTS":
-                        def_config['PORTS'] = lsplit[1]
+                        def_config['PJ-OUT-CON'] = f"{def_config['PJ-OUT-CON']}{lsplit[1]}"
                     elif lsplit[0] == "XDEV":
                         def_config['XDEV'] = lsplit[1].strip('"')
                         zdev = def_config['XDEV'].strip('"').split()
@@ -221,11 +237,16 @@ def import_config():
                     elif lsplit[0] == "USBDEV":
                         def_config['USBDEV'] = lsplit[1]
 
-    if def_config['PULSE-IN'] == "0" and def_config['PULSE-OUT'] == "0":
-        def_config['PULSE'] = "False"
-
     if def_config['DEV'] == "default":
         def_config['DEV'] = "0,0,0"
+    zdev = def_config['XDEV'].strip('"').split()
+    pulse_in = def_config['PULSE-IN'].strip('"').split()
+    pulse_out = def_config['PULSE-OUT'].strip('"').split()
+    p_in_con = def_config['PJ-IN-CON'].strip('"').split()
+    p_out_con = def_config['PJ-OUT-CON'].strip('"').split()
+    if pulse_in == [] and pulse_out == []:
+        def_config['PULSE'] = "False"
+        
 
 
 def reconfig():
@@ -233,6 +254,8 @@ def reconfig():
     to do this without stopping jack if not needed'''
     global devices
     global zdev
+    global pulse_in
+    global pulse_out
     global config
     global config_file
     global def_config
@@ -241,6 +264,8 @@ def reconfig():
     old_def_config = old_config['DEFAULT']
     old_config.read_dict(config)
     oldzdev = zdev
+    oldpulse_in = pulse_in
+    oldpulse_out = pulse_out
     import_config()
 
     newlist = [def_config['JACK'], def_config['DRIVER'], def_config['CHAN-IN'], def_config['CHAN-OUT'],
@@ -261,39 +286,28 @@ def reconfig():
         pulse_dirty = True
         disconnect_pa()
         subprocess.run(["/usr/bin/pactl", "unload-module", "module-jack-source"], shell=False)
-
-        if int(def_config['PULSE-IN']) > 0:
+        for piname in pulse_in:
             def_config['PULSE'] = "True"
-            subprocess.run(["/usr/bin/pactl", "load-module", "module-jack-source", "client_name=PulseIn", "channels=2",
+            subprocess.run(["/usr/bin/pactl", "load-module", "module-jack-source", f"client_name={piname}", "channels=2",
                             "connect=no"], shell=False)
-        if int(def_config['PULSE-IN']) > 1:
-            for i in range(2, (int(def_config['PULSE-IN']) + 1)):
-                subprocess.run(["/usr/bin/pactl", "load-module", "module-jack-source", f"client_name=PulseIn-{str(i)}",
-                                "channels=2", "connect=no"], shell=False)
-
+            
     if def_config['PULSE-OUT'] != old_def_config['PULSE-OUT']:
         if not pulse_dirty:
             # only do one disconnect
             pulse_dirty = True
             disconnect_pa()
         subprocess.run(["/usr/bin/pactl", "unload-module", "module-jack-sink"], shell=False)
-        if int(def_config['PULSE-OUT']) > 0:
+        for poname in pulse_out:
             def_config['PULSE'] = "True"
-            subprocess.run(["/usr/bin/pactl", "load-module", "module-jack-sink", "client_name=PulseOut", "channels=2",
+            subprocess.run(["/usr/bin/pactl", "load-module", "module-jack-sink", f"client_name={poname}", "channels=2",
                             "connect=no"], shell=False)
-        if int(def_config['PULSE-OUT']) > 1:
-            for i in range(2, (int(def_config['PULSE-OUT']) + 1)):
-                subprocess.run(["/usr/bin/pactl", "load-module", "module-jack-sink", f"client_name=PulseOut-{str(i)}",
-                                "channels=2", "connect=no"], shell=False)
 
     if pulse_dirty:
         connect_pa()
 
     # also connect ports if pulse bridged
-    if [def_config['OUTPUT'], def_config['PORTS']] != [old_def_config['OUTPUT'], old_def_config['PORTS']]:
+    if [def_config['PJ-IN-CON'], def_config['PJ-OUT-CON']] != [old_def_config['PJ-IN-CON'], old_def_config['PJ-OUT-CON']]:
         disconnect_pa()
-        if not def_config['OUTPUT'] in zdev and def_config['OUTPUT'] != "system":
-            kill_slave(def_config['OUTPUT'])
         if def_config['PULSE'] == "True":
             connect_pa()
     if old_def_config['A2J'] != def_config['A2J']:
@@ -337,6 +351,8 @@ def config_start():
     ''' Pulls configuration and force restarts the world '''
     global last_master
     global zdev
+    global pulse_in
+    global pulse_out
     global def_config
 
     print("Running: config_start()")
@@ -364,7 +380,6 @@ def config_start():
         mdev = def_config['DEV']
     # Now start jackdbus with the configured device
     # the commands are all different so...
-    # XXXX Add Chan_in/out...
     if def_config['DRIVER'] == "alsa":
         subprocess.run(["/usr/bin/jack_control", "ds", "alsa", "dps", "capture", "none", "dps", "playback", "none"],
                        shell=False)
@@ -399,24 +414,14 @@ def config_start():
     # maybe check for jack up (need function?)
     time.sleep(2)
 
-    if int(def_config['PULSE-IN']) > 0:
-        subprocess.run(
-            ["/usr/bin/pactl", "load-module", "module-jack-source", "client_name=PulseIn", "channels=2", "connect=no"],
-            shell=False)
-    if int(def_config['PULSE-IN']) > 1:
-        for i in range(2, (def_config['PULSE-IN'] + 1)):
-            subprocess.run(
-                ["/usr/bin/pactl", "load-module", "module-jack-source", f"client_name=PulseIn-{str(i)}", "channels=2",
-                 "connect=no"], shell=False)
-    if int(def_config['PULSE-OUT']) > 0:
-        subprocess.run(
-            ["/usr/bin/pactl", "load-module", "module-jack-sink", "client_name=PulseOut", "channels=2", "connect=no"],
-            shell=False)
-    if int(def_config['PULSE-OUT']) > 1:
-        for i in range(2, (int(def_config['PULSE-OUT']) + 1)):
-            subprocess.run(
-                ["/usr/bin/pactl", "load-module", "module-jack-sink", f"client_name=PulseOut-{str(i)}", "channels=2",
-                 "connect=no"], shell=False)
+    for piname in pulse_in:
+        def_config['PULSE'] = "True"
+        subprocess.run(["/usr/bin/pactl", "load-module", "module-jack-source", f"client_name={piname}", "channels=2",
+                        "connect=no"], shell=False)
+    for poname in pulse_out:
+        def_config['PULSE'] = "True"
+        subprocess.run(["/usr/bin/pactl", "load-module", "module-jack-sink", f"client_name={poname}", "channels=2",
+                        "connect=no"], shell=False)
 
     for cname in zdev:
         if cname != "":
@@ -441,77 +446,65 @@ def config_start():
 def connect_pa():
     '''connects pulse ports to the correct device ports. May have to
     use zita-ajbridge to first make the correct device available.'''
-    global def_config
+    global pulse_in
+    global pulse_out
+    global p_in_con
+    global p_out_con
 
-    if def_config['PORTS'] == "0":
+    if (p_in_con == []) and (p_out_con == []):
         return
-    global last_master
-    global devices
-    import_device_array()
-    dev_available = False
-    dev_has_in = False
-    dev_has_pid = False
-    for device in devices:
-        if device[0] == def_config['OUTPUT'].split(",")[0]:
-            # This is the device
-            if device[2]:
-                # device has sub devices (not MIDI only)
-                dev_available = True
-                for i in range(3, (device[2] + 3)):
-                    if str(device[i][0]) == def_config['OUTPUT'].split(",")[1]:
-                        # this is the right sub device
-                        if device[i][3]:
-                            dev_has_in = True
-                            # not used right now
-                        if not device[i][1]:
-                            # this should change to dev_has_out
-                            dev_available = False
-                        if device[i][2]:
-                            dev_has_pid = True
 
-    if def_config['OUTPUT'] == "system":
-        in_name = out_name = "system"
-        dev_has_pid = True
-    elif def_config['OUTPUT'] == def_config['DEV'] and last_master == def_config['DEV']:
-        in_name = out_name = "system"
-        dev_has_pid = True
-    elif def_config['OUTPUT'] == def_config['USBDEV'] and last_master == def_config['USBDEV']:
-        in_name = out_name = "system"
-        dev_has_pid = True
-    elif dev_available == True:
-        if dev_has_in:
-            # in_name = f"{def_config['OUTPUT']}-in"
-            # we don't care for now
-            in_name = "system"
+    for i, pj_name in enumerate(pulse_in):
+        port2 = ""
+        port = p_in_con[i]
+        if port == "none":
+            continue
+        elif "left" in port:
+            port2 = f"{port[0-(len(port)-5)]}right"
+        elif port.isnumeric():
+            p = int(port)
+            port = f"system:capture_{str(p)}"
+            port2 = f"system:capture_{str(p + 1)}"
         else:
-            in_name = "system"
-        out_name = f"{def_config['OUTPUT']}-out"
-    else:
-        in_name = out_name = "system"
-        dev_has_pid = True
+            print("assuming port ends with _*")
+            p = int(port[(port.rfind("_") + 1):]) + 1
+            port2 = f"{port[0:port.rfind('_') + 1]}{p}"
+        print(f"connecting {pj_name}:front-left to {port}")
+        print(f"connecting {pj_name}:front-right to {port2}")
+        subprocess.run(["/usr/bin/jack_connect", port,
+                        f"{pj_name}:front-left"], shell=False)
+        subprocess.run(["/usr/bin/jack_connect", port2,
+                        f"{pj_name}:front-right"], shell=False)
 
-    if not dev_has_pid:
-        # print ("no pid, start slave")
-        start_slave(def_config['OUTPUT'])
-        time.sleep(1)
-
-    if int(def_config['PULSE-IN']):
-        subprocess.run(["/usr/bin/jack_connect", f"{in_name}:capture_1",
-                        "PulseIn:front-left"], shell=False)
-        subprocess.run(["/usr/bin/jack_connect", f"{in_name}:capture_2",
-                        "PulseIn:front-right"], shell=False)
-    if int(def_config['PULSE-OUT']):
-        subprocess.run(["/usr/bin/jack_connect", "PulseOut:front-left", f"{out_name}:playback_{def_config['PORTS']}"],
-                       shell=False)
-        subprocess.run(["/usr/bin/jack_connect", "PulseOut:front-right",
-                        f"{out_name}:playback_{str(int(def_config['PORTS']) + 1)}"],
-                       shell=False)
+    for i, pj_name in enumerate(pulse_out):
+        port2 = ""
+        port = p_out_con[i]
+        if port == "none":
+            continue
+        elif "left" in port:
+            port2 = f"{port[0-(len(port)-5)]}right"
+        elif port.isnumeric():
+            p = int(port)
+            port = f"system:playback_{str(p)}"
+            port2 = f"system:playback_{str(p + 1)}"
+        else:
+            p = int(port[(port.rfind("_") + 1):]) + 1
+            port2 = f"{port[0:port.rfind('_') + 1]}{p}"
+        print(f"connecting {pj_name}:front-left to {port}")
+        print(f"connecting {pj_name}:front-right to {port2}")
+        subprocess.run(["/usr/bin/jack_connect", port,
+                        f"{pj_name}:front-left"], shell=False)
+        subprocess.run(["/usr/bin/jack_connect", port2,
+                        f"{pj_name}:front-right"], shell=False)
 
 
 def disconnect_pa():
     '''Searches jack ports for Pulse ports and disconnects them. The pa-jack
     bridge is left running.'''
-    stdoutdata = subprocess.check_output(["/usr/bin/jack_lsp", "-c", "Pulse"], shell=False)
+    global pulse_in
+    global pulse_out
+    # XXXwith manual PA port names this function may need to have variables in the call
+    stdoutdata = subprocess.check_output(["/usr/bin/jack_lsp", "-c", "pulse"], shell=False)
     ports = stdoutdata.split()
     port1 = ""
     for linein in ports:
@@ -674,6 +667,7 @@ def start_slave(ldev):
     from that device to jack '''
     global devices
     global def_config
+    global procs
 
     dsr = def_config['RATE']
     import_device_array()
@@ -687,26 +681,29 @@ def start_slave(ldev):
                         dsr = get_card_rate(f"/proc/asound/{dname}/stream0", True)
                     print(f"{time.asctime()} Got {dsr} as the closest rate to {def_config['RATE']}")
                     if def_config['USB-SINGLE'] == "False":
-                        pidout = subprocess.Popen(
+                        procout = subprocess.Popen(
                             ["/usr/bin/zita-j2a", "-j", f"{ldev}-out", "-d", f"hw:{ldev}", "-r", dsr, "-p",
-                             def_config['ZFRAME'],
-                             "-n", def_config['PERIOD'], "-c", "100"], shell=False).pid
+                             def_config['ZFRAME'], "-n", def_config['PERIOD'], "-c", "100"], shell=False)
+                        pidout = procout.pid
+                        procs.append(procout)
                         device[3 + int(l_dev)][2] = pidout
                 else:
                     # this is internal and so we look at /proc/dname/codec* if it is a file
                     if os.path.isfile(f"/proc/asound/{dname}/codec#0"):
                         dsr = get_card_rate(f"/proc/asound/{dname}/codec#0", False)
                     print(f"{time.asctime()} Got {dsr} as the closest rate to {def_config['RATE']}")
-                    pidout = subprocess.Popen(
+                    procout = subprocess.Popen(
                         ["/usr/bin/zita-j2a", "-j", f"{ldev}-out", "-d", f"hw:{ldev}", "-r", dsr, "-p",
-                         def_config['ZFRAME'], "-n",
-                         def_config['PERIOD'], "-c", "100"], shell=False).pid
+                            def_config['ZFRAME'], "-n", def_config['PERIOD'], "-c", "100"], shell=False)
+                    pidout = procout.pid
+                    procs.append(procout)
                     device[3 + int(l_dev)][2] = pidout
             if device[3 + int(l_dev)][3]:
-                pidin = subprocess.Popen(
+                procin = subprocess.Popen(
                     ["/usr/bin/zita-a2j", "-j", f"{ldev}-in", "-d", f"hw:{ldev}", "-r", dsr, "-p", def_config['ZFRAME'],
-                     "-n", def_config['PERIOD'],
-                     "-c", "100"], shell=False).pid
+                     "-n", def_config['PERIOD'], "-c", "100"], shell=False)
+                pidin = procin.pid
+                procs.append(procin)
                 device[3 + int(l_dev)][4] = pidin
 
 
@@ -714,16 +711,35 @@ def kill_slave(ldev):
     ''' takes the device as a parameter and if the device exists
     and is bridged to jack, stops the bridge '''
     global devices
+    global procs
     # XXXX need to separate out dev and subdev like above.
     dname, l_dev, sub = ldev.split(",", 2)
     for device in devices:
         if device[0] == dname and device[2]:
             if device[3 + int(l_dev)][2]:
-                print(f"{time.asctime()} kill {str(dname)} sub: {str(l_dev)} PID: {str(device[3 + int(l_dev)][2])}")
-                os.kill(device[3 + int(l_dev)][2], signal.SIGKILL)
+                for i, pr in enumerate(procs):
+                    if pr.pid == device[3 + int(l_dev)][2]:
+                        print(f"{time.asctime()} kill {str(dname)} sub: {str(l_dev)} PID: {str(device[3 + int(l_dev)][2])}")
+                        pr.send_signal(signal.SIGINT)
+                        try:
+                            rt = pr.wait(timeout=15)
+                        except TimeoutExpired:
+                            print(f"{time.asctime()} kill PID: {str(device[3 + int(l_dev)][2])} failed")
+                            pr.terminate()
+                            outs, errs = pr.communicate()
+                        del procs[i]
             if device[3 + int(l_dev)][4]:
-                print(f"{time.asctime()} kill {str(dname)} sub: {str(l_dev)} PID: {str(device[3 + int(l_dev)][4])}")
-                os.kill(device[3 + int(l_dev)][4], signal.SIGKILL)
+                for i, pr in enumerate(procs):
+                    if pr.pid == device[3 + int(l_dev)][4]:
+                        print(f"{time.asctime()} kill {str(dname)} sub: {str(l_dev)} PID: {str(device[3 + int(l_dev)][4])}")
+                        pr.send_signal(signal.SIGINT)
+                        try:
+                            rt = pr.wait(timeout=15)
+                        except TimeoutExpired:
+                            print(f"{time.asctime()} kill PID: {str(device[3 + int(l_dev)][4])} failed")
+                            pr.terminate()
+                            outs, errs = pr.communicate()
+                        del procs[i]
 
 
 def ses_cb_quit(*args, **kwargs):
@@ -767,6 +783,8 @@ def main():
     ''' Autojack runs at session start and manages audio for the session.
     this is the daemon for ubuntustudio-controls'''
     global last_master
+    global procs
+    procs = []
     dbus.mainloop.glib.DBusGMainLoop(set_as_default=True)
     last_master = ""
     config_start()

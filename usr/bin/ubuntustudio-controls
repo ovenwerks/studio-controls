@@ -132,7 +132,7 @@ class UbuntuStudioControls:
         self.combo_governor = builder.get_object('combo_governor')
         self.combo_boost = builder.get_object('combo_boost')
         '''audio tab stuff'''
-        '''master'''
+        '''master tab'''
         self.jack_device_combo = builder.get_object('jack_device_combo')
         self.jack_usb_dev_combo = builder.get_object('jack_usb_dev_combo')
         self.chan_in_spin = builder.get_object('chan_in_spin')
@@ -147,17 +147,19 @@ class UbuntuStudioControls:
         self.dsp_label = builder.get_object('dsp_label')
         self.xrun_lab = builder.get_object('xrun_lab')
 
-        '''extra'''
+        '''extra tab'''
         self.usb_plug_check = builder.get_object('usb_plug_check')
         self.usb_single_ck = builder.get_object('usb_single_ck')
         self.combo_zita_add = builder.get_object('combo_zita_add')
         self.combo_zita_remove = builder.get_object('combo_zita_remove')
 
-        '''pulse'''
-        self.combo_output = builder.get_object('combo_output')
-        self.combo_out_ports = builder.get_object('combo_out_ports')
-        self.pulse_in_spin = builder.get_object('pulse_input_spin')
-        self.pulse_out_spin = builder.get_object('pulse_output_spin')
+        '''pulse tab'''
+        self.pj_in_combo = builder.get_object('pj_in_combo')
+        self.pj_out_combo = builder.get_object('pj_out_combo')
+        self.pj_in_name = builder.get_object('pj_in_name')
+        self.pj_out_name = builder.get_object('pj_out_name')
+        self.pj_in_con = builder.get_object('pj_in_con')
+        self.pj_out_con = builder.get_object('pj_out_con')
 
         '''Dbus monitoring'''
         user_bus = dbus.SessionBus()
@@ -217,12 +219,12 @@ class UbuntuStudioControls:
             'PERIOD': "2",
             'ZFRAME': "512",
             'XDEV': "",
-            'PULSE-IN': '1',
-            'PULSE-OUT': '1',
+            'PULSE-IN': 'pulse_in',
+            'PULSE-OUT': 'pulse_out',
+            'PJ-IN-CON': 'system:capture_1',
+            'PJ-OUT-CON': 'system:playback_1',
             'A2J': "True",
             'DEV': "0,0,0",
-            'OUTPUT': "system",
-            'PORTS': "1",
             'USBAUTO': "True",
             'USB-SINGLE': "False",
             'USBDEV': "",
@@ -242,12 +244,9 @@ class UbuntuStudioControls:
 
         # read in autojack config file
         c_file = expanduser(self.config_file)
-        self.zdev = self.def_config['XDEV'].strip('"').split()
         if os.path.isfile(c_file):
             # New config file exists, read it in
             self.config.read(c_file)
-            # 'XDEV': "",  # self.zdev config['XDEV'] = lsplit[1].strip('"').split() Come back to this one
-            self.zdev = self.def_config['XDEV'].strip('"').split()
         else:
             # New file did not exist, let's check for a legacy file
             c_file = expanduser(self.old_config_file)
@@ -278,18 +277,24 @@ class UbuntuStudioControls:
                             self.def_config['PERIOD'] = lsplit[1]
                         elif lsplit[0] == "PULSE":
                             pulse = lsplit[1]
-                            self.def_config['PULSE-IN'] = str(int(pulse == 'True'))
-                            self.def_config['PULSE-OUT'] = str(int(pulse == 'True'))
+                            if pulse == 'True':
+                                self.def_config['PULSE-IN'] = 'pulse_in'
+                                self.def_config['PULSE-OUT'] = 'pulse_out'
                         elif lsplit[0] == "PULSE-IN":
-                            self.def_config['PULSE-IN'] = lsplit[1]
+                            pin = lsplit[1]
+                            if pin:
+                                self.def_config['PULSE-IN'] = 'pulse_in'
                         elif lsplit[0] == "PULSE-OUT":
-                            self.def_config['PULSE-OUT'] = lsplit[1]
+                            pout = lsplit[1]
+                            if pout:
+                                self.def_config['PULSE-OUT'] = 'pulse_out'
                         elif lsplit[0] == "A2J":
                             self.def_config['A2J'] = lsplit[1]
                         elif lsplit[0] == "OUTPUT":
-                            self.def_config['OUTPUT'] = lsplit[1]
+                            self.def_config['PJ-IN-CON'] = f"{lsplit[1]}:capture_1"
+                            self.def_config['PJ-OUT-CON'] = f"{lsplit[1]}:playback_"
                         elif lsplit[0] == "PORTS":
-                            self.def_config['PORTS'] = lsplit[1]
+                            self.def_config['PJ-OUT-CON'] = f"{self.def_config['PJ-OUT-CON']}{lsplit[1]}"
                         elif lsplit[0] == "XDEV":
                             self.def_config['XDEV'] = lsplit[1].strip('"')
                             self.zdev = self.def_config['XDEV'].strip('"').split()
@@ -299,7 +304,13 @@ class UbuntuStudioControls:
                             self.def_config['USB-SINGLE'] = lsplit[1]
                         elif lsplit[0] == "USBDEV":
                             self.def_config['USBDEV'] = lsplit[1]
+        self.zdev = self.def_config['XDEV'].strip('"').split()
+        self.pulse_in = self.def_config['PULSE-IN'].strip('"').split()
+        self.pulse_out = self.def_config['PULSE-OUT'].strip('"').split()
+        self.p_in_con = self.def_config['PJ-IN-CON'].strip('"').split()
+        self.p_out_con = self.def_config['PJ-OUT-CON'].strip('"').split()
 
+        # Find out if jack is running
         try:
             client = jack.Client('controls', False, True)
             self.def_config['JACK'] = "True"
@@ -307,10 +318,17 @@ class UbuntuStudioControls:
         except jack.JackError:
             self.def_config['JACK'] = "False"
 
+        # fill in Jack master widgets
         self.jack_rate_combo.set_active_id(self.def_config['RATE'])
         self.combobox_late.set_active_id(self.def_config['FRAME'])
         self.combo_periods.set_active_id(self.def_config['PERIOD'])
         self.combo_backend.set_active_id(self.def_config['DRIVER'])
+        self.chan_in_spin.set_range(0, 128)
+        self.chan_out_spin.set_range(0, 128)
+        self.chan_in_spin.set_value(self.def_config.getint('CHAN-IN'))
+        self.chan_out_spin.set_value(self.def_config.getint('CHAN-OUT'))
+        self.jack_midi_check.set_active(self.def_config['A2J'] == "True")
+        # Fill Extra devices widgets
         self.usb_plug_check.set_active(self.def_config['USBAUTO'] == "True")
         if self.def_config['USBAUTO'] == "True":
             self.usb_single_ck.set_sensitive(True)
@@ -318,18 +336,12 @@ class UbuntuStudioControls:
         else:
             self.usb_single_ck.set_sensitive(False)
             self.usb_single_ck.set_active(self.def_config['USB-SINGLE'] == "True")
-        self.combo_out_ports.set_active_id(self.def_config['PORTS'])
-        self.jack_midi_check.set_active(self.def_config['A2J'] == "True")
-        self.chan_in_spin.set_range(0, 128)
-        self.chan_out_spin.set_range(0, 128)
-        self.chan_in_spin.set_value(self.def_config.getint('CHAN-IN'))
-        self.chan_out_spin.set_value(self.def_config.getint('CHAN-OUT'))
-        self.pulse_in_spin.set_range(0, 9)
-        self.pulse_out_spin.set_range(0, 9)
-        self.pulse_in_spin.set_value(self.def_config.getint('PULSE-IN'))
-        self.pulse_out_spin.set_value(self.def_config.getint('PULSE-OUT'))
+
 
         self.refresh_dropdowns()
+        self.i_in = 0
+        self.i_out = 0
+        self.refresh_pulse_tab(self.i_in, self.i_out)
 
         handlers = {
             "on_window_main_delete_event": self.on_window_main_delete_event,
@@ -342,19 +354,29 @@ class UbuntuStudioControls:
             "on_button_msg_ok_clicked": self.on_button_msg_ok_clicked,
             "on_button_rt_info_ok_clicked": self.on_button_rt_info_ok_clicked,
             "on_button_help_ok_clicked": self.on_button_help_ok_clicked,
-            "cb_zita_add": self.cb_zita_add,
-            "cb_zita_remove": self.cb_zita_remove,
-            "mixer_cb": self.mixer_cb,
-            "pavucontrol_cb": self.pavucontrol_cb,
-            "carla_cb": self.carla_cb,
+
+            "jack_device_changed": self.jack_device_changed,
+            "usb_master_changed": self.usb_master_changed,
+            "jack_driver_changed": self.jack_driver_changed,
+            "xrun_reset": self.xrun_reset,
             "cb_jack_start": self.cb_jack_start,
             "cb_jack_stop": self.cb_jack_stop,
             "cb_audio_apply": self.cb_audio_apply,
-            "jack_device_changed": self.jack_device_changed,
-            "jack_driver_changed": self.jack_driver_changed,
-            "usb_master_changed": self.usb_master_changed,
+            "mixer_cb": self.mixer_cb,
+            "pavucontrol_cb": self.pavucontrol_cb,
+            "carla_cb": self.carla_cb,
+
+            "cb_zita_add": self.cb_zita_add,
+            "cb_zita_remove": self.cb_zita_remove,
             "usb_plug_cb": self.usb_plug_cb,
-            "xrun_reset": self.xrun_reset,
+
+            "pj_in_combo_cb": self.pj_in_combo_cb,
+            "pj_out_combo_cb": self.pj_out_combo_cb,
+            "pj_in_add_cb": self.pj_in_add_cb,
+            "pj_out_add_cb": self.pj_out_add_cb,
+            "pj_in_rem_cb": self.pj_in_rem_cb,
+            "pj_out_rem_cb": self.pj_out_rem_cb,
+            "pj_changed": self.pj_changed,
         }
         builder.connect_signals(handlers)
 
@@ -396,6 +418,7 @@ class UbuntuStudioControls:
         # device changed, update GUI
         if self.dirty or newusb:
             self.refresh_dropdowns()
+            self.refresh_pulse_tab(self.i_in, self.i_out)
             self.dirty = False
             newusb = False
 
@@ -466,11 +489,6 @@ class UbuntuStudioControls:
         self.jack_device_combo.append("0,0,0", "default")
         if self.def_config['DEV'] == "0,0,0":
             self.jack_device_combo.set_active_id("0,0,0")
-
-        self.combo_output.get_model().clear()
-        self.combo_output.append("system", "Jack Master")
-        if self.def_config['OUTPUT'] == "system":
-            self.combo_output.set_active_id("system")
 
         self.jack_usb_dev_combo.get_model().clear()
         self.jack_usb_dev_combo.append("", "No USB Master")
@@ -552,10 +570,6 @@ class UbuntuStudioControls:
                                 else:
                                     if self.def_config['DEV'] != next_id:
                                         self.combo_zita_add.append(next_id, next_d)
-                            if next_d.find("playback") >= 0:
-                                self.combo_output.append(next_id, next_d)
-                                if self.def_config['OUTPUT'] == next_id:
-                                    self.combo_output.set_active_id(next_id)
 
         if pci_save == "" and self.def_config['USBDEV'] == "":
             self.def_config['USBDEV'] = usb_save
@@ -648,6 +662,117 @@ class UbuntuStudioControls:
         a_id = widget.get_active()
         self.usb_single_ck.set_sensitive(a_id)
 
+
+    def refresh_pulse_tab(self, i_in, i_out):
+        ''' Fill in all pulse related widgets '''
+        '''self.combo_out_ports.set_active_id(self.def_config['PORTS'])'''
+        self.pj_in_combo.get_model().clear()
+        for i, pj_name in enumerate(self.pulse_in):
+            self.pj_in_combo.append(str(i), pj_name)
+        self.pj_in_combo.set_active(i_in)
+        self.pj_in_name.set_text(self.pulse_in[i_in])
+        self.pj_in_con.set_text(self.p_in_con[i_in])
+
+        self.pj_out_combo.get_model().clear()
+        for i, pj_name in enumerate(self.pulse_out):
+            self.pj_out_combo.append(str(i), pj_name)
+        self.pj_out_combo.set_active(i_out)
+        self.pj_out_name.set_text(self.pulse_out[i_out])
+        self.pj_out_con.set_text(self.p_out_con[i_out])
+
+
+    def save_pulse_values(self):
+        ''' save the current values for both input
+        and output pulse bridges: Name (check unique)
+        and connect port (check valid or none) '''
+        if self.dirty:
+            return
+        self.pulse_in[self.i_in] = str(self.pj_in_name.get_text())
+        self.p_in_con[self.i_in] = str(self.pj_in_con.get_text())
+        self.pulse_out[self.i_out] = str(self.pj_out_name.get_text())
+        self.p_out_con[self.i_out] = str(self.pj_out_con.get_text())
+
+    def pj_changed(self, widget):
+        ''' call back for any pulse bridge change
+        to current values '''
+        self.save_pulse_values()
+
+
+    def pj_in_combo_cb(self, widget):
+        ''' callback to look at different pa bridge.
+        need to save name and connection, then
+        refresh name and connections to match '''
+        if widget.get_active() < 0:
+            return
+        self.i_in = self.pj_in_combo.get_active()
+        if not self.dirty:
+            self.dirty = True
+
+
+    def pj_out_combo_cb(self, widget):
+        ''' callback to look at different pa bridge.
+        need to save name and connection, then
+        refresh name and connections to match '''
+        if widget.get_active() < 0:
+            return
+        self.i_out = self.pj_out_combo.get_active()
+        if not self.dirty:
+            self.dirty = True
+
+
+    def pj_in_add_cb(self, widget):
+        ''' need to create a name for the bridge and
+        assign connect as "none". Before switching
+        to display the new bridge we need to save the
+        current bridge info '''
+        self.i_in = len(self.pulse_in)
+        self.i_out = int(self.pj_out_combo.get_active_id())
+        # ACK! Check generated name is unique.
+        self.pulse_in.append(f"pulse_in-{str(self.i_in + 1)}")
+        self.p_in_con.append("none")
+        if not self.dirty:
+            self.dirty = True
+
+
+    def pj_out_add_cb(self, widget):
+        ''' need to create a name for the bridge and
+        assign connect as "none". Before switching
+        to display the new bridge we need to save the
+        current bridge info '''
+        self.i_out = len(self.pulse_out)
+        self.i_in = int(self.pj_in_combo.get_active_id())
+        self.pulse_out.append(f"pulse_out-{str(self.i_out + 1)}")
+        self.p_out_con.append("none")
+        if not self.dirty:
+            self.dirty = True
+
+
+    def pj_in_rem_cb(self, widget):
+        ''' get index of current bridge
+        remove name from list by index
+        remove connection from list by index '''
+        index = self.pj_in_combo.get_active()
+        del self.pulse_in[index]
+        del self.p_in_con[index]
+        self.i_in = 0
+        self.i_out = int(self.pj_out_combo.get_active_id())
+        if not self.dirty:
+            self.dirty = True
+
+
+    def pj_out_rem_cb(self, widget):
+        ''' get index of current bridge
+        remove name from list by index
+        remove connection from list by index '''
+        index = self.pj_out_combo.get_active()
+        del self.pulse_out[index]
+        del self.p_out_con[index]
+        self.i_out = 0
+        self.i_in = int(self.pj_in_combo.get_active_id())
+        if not self.dirty:
+            self.dirty = True
+
+
     def mixer_cb(self, button):
         '''callback for mixer button. This starts QASMixer
         with the device set to whatever is jack master'''
@@ -739,11 +864,11 @@ class UbuntuStudioControls:
                 zframe = str(64)
             self.def_config['ZFRAME'] = zframe
             self.def_config['PERIOD'] = str(self.combo_periods.get_active_id())
-            self.def_config['PULSE-IN'] = str(int(self.pulse_in_spin.get_value()))
-            self.def_config['PULSE-OUT'] = str(int(self.pulse_out_spin.get_value()))
             self.def_config['A2J'] = str(self.jack_midi_check.get_active())
-            self.def_config['OUTPUT'] = str(self.combo_output.get_active_id())
-            self.def_config['PORTS'] = str(self.combo_out_ports.get_active_id())
+            self.def_config['PULSE-IN'] = ' '.join(self.pulse_in)
+            self.def_config['PULSE-OUT'] = ' '.join(self.pulse_out)
+            self.def_config['PJ-IN-CON'] = ' '.join(self.p_in_con)
+            self.def_config['PJ-OUT-CON'] = ' '.join(self.p_out_con)
             self.def_config['USBAUTO'] = str(self.usb_plug_check.get_active())
             self.def_config['USB-SINGLE'] = str(self.usb_single_ck.get_active())
             self.def_config['XDEV'] = ' '.join(self.zdev)

@@ -453,15 +453,6 @@
                             <property name="width">2</property>
                           </packing>
                         </child>
-                        <child>
-                          <placeholder/>
-                        </child>
-                        <child>
-                          <placeholder/>
-                        </child>
-                        <child>
-                          <placeholder/>
-                        </child>
                       </object>
                     </child>
                     <child type="tab">
@@ -582,109 +573,16 @@
                       <object class="GtkGrid">
                         <property name="visible">True</property>
                         <property name="can_focus">False</property>
+                        <property name="row_homogeneous">True</property>
                         <property name="column_homogeneous">True</property>
-                        <child>
-                          <object class="GtkLabel" id="label_output">
-                            <property name="visible">True</property>
-                            <property name="can_focus">False</property>
-                            <property name="halign">end</property>
-                            <property name="label" translatable="yes">Default PulseAudio Output Device:</property>
-                          </object>
-                          <packing>
-                            <property name="left_attach">0</property>
-                            <property name="top_attach">0</property>
-                          </packing>
-                        </child>
-                        <child>
-                          <object class="GtkComboBoxText" id="combo_output">
-                            <property name="visible">True</property>
-                            <property name="can_focus">False</property>
-                            <property name="active">0</property>
-                          </object>
-                          <packing>
-                            <property name="left_attach">1</property>
-                            <property name="top_attach">0</property>
-                            <property name="width">2</property>
-                          </packing>
-                        </child>
-                        <child>
-                          <object class="GtkLabel" id="label_port">
-                            <property name="visible">True</property>
-                            <property name="can_focus">False</property>
-                            <property name="halign">end</property>
-                            <property name="label" translatable="yes">Ports to use on Default PulseAudio Output:</property>
-                          </object>
-                          <packing>
-                            <property name="left_attach">0</property>
-                            <property name="top_attach">1</property>
-                          </packing>
-                        </child>
-                        <child>
-                          <object class="GtkComboBoxText" id="combo_out_ports">
-                            <property name="visible">True</property>
-                            <property name="can_focus">False</property>
-                            <property name="active">1</property>
-                            <items>
-                              <item id="1" translatable="yes">1 and  2</item>
-                              <item id="3" translatable="yes">3 and 4</item>
-                              <item id="5" translatable="yes">5 and 6</item>
-                              <item id="7" translatable="yes">7 and 8</item>
-                              <item id="9" translatable="yes">9 and 10</item>
-                              <item id="0" translatable="yes">Do Not Connect Output</item>
-                            </items>
-                          </object>
-                          <packing>
-                            <property name="left_attach">1</property>
-                            <property name="top_attach">1</property>
-                            <property name="width">2</property>
-                          </packing>
-                        </child>
-                        <child>
-                          <object class="GtkSpinButton" id="pulse_output_spin">
-                            <property name="visible">True</property>
-                            <property name="can_focus">True</property>
-                            <property name="max_length">1</property>
-                            <property name="max_width_chars">1</property>
-                            <property name="input_purpose">number</property>
-                            <property name="adjustment">adjustment2</property>
-                            <property name="climb_rate">1</property>
-                            <property name="snap_to_ticks">True</property>
-                            <property name="numeric">True</property>
-                            <property name="wrap">True</property>
-                          </object>
-                          <packing>
-                            <property name="left_attach">2</property>
-                            <property name="top_attach">3</property>
-                          </packing>
-                        </child>
-                        <child>
-                          <object class="GtkSpinButton" id="pulse_input_spin">
-                            <property name="visible">True</property>
-                            <property name="can_focus">True</property>
-                            <property name="max_length">1</property>
-                            <property name="max_width_chars">1</property>
-                            <property name="text" translatable="yes">0</property>
-                            <property name="input_purpose">number</property>
-                            <property name="adjustment">adjustment1</property>
-                            <property name="climb_rate">1</property>
-                            <property name="snap_to_ticks">True</property>
-                            <property name="numeric">True</property>
-                            <property name="wrap">True</property>
-                          </object>
-                          <packing>
-                            <property name="left_attach">0</property>
-                            <property name="top_attach">3</property>
-                          </packing>
-                        </child>
                         <child>
                           <object class="GtkLabel">
                             <property name="visible">True</property>
                             <property name="can_focus">False</property>
-                            <property name="label" translatable="yes">label</property>
                           </object>
                           <packing>
                             <property name="left_attach">1</property>
-                            <property name="top_attach">2</property>
+                            <property name="top_attach">0</property>
                           </packing>
                         </child>
                         <child>
@@ -692,62 +590,66 @@
                             <property name="visible">True</property>
                             <property name="can_focus">False</property>
                             <property name="halign">center</property>
-                            <property name="label" translatable="yes">Number of Pulse-Jack Bridges</property>
+                            <property name="label" translatable="yes">Add A Pulse Jack Bridge</property>
                           </object>
                           <packing>
                             <property name="left_attach">1</property>
-                            <property name="top_attach">3</property>
+                            <property name="top_attach">1</property>
                           </packing>
                         </child>
                         <child>
-                          <object class="GtkComboBoxText" id="pajk_in_combo">
+                          <object class="GtkComboBoxText" id="pj_in_combo">
                             <property name="visible">True</property>
                             <property name="can_focus">False</property>
+                            <signal name="changed" handler="pj_in_combo_cb" swapped="no"/>
                           </object>
                           <packing>
                             <property name="left_attach">0</property>
-                            <property name="top_attach">4</property>
+                            <property name="top_attach">2</property>
                           </packing>
                         </child>
                         <child>
-                          <object class="GtkComboBoxText" id="pajk_out_combo">
+                          <object class="GtkComboBoxText" id="pj_out_combo">
                             <property name="visible">True</property>
                             <property name="can_focus">False</property>
+                            <signal name="changed" handler="pj_out_combo_cb" swapped="no"/>
                           </object>
                           <packing>
                             <property name="left_attach">2</property>
-                            <property name="top_attach">4</property>
+                            <property name="top_attach">2</property>
                           </packing>
                         </child>
                         <child>
                           <object class="GtkLabel">
                             <property name="visible">True</property>
                             <property name="can_focus">False</property>
-                            <property name="label" translatable="yes">Bridge to Add or Configure</property>
+                            <property name="label" translatable="yes">Bridge to Configure</property>
                           </object>
                           <packing>
                             <property name="left_attach">1</property>
-                            <property name="top_attach">4</property>
+                            <property name="top_attach">2</property>
                           </packing>
                         </child>
                         <child>
-                          <object class="GtkEntry" id="pajk_in_name">
+                          <object class="GtkEntry" id="pj_in_name">
                             <property name="visible">True</property>
                             <property name="can_focus">True</property>
+                            <signal name="changed" handler="pj_changed" swapped="no"/>
                           </object>
                           <packing>
                             <property name="left_attach">0</property>
-                            <property name="top_attach">5</property>
+                            <property name="top_attach">3</property>
                           </packing>
                         </child>
                         <child>
-                          <object class="GtkEntry" id="pajk_out_name">
+                          <object class="GtkEntry" id="pj_out_name">
                             <property name="visible">True</property>
                             <property name="can_focus">True</property>
+                            <signal name="changed" handler="pj_changed" swapped="no"/>
                           </object>
                           <packing>
                             <property name="left_attach">2</property>
-                            <property name="top_attach">5</property>
+                            <property name="top_attach">3</property>
                           </packing>
                         </child>
                         <child>
@@ -758,23 +660,24 @@
                           </object>
                           <packing>
                             <property name="left_attach">1</property>
-                            <property name="top_attach">5</property>
+                            <property name="top_attach">3</property>
                           </packing>
                         </child>
                         <child>
-                          <object class="GtkButton" id="pajk_in_">
+                          <object class="GtkButton" id="pajk_in_rem">
                             <property name="label" translatable="yes">Remove input Bridge</property>
                             <property name="visible">True</property>
                             <property name="can_focus">True</property>
                             <property name="receives_default">True</property>
+                            <signal name="clicked" handler="pj_in_rem_cb" swapped="no"/>
                           </object>
                           <packing>
                             <property name="left_attach">0</property>
-                            <property name="top_attach">7</property>
+                            <property name="top_attach">5</property>
                           </packing>
                         </child>
                         <child>
-                          <object class="GtkButton">
+                          <object class="GtkButton" id="pj_out_rem">
                             <property name="label" translatable="yes">Remove output Bridge</property>
                             <property name="visible">True</property>
                             <property name="can_focus">True</property>
@@ -782,7 +685,7 @@
                           </object>
                           <packing>
                             <property name="left_attach">2</property>
-                            <property name="top_attach">7</property>
+                            <property name="top_attach">5</property>
                           </packing>
                         </child>
                         <child>
@@ -790,31 +693,33 @@
                             <property name="visible">True</property>
                             <property name="can_focus">False</property>
                             <property name="tooltip_text" translatable="yes">The full name of the jack port to connect the left channel too. The right channrl will be connected to one channel up on the same jack client.</property>
-                            <property name="label" translatable="yes">Auto Connect</property>
+                            <property name="label" translatable="yes">Auto Connect Port</property>
                           </object>
                           <packing>
                             <property name="left_attach">1</property>
-                            <property name="top_attach">6</property>
+                            <property name="top_attach">4</property>
                           </packing>
                         </child>
                         <child>
-                          <object class="GtkEntry" id="pajk_in_con">
+                          <object class="GtkEntry" id="pj_in_con">
                             <property name="visible">True</property>
                             <property name="can_focus">True</property>
+                            <signal name="changed" handler="pj_changed" swapped="no"/>
                           </object>
                           <packing>
                             <property name="left_attach">0</property>
-                            <property name="top_attach">6</property>
+                            <property name="top_attach">4</property>
                           </packing>
                         </child>
                         <child>
-                          <object class="GtkEntry" id="pajk_out_con">
+                          <object class="GtkEntry" id="pj_out_con">
                             <property name="visible">True</property>
                             <property name="can_focus">True</property>
+                            <signal name="changed" handler="pj_changed" swapped="no"/>
                           </object>
                           <packing>
                             <property name="left_attach">2</property>
-                            <property name="top_attach">6</property>
+                            <property name="top_attach">4</property>
                           </packing>
                         </child>
                         <child>
@@ -825,7 +730,7 @@
                           </object>
                           <packing>
                             <property name="left_attach">0</property>
-                            <property name="top_attach">2</property>
+                            <property name="top_attach">0</property>
                           </packing>
                         </child>
                         <child>
@@ -836,26 +741,36 @@
                           </object>
                           <packing>
                             <property name="left_attach">2</property>
-                            <property name="top_attach">2</property>
+                            <property name="top_attach">0</property>
                           </packing>
                         </child>
                         <child>
-                          <placeholder/>
+                          <object class="GtkButton" id="pj_in_add">
+                            <property name="label" translatable="yes">Add an input Bridge</property>
+                            <property name="visible">True</property>
+                            <property name="can_focus">True</property>
+                            <property name="focus_on_click">False</property>
+                            <property name="receives_default">True</property>
+                            <signal name="clicked" handler="pj_in_add_cb" swapped="no"/>
+                          </object>
+                          <packing>
+                            <property name="left_attach">0</property>
+                            <property name="top_attach">1</property>
+                          </packing>
                         </child>
                         <child>
-                          <placeholder/>
-                        </child>
-                        <child>
-                          <placeholder/>
-                        </child>
-                        <child>
-                          <placeholder/>
-                        </child>
-                        <child>
-                          <placeholder/>
-                        </child>
-                        <child>
-                          <placeholder/>
+                          <object class="GtkButton" id="pj_out_add">
+                            <property name="label" translatable="yes">Add an Output Bridge</property>
+                            <property name="visible">True</property>
+                            <property name="can_focus">True</property>
+                            <property name="focus_on_click">False</property>
+                            <property name="receives_default">True</property>
+                            <signal name="clicked" handler="pj_out_add_cb" swapped="no"/>
+                          </object>
+                          <packing>
+                            <property name="left_attach">2</property>
+                            <property name="top_attach">1</property>
+                          </packing>
                         </child>
                         <child>
                           <placeholder/>

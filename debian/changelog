@@ -6,6 +6,10 @@ ubuntustudio-controls (1.11.3) UNRELEASED; urgency=medium
   * Move config file to it's own sub directory to allow more files
   * Refactor PA bridging
   * Add Xrun counter and reset button
+  * Properly stop zita-ajbridge with SIGINT instead of SIGKILL
+  * Read zita-ajbridge return value to avoid zombie processes
+  * Split audio setup page into three tabs
+  * Allow user to name Pulse bridges
 
   [ Brian Hechinger ]
   *  NO-OP: Updated formatting for PEP8
