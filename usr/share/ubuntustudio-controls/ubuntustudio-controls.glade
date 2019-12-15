@@ -682,6 +682,7 @@
                             <property name="visible">True</property>
                             <property name="can_focus">True</property>
                             <property name="receives_default">True</property>
+                            <signal name="clicked" handler="pj_out_rem_cb" swapped="no"/>
                           </object>
                           <packing>
                             <property name="left_attach">2</property>

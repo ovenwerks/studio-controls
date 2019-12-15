@@ -10,6 +10,7 @@ ubuntustudio-controls (1.11.3) UNRELEASED; urgency=medium
   * Read zita-ajbridge return value to avoid zombie processes
   * Split audio setup page into three tabs
   * Allow user to name Pulse bridges
+  * Fix error with no pulse bridge
 
   [ Brian Hechinger ]
   *  NO-OP: Updated formatting for PEP8

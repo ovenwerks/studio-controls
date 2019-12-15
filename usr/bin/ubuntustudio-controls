@@ -669,16 +669,26 @@ class UbuntuStudioControls:
         self.pj_in_combo.get_model().clear()
         for i, pj_name in enumerate(self.pulse_in):
             self.pj_in_combo.append(str(i), pj_name)
-        self.pj_in_combo.set_active(i_in)
-        self.pj_in_name.set_text(self.pulse_in[i_in])
-        self.pj_in_con.set_text(self.p_in_con[i_in])
+        siz = len(self.pulse_in)
+        if siz:
+            self.pj_in_combo.set_active(i_in)
+            self.pj_in_name.set_text(self.pulse_in[i_in])
+            self.pj_in_con.set_text(self.p_in_con[i_in])
+        else:
+            self.pj_in_name.set_text("")
+            self.pj_in_con.set_text("")
 
         self.pj_out_combo.get_model().clear()
         for i, pj_name in enumerate(self.pulse_out):
             self.pj_out_combo.append(str(i), pj_name)
-        self.pj_out_combo.set_active(i_out)
-        self.pj_out_name.set_text(self.pulse_out[i_out])
-        self.pj_out_con.set_text(self.p_out_con[i_out])
+        siz = len(self.pulse_out)
+        if siz:
+            self.pj_out_combo.set_active(i_out)
+            self.pj_out_name.set_text(self.pulse_out[i_out])
+            self.pj_out_con.set_text(self.p_out_con[i_out])
+        else:
+            self.pj_out_name.set_text("")
+            self.pj_out_con.set_text("")
 
 
     def save_pulse_values(self):
@@ -687,10 +697,12 @@ class UbuntuStudioControls:
         and connect port (check valid or none) '''
         if self.dirty:
             return
-        self.pulse_in[self.i_in] = str(self.pj_in_name.get_text())
-        self.p_in_con[self.i_in] = str(self.pj_in_con.get_text())
-        self.pulse_out[self.i_out] = str(self.pj_out_name.get_text())
-        self.p_out_con[self.i_out] = str(self.pj_out_con.get_text())
+        if len(pulse_in):
+            self.pulse_in[self.i_in] = str(self.pj_in_name.get_text())
+            self.p_in_con[self.i_in] = str(self.pj_in_con.get_text())
+        if len(pulse_out):
+            self.pulse_out[self.i_out] = str(self.pj_out_name.get_text())
+            self.p_out_con[self.i_out] = str(self.pj_out_con.get_text())
 
     def pj_changed(self, widget):
         ''' call back for any pulse bridge change
@@ -726,7 +738,9 @@ class UbuntuStudioControls:
         to display the new bridge we need to save the
         current bridge info '''
         self.i_in = len(self.pulse_in)
-        self.i_out = int(self.pj_out_combo.get_active_id())
+        self.i_out = 0
+        if len(self.pulse_out):
+            self.i_out = int(self.pj_out_combo.get_active_id())
         # ACK! Check generated name is unique.
         self.pulse_in.append(f"pulse_in-{str(self.i_in + 1)}")
         self.p_in_con.append("none")
@@ -740,7 +754,9 @@ class UbuntuStudioControls:
         to display the new bridge we need to save the
         current bridge info '''
         self.i_out = len(self.pulse_out)
-        self.i_in = int(self.pj_in_combo.get_active_id())
+        self.i_in = 0
+        if len(self.pulse_in):
+            self.i_in = int(self.pj_in_combo.get_active_id())
         self.pulse_out.append(f"pulse_out-{str(self.i_out + 1)}")
         self.p_out_con.append("none")
         if not self.dirty:
@@ -755,7 +771,9 @@ class UbuntuStudioControls:
         del self.pulse_in[index]
         del self.p_in_con[index]
         self.i_in = 0
-        self.i_out = int(self.pj_out_combo.get_active_id())
+        self.i_out = 0
+        if len(self.pulse_out):
+            self.i_out = int(self.pj_out_combo.get_active_id())
         if not self.dirty:
             self.dirty = True
 
@@ -768,7 +786,9 @@ class UbuntuStudioControls:
         del self.pulse_out[index]
         del self.p_out_con[index]
         self.i_out = 0
-        self.i_in = int(self.pj_in_combo.get_active_id())
+        self.i_in = 0
+        if len(self.pulse_in):
+            self.i_in = int(self.pj_in_combo.get_active_id())
         if not self.dirty:
             self.dirty = True
 
