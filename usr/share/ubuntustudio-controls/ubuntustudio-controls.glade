@@ -601,6 +601,7 @@
                           <object class="GtkComboBoxText" id="pj_in_combo">
                             <property name="visible">True</property>
                             <property name="can_focus">False</property>
+                            <property name="tooltip_text" translatable="yes">Select a Bridge to edit</property>
                             <signal name="changed" handler="pj_in_combo_cb" swapped="no"/>
                           </object>
                           <packing>
@@ -612,6 +613,7 @@
                           <object class="GtkComboBoxText" id="pj_out_combo">
                             <property name="visible">True</property>
                             <property name="can_focus">False</property>
+                            <property name="tooltip_text" translatable="yes">Select a Bridge to edit</property>
                             <signal name="changed" handler="pj_out_combo_cb" swapped="no"/>
                           </object>
                           <packing>
@@ -634,6 +636,7 @@
                           <object class="GtkEntry" id="pj_in_name">
                             <property name="visible">True</property>
                             <property name="can_focus">True</property>
+                            <property name="tooltip_text" translatable="yes">Change this Bridge's Name. No spaces allowed</property>
                             <signal name="changed" handler="pj_changed" swapped="no"/>
                           </object>
                           <packing>
@@ -645,6 +648,7 @@
                           <object class="GtkEntry" id="pj_out_name">
                             <property name="visible">True</property>
                             <property name="can_focus">True</property>
+                            <property name="tooltip_text" translatable="yes">Change this Bridge's Name. No spaces allowed</property>
                             <signal name="changed" handler="pj_changed" swapped="no"/>
                           </object>
                           <packing>
@@ -656,6 +660,7 @@
                           <object class="GtkLabel">
                             <property name="visible">True</property>
                             <property name="can_focus">False</property>
+                            <property name="tooltip_text" translatable="yes">Bridge Names must be unique. They cannot be the same for input and output.</property>
                             <property name="label" translatable="yes">Bridge's (unique) Name</property>
                           </object>
                           <packing>
@@ -693,33 +698,10 @@
                           <object class="GtkLabel">
                             <property name="visible">True</property>
                             <property name="can_focus">False</property>
-                            <property name="tooltip_text" translatable="yes">The full name of the jack port to connect the left channel too. The right channrl will be connected to one channel up on the same jack client.</property>
                             <property name="label" translatable="yes">Auto Connect Port</property>
                           </object>
                           <packing>
                             <property name="left_attach">1</property>
-                            <property name="top_attach">4</property>
-                          </packing>
-                        </child>
-                        <child>
-                          <object class="GtkEntry" id="pj_in_con">
-                            <property name="visible">True</property>
-                            <property name="can_focus">True</property>
-                            <signal name="changed" handler="pj_changed" swapped="no"/>
-                          </object>
-                          <packing>
-                            <property name="left_attach">0</property>
-                            <property name="top_attach">4</property>
-                          </packing>
-                        </child>
-                        <child>
-                          <object class="GtkEntry" id="pj_out_con">
-                            <property name="visible">True</property>
-                            <property name="can_focus">True</property>
-                            <signal name="changed" handler="pj_changed" swapped="no"/>
-                          </object>
-                          <packing>
-                            <property name="left_attach">2</property>
                             <property name="top_attach">4</property>
                           </packing>
                         </child>
@@ -771,6 +753,78 @@
                           <packing>
                             <property name="left_attach">2</property>
                             <property name="top_attach">1</property>
+                          </packing>
+                        </child>
+                        <child>
+                          <object class="GtkBox">
+                            <property name="visible">True</property>
+                            <property name="can_focus">False</property>
+                            <property name="homogeneous">True</property>
+                            <child>
+                              <object class="GtkLabel">
+                                <property name="visible">True</property>
+                                <property name="can_focus">False</property>
+                                <property name="halign">end</property>
+                                <property name="label" translatable="yes">system:capture_</property>
+                                <property name="justify">right</property>
+                              </object>
+                              <packing>
+                                <property name="expand">False</property>
+                                <property name="fill">True</property>
+                                <property name="position">0</property>
+                              </packing>
+                            </child>
+                            <child>
+                              <object class="GtkComboBoxText" id="pj_in_con">
+                                <property name="visible">True</property>
+                                <property name="can_focus">False</property>
+                              </object>
+                              <packing>
+                                <property name="expand">False</property>
+                                <property name="fill">True</property>
+                                <property name="position">1</property>
+                              </packing>
+                            </child>
+                          </object>
+                          <packing>
+                            <property name="left_attach">0</property>
+                            <property name="top_attach">4</property>
+                          </packing>
+                        </child>
+                        <child>
+                          <object class="GtkBox">
+                            <property name="visible">True</property>
+                            <property name="can_focus">False</property>
+                            <property name="homogeneous">True</property>
+                            <child>
+                              <object class="GtkLabel">
+                                <property name="visible">True</property>
+                                <property name="can_focus">False</property>
+                                <property name="halign">end</property>
+                                <property name="label" translatable="yes">system:playback_</property>
+                                <property name="justify">right</property>
+                              </object>
+                              <packing>
+                                <property name="expand">False</property>
+                                <property name="fill">True</property>
+                                <property name="position">0</property>
+                              </packing>
+                            </child>
+                            <child>
+                              <object class="GtkComboBoxText" id="pj_out_con">
+                                <property name="visible">True</property>
+                                <property name="can_focus">False</property>
+                              </object>
+                              <packing>
+                                <property name="expand">False</property>
+                                <property name="fill">True</property>
+                                <property name="position">1</property>
+                              </packing>
+                            </child>
+                          </object>
+                          <packing>
+                            <property name="left_attach">2</property>
+                            <property name="top_attach">4</property>
                           </packing>
                         </child>
                         <child>

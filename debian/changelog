@@ -11,6 +11,7 @@ ubuntustudio-controls (1.11.3) UNRELEASED; urgency=medium
   * Split audio setup page into three tabs
   * Allow user to name Pulse bridges
   * Fix error with no pulse bridge
+  * Make pulse bridge connections into a drop down
 
   [ Brian Hechinger ]
   *  NO-OP: Updated formatting for PEP8
