@@ -419,6 +419,9 @@ class UbuntuStudioControls:
         if jack_died:
             jack_client.deactivate()
             jack_client.close()
+            max_in = 18
+            max_out = 18
+            self.dirty = True
             jack_died = False
             jack_alive = False
 
@@ -442,11 +445,6 @@ class UbuntuStudioControls:
                 self.jack_state.set_text(" Stopped")
                 self.jack_ind.set_from_icon_name("gtk-stop", 0)
                 self.xrun_lab.set_text(" 0")
-                max_in = 18
-                max_out = 18
-                self.dirty = True
-                self.refresh_pulse_tab(self.i_in, self.i_out)
-                self.dirty = False
                 return True
             self.jack_state.set_text(" Running")
             self.jack_ind.set_from_icon_name("gtk-apply", 0)
@@ -457,8 +455,6 @@ class UbuntuStudioControls:
             max_in = len(jack_client.get_ports('system.*', is_audio=True, is_input=True))
             max_out = len(jack_client.get_ports('system.*', is_audio=True, is_output=True))
             self.dirty = True
-            self.refresh_pulse_tab(self.i_in, self.i_out)
-            self.dirty = False
         return True
 
     def jackdied(state, why, extra):
