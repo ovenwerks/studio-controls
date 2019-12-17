@@ -313,8 +313,6 @@ class UbuntuStudioControls:
         self.pulse_out = self.def_config['PULSE-OUT'].strip('"').split()
         self.p_in_con = self.def_config['PJ-IN-CON'].strip('"').split()
         self.p_out_con = self.def_config['PJ-OUT-CON'].strip('"').split()
-        if int(self.def_config['PJ-OUT-CON']) > max_out:
-            max_out = max_in = self.def_config['PJ-OUT-CON'] + 1
 
         # Find out if jack is running
         try:
