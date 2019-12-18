@@ -380,7 +380,8 @@ class UbuntuStudioControls:
             "pj_out_add_cb": self.pj_out_add_cb,
             "pj_in_rem_cb": self.pj_in_rem_cb,
             "pj_out_rem_cb": self.pj_out_rem_cb,
-            "pj_changed": self.pj_changed,
+            "pj_in_name_cb": self.pj_in_name_cb,
+            "pj_out_name_cb": self.pj_out_name_cb,
         }
         builder.connect_signals(handlers)
 
@@ -428,7 +429,6 @@ class UbuntuStudioControls:
         # device changed, update GUI
         if self.dirty or newusb:
             self.refresh_dropdowns()
-            self.refresh_pulse_tab(self.i_in, self.i_out)
             self.dirty = False
             newusb = False
 
@@ -439,12 +439,14 @@ class UbuntuStudioControls:
         else:
             self.dsp_label.set_text("DSP: 0%")
             self.xrun_lab.set_text(" 0")
+            xrun_count = 0
             try:
                 jack_client = jack.Client('controls', False, True)
             except jack.JackError:
                 self.jack_state.set_text(" Stopped")
                 self.jack_ind.set_from_icon_name("gtk-stop", 0)
                 self.xrun_lab.set_text(" 0")
+                xrun_count = 0
                 return True
             self.jack_state.set_text(" Running")
             self.jack_ind.set_from_icon_name("gtk-apply", 0)
@@ -452,9 +454,9 @@ class UbuntuStudioControls:
             jack_client.set_xrun_callback(self.jackxrun)
             jack_client.activate()
             jack_alive = True
-            max_in = len(jack_client.get_ports('system.*', is_audio=True, is_input=True))
-            max_out = len(jack_client.get_ports('system.*', is_audio=True, is_output=True))
-            self.dirty = True
+            max_in = len(jack_client.get_ports('system.*', is_audio=True, is_output=True))
+            max_out = len(jack_client.get_ports('system.*', is_audio=True, is_input=True))
+            self.refresh_pulse_tab(self.i_in, self.i_out)
         return True
 
     def jackdied(state, why, extra):
@@ -682,6 +684,13 @@ class UbuntuStudioControls:
         global jack_alive
         global max_in
         global max_out
+        self.pj_in_con.set_sensitive(False)
+        self.pj_in_combo.set_sensitive(False)
+        self.pj_in_name.set_sensitive(False)
+        self.pj_out_con.set_sensitive(False)
+        self.pj_out_combo.set_sensitive(False)
+        self.pj_out_name.set_sensitive(False)
+
         self.pj_in_con.get_model().clear()
         self.pj_in_con.append("0", "no connection")
         self.pj_in_con.set_active(0)
@@ -718,46 +727,60 @@ class UbuntuStudioControls:
         else:
             self.pj_out_name.set_text("")
 
+        self.pj_in_con.set_sensitive(True)
+        self.pj_in_combo.set_sensitive(True)
+        self.pj_in_name.set_sensitive(True)
+        self.pj_out_con.set_sensitive(True)
+        self.pj_out_combo.set_sensitive(True)
+        self.pj_out_name.set_sensitive(True)
 
-    def save_pulse_values(self):
-        ''' save the current values for both input
-        and output pulse bridges: Name (check unique)
-        and connect port (check valid or none) '''
-        if self.dirty:
+
+    def pj_in_name_cb(self, widget):
+        ''' call back for any pulse bridge input name or connect change
+        to current values '''
+        if not widget.get_sensitive():
             return
         if len(self.pulse_in):
-            self.pulse_in[self.i_in] = str(self.pj_in_name.get_text())
+            self.pulse_in[self.i_in] = "".join(str(self.pj_in_name.get_text()).split())
+            self.pj_in_name.set_text(self.pulse_in[self.i_in])
             self.p_in_con[self.i_in] = str(self.pj_in_con.get_active_id())
-        if len(self.pulse_out):
-            self.pulse_out[self.i_out] = str(self.pj_out_name.get_text())
-            self.p_out_con[self.i_out] = str(self.pj_out_con.get_active_id())
+            self.refresh_pulse_tab(self.i_in, self.i_out)
 
-    def pj_changed(self, widget):
-        ''' call back for any pulse bridge change
+
+    def pj_out_name_cb(self, widget):
+        ''' call back for any pulse bridge output name or connect change
         to current values '''
-        self.save_pulse_values()
+        if not widget.get_sensitive():
+            return
+        if len(self.pulse_out):
+            self.pulse_out[self.i_out] = "".join(str(self.pj_out_name.get_text()).split())
+            self.pj_out_name.set_text(self.pulse_out[self.i_out])
+            self.p_out_con[self.i_out] = str(self.pj_out_con.get_active_id())
+            self.refresh_pulse_tab(self.i_in, self.i_out)
 
 
     def pj_in_combo_cb(self, widget):
         ''' callback to look at different pa bridge.
         need to save name and connection, then
         refresh name and connections to match '''
+        if not widget.get_sensitive():
+            return
         if widget.get_active() < 0:
             return
         self.i_in = self.pj_in_combo.get_active()
-        if not self.dirty:
-            self.dirty = True
+        self.refresh_pulse_tab(self.i_in, self.i_out)
 
 
     def pj_out_combo_cb(self, widget):
         ''' callback to look at different pa bridge.
         need to save name and connection, then
         refresh name and connections to match '''
+        if not widget.get_sensitive():
+            return
         if widget.get_active() < 0:
             return
         self.i_out = self.pj_out_combo.get_active()
-        if not self.dirty:
-            self.dirty = True
+        self.refresh_pulse_tab(self.i_in, self.i_out)
 
 
     def pj_in_add_cb(self, widget):
@@ -769,11 +792,9 @@ class UbuntuStudioControls:
         self.i_out = 0
         if len(self.pulse_out):
             self.i_out = int(self.pj_out_combo.get_active_id())
-        # ACK! Check generated name is unique.
         self.pulse_in.append(f"pulse_in-{str(self.i_in + 1)}")
         self.p_in_con.append("0")
-        if not self.dirty:
-            self.dirty = True
+        self.refresh_pulse_tab(self.i_in, self.i_out)
 
 
     def pj_out_add_cb(self, widget):
@@ -787,8 +808,7 @@ class UbuntuStudioControls:
             self.i_in = int(self.pj_in_combo.get_active_id())
         self.pulse_out.append(f"pulse_out-{str(self.i_out + 1)}")
         self.p_out_con.append("0")
-        if not self.dirty:
-            self.dirty = True
+        self.refresh_pulse_tab(self.i_in, self.i_out)
 
 
     def pj_in_rem_cb(self, widget):
@@ -802,8 +822,7 @@ class UbuntuStudioControls:
         self.i_out = 0
         if len(self.pulse_out):
             self.i_out = int(self.pj_out_combo.get_active_id())
-        if not self.dirty:
-            self.dirty = True
+        self.refresh_pulse_tab(self.i_in, self.i_out)
 
 
     def pj_out_rem_cb(self, widget):
@@ -817,8 +836,7 @@ class UbuntuStudioControls:
         self.i_in = 0
         if len(self.pulse_in):
             self.i_in = int(self.pj_in_combo.get_active_id())
-        if not self.dirty:
-            self.dirty = True
+        self.refresh_pulse_tab(self.i_in, self.i_out)
 
 
     def mixer_cb(self, button):
@@ -893,7 +911,6 @@ class UbuntuStudioControls:
 
     def config_save(self):
         ''' Write audio setting to ~/.config/autojack/autojackrc'''
-        self.save_pulse_values()
         c_file = expanduser(self.config_file)
         if not os.path.isfile(c_file):
             # either first run or old version

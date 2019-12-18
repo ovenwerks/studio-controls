@@ -598,30 +598,6 @@
                           </packing>
                         </child>
                         <child>
-                          <object class="GtkComboBoxText" id="pj_in_combo">
-                            <property name="visible">True</property>
-                            <property name="can_focus">False</property>
-                            <property name="tooltip_text" translatable="yes">Select a Bridge to edit</property>
-                            <signal name="changed" handler="pj_in_combo_cb" swapped="no"/>
-                          </object>
-                          <packing>
-                            <property name="left_attach">0</property>
-                            <property name="top_attach">2</property>
-                          </packing>
-                        </child>
-                        <child>
-                          <object class="GtkComboBoxText" id="pj_out_combo">
-                            <property name="visible">True</property>
-                            <property name="can_focus">False</property>
-                            <property name="tooltip_text" translatable="yes">Select a Bridge to edit</property>
-                            <signal name="changed" handler="pj_out_combo_cb" swapped="no"/>
-                          </object>
-                          <packing>
-                            <property name="left_attach">2</property>
-                            <property name="top_attach">2</property>
-                          </packing>
-                        </child>
-                        <child>
                           <object class="GtkLabel">
                             <property name="visible">True</property>
                             <property name="can_focus">False</property>
@@ -637,7 +613,7 @@
                             <property name="visible">True</property>
                             <property name="can_focus">True</property>
                             <property name="tooltip_text" translatable="yes">Change this Bridge's Name. No spaces allowed</property>
-                            <signal name="changed" handler="pj_changed" swapped="no"/>
+                            <signal name="activate" handler="pj_in_name_cb" swapped="no"/>
                           </object>
                           <packing>
                             <property name="left_attach">0</property>
@@ -649,7 +625,7 @@
                             <property name="visible">True</property>
                             <property name="can_focus">True</property>
                             <property name="tooltip_text" translatable="yes">Change this Bridge's Name. No spaces allowed</property>
-                            <signal name="changed" handler="pj_changed" swapped="no"/>
+                            <signal name="activate" handler="pj_out_name_cb" swapped="no"/>
                           </object>
                           <packing>
                             <property name="left_attach">2</property>
@@ -661,7 +637,7 @@
                             <property name="visible">True</property>
                             <property name="can_focus">False</property>
                             <property name="tooltip_text" translatable="yes">Bridge Names must be unique. They cannot be the same for input and output.</property>
-                            <property name="label" translatable="yes">Bridge's (unique) Name</property>
+                            <property name="label" translatable="yes">Change Bridge's (unique) Name</property>
                           </object>
                           <packing>
                             <property name="left_attach">1</property>
@@ -669,7 +645,7 @@
                           </packing>
                         </child>
                         <child>
-                          <object class="GtkButton" id="pajk_in_rem">
+                          <object class="GtkButton" id="pj_in_rem">
                             <property name="label" translatable="yes">Remove input Bridge</property>
                             <property name="visible">True</property>
                             <property name="can_focus">True</property>
@@ -778,6 +754,7 @@
                               <object class="GtkComboBoxText" id="pj_in_con">
                                 <property name="visible">True</property>
                                 <property name="can_focus">False</property>
+                                <signal name="changed" handler="pj_in_name_cb" swapped="no"/>
                               </object>
                               <packing>
                                 <property name="expand">False</property>
@@ -814,6 +791,7 @@
                               <object class="GtkComboBoxText" id="pj_out_con">
                                 <property name="visible">True</property>
                                 <property name="can_focus">False</property>
+                                <signal name="changed" handler="pj_out_name_cb" swapped="no"/>
                               </object>
                               <packing>
                                 <property name="expand">False</property>
@@ -825,6 +803,31 @@
                           <packing>
                             <property name="left_attach">2</property>
                             <property name="top_attach">4</property>
+                          </packing>
+                        </child>
+                        <child>
+                          <object class="GtkComboBoxText" id="pj_in_combo">
+                            <property name="visible">True</property>
+                            <property name="can_focus">False</property>
+                            <property name="tooltip_text" translatable="yes">Select a Bridge to edit</property>
+                            <property name="has_frame">False</property>
+                            <signal name="changed" handler="pj_in_combo_cb" swapped="no"/>
+                          </object>
+                          <packing>
+                            <property name="left_attach">0</property>
+                            <property name="top_attach">2</property>
+                          </packing>
+                        </child>
+                        <child>
+                          <object class="GtkComboBoxText" id="pj_out_combo">
+                            <property name="visible">True</property>
+                            <property name="can_focus">False</property>
+                            <property name="tooltip_text" translatable="yes">Select a Bridge to edit</property>
+                            <signal name="changed" handler="pj_out_combo_cb" swapped="no"/>
+                          </object>
+                          <packing>
+                            <property name="left_attach">2</property>
+                            <property name="top_attach">2</property>
                           </packing>
                         </child>
                         <child>
