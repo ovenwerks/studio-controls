@@ -9,3 +9,5 @@ New for this version
 - Converted config file to use configparser for less accident prone
 		maintenance.
 - Declutter audio setup GUI by splitting it into three tabs
+- Pulse bridges can have custom names
+- pulse bridges can have custom auto connects

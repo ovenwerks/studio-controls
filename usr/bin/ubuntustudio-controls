@@ -106,6 +106,7 @@ class RTSetup:
 class UbuntuStudioControls:
     config = configparser.ConfigParser()
     def_config = config['DEFAULT']
+    #tab_conf = config['TABLET']
     config_path = "~/.config/autojack"
     config_file = "{path}/autojackrc".format(path=config_path)
     old_config_file = "~/.config/autojackrc"
@@ -160,6 +161,14 @@ class UbuntuStudioControls:
         self.pj_out_name = builder.get_object('pj_out_name')
         self.pj_in_con = builder.get_object('pj_in_con')
         self.pj_out_con = builder.get_object('pj_out_con')
+
+        ''' tablet '''
+        ''' pad '''
+        self.pad_device_c = builder.get_object('pad_device')
+        # need 12 buttons too
+        ''' pen '''
+        self.pen_device_c = builder.get_object('pen_device')
+        # need top-left x-y and bottom-right x-y
 
         '''Dbus monitoring'''
         user_bus = dbus.SessionBus()
@@ -229,6 +238,28 @@ class UbuntuStudioControls:
             'USB-SINGLE': "False",
             'USBDEV': "",
         }
+
+        # This is going to bite us sometime...
+        # People who have more than one tablet will want to save
+        # settings for all of them not just one of them.
+        self.config['TABLET'] = {
+            'DEVICE': "",
+            'BUTTON1': "",
+            'BUTTON2': "",
+            'BUTTON3': "",
+            'BUTTON8': "",
+            'BUTTON9': "",
+            'BUTTON10': "",
+            'BUTTON11': "",
+            'BUTTON12': "",
+            'BUTTON13': "",
+            'BUTTON14': "",
+            'BUTTON15': "",
+            'BUTTON16': "",
+            'POSITION': "",
+            'PEN': "",
+        }
+        self.tab_conf = self.config['TABLET']
 
         global autojack
         global newusb
@@ -346,6 +377,7 @@ class UbuntuStudioControls:
         self.i_in = 0
         self.i_out = 0
         self.refresh_pulse_tab(self.i_in, self.i_out)
+        self.refresh_tablet()
 
         handlers = {
             "on_window_main_delete_event": self.on_window_main_delete_event,
@@ -958,6 +990,34 @@ class UbuntuStudioControls:
             os.replace(f"{logpath}/autojack.log", f"{logpath}/autojack.log.old")
         subprocess.Popen(["/usr/bin/autojack"], stdin=subprocess.DEVNULL, stdout=open(f"{logpath}/autojack.log", 'w'),
                          stderr=subprocess.STDOUT, shell=False).pid
+
+    def refresh_tablet(self):
+        ''' refresh tablet tab in gui '''
+        d_lines = []
+        device_list = subprocess.check_output(["/usr/bin/xsetwacom", "list"], shell=False)
+        d_lines = device_list.split()
+        for linein in d_lines:
+            line = linein.decode()
+            if len(line):
+                # we have a line
+                device = line.rstrip().split("id:", 1)[0].strip()
+                tablet = line.rstrip().split("type:", 1)
+                if tablet[1].strip() == "PAD":
+                    # this is is a pad device for the buttons tab
+                    #self.pad_device_c = builder.get_object('pad_device')
+                    self.pad_device_c.append(device, device)
+                    if device == self.tab_config['DEVICE']:
+                        self.pad_device_c.set_active_id(device)
+                elif tablet[1].strip() == "STYLUS":
+                    self.pen_device_c.append(device, device)
+                    if device == self.tab_config['PEN']:
+                        self.pen_device_c.set_active_id(device)
+
+        pad_dev = ""
+        if d_lines != []:
+            pad_dev = self.pad_device_c.get_active_id()
+            pen_dev = self.pen_device_c.get_active_id()
+
 
     def on_button_help_ok_clicked(self, button):
         self.window_help.hide()

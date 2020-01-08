@@ -128,6 +128,7 @@ def import_config():
     ''' sets default parmeters, then reads values from configuration file'''
     global config
     global def_config
+    global tab_conf
     global config_path
     global config_file
     global zdev
@@ -143,6 +144,7 @@ def import_config():
 
     config = configparser.ConfigParser()
     def_config = config['DEFAULT']
+    #tab_conf = config['TABLET']
     config_path = "~/.config/autojack"
     config_file = "{path}/autojackrc".format(path=config_path)
     old_config_file = "~/.config/autojackrc"
@@ -169,6 +171,25 @@ def import_config():
         'USBDEV': "",
         "PULSE": "True",
     }
+
+    config['TABLET'] = {
+        'DEVICE': "",
+        'BUTTON1': "",
+        'BUTTON2': "",
+        'BUTTON3': "",
+        'BUTTON8': "",
+        'BUTTON9': "",
+        'BUTTON10': "",
+        'BUTTON11': "",
+        'BUTTON12': "",
+        'BUTTON13': "",
+        'BUTTON14': "",
+        'BUTTON15': "",
+        'BUTTON16': "",
+        'POSITION': "",
+        'PEN': "",
+    }
+    tab_conf = config['TABLET']
 
     # read in autojack config file
     c_file = expanduser(config_file)
@@ -762,6 +783,36 @@ def ses_cb_config(*args, **kwargs):
     reconfig()
 
 
+def ses_cb_tablet(*args, **kwargs):
+    ''' dbus call back when tablet signal caught
+        This reads the config file and sets the tablet
+        buttons, pen and size/position'''
+    global tab_conf
+    print(f"{time.asctime()} Got tablet signal.\n")
+    import_config()
+    '''
+        'DEVICE': "",
+        device is a dual number like 256c:006e
+        for setting it becomes: 'HID 256c:006e Pad pad'
+        how we save it will depend on how it gets listed
+        'BUTTON1': "", normally the top button 'undo'
+        'BUTTON2': "", 
+        'BUTTON3': "",
+        buttons 4,5,6,7 extra
+        'BUTTON8': "",
+        'BUTTON9': "",
+        'BUTTON10': "",
+        'BUTTON11': "",
+        'BUTTON12': "",
+        'BUTTON13': "",
+        'BUTTON14': "",
+        'BUTTON15': "",
+        'BUTTON16': "",
+    '''
+    position = tab_conf['POSITION'].strip('"').split()
+    pen = tab_conf['PEN'].strip('"').split()
+
+
 def ses_cb_ping(*args, **kwargs):
     ''' dbus call back when config signal caught '''
     print(f"{time.asctime()} Got ping signal.\n")
@@ -796,9 +847,11 @@ def main():
                                  signal_name='config_signal')
     user_bus.add_signal_receiver(ses_cb_ping, dbus_interface='org.ubuntustudio.control.event',
                                  signal_name='ping_signal')
+    user_bus.add_signal_receiver(ses_cb_tablet, dbus_interface='org.ubuntustudio.control.event',
+                                 signal_name='tablet_signal')
 
-    subprocess.run(["/usr/bin/dbus-send", "--type=signal", "/", "org.ubuntustudio.control.event.V3_1_signal"],
-                   shell=False)
+    subprocess.run(["/usr/bin/dbus-send", "--type=signal", "/",
+                    "org.ubuntustudio.control.event.V3_1_signal"], shell=False)
 
     loop = GLib.MainLoop()
     loop.run()
