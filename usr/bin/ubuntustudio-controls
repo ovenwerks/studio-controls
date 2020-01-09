@@ -992,31 +992,41 @@ class UbuntuStudioControls:
                          stderr=subprocess.STDOUT, shell=False).pid
 
     def refresh_tablet(self):
-        ''' refresh tablet tab in gui '''
+        ''' refresh tablet tab in gui. By the time we open -controls
+            The tablet should be set with whatever the config file has
+            so we read the device values.'''
         d_lines = []
         device_list = subprocess.check_output(["/usr/bin/xsetwacom", "list"], shell=False)
-        d_lines = device_list.split()
-        for linein in d_lines:
-            line = linein.decode()
+        d_lines = device_list.decode()
+        for line in d_lines.split('\n'):
             if len(line):
                 # we have a line
                 device = line.rstrip().split("id:", 1)[0].strip()
-                tablet = line.rstrip().split("type:", 1)
-                if tablet[1].strip() == "PAD":
+                print (f"tablet device = {device}")
+                tablet = line.rstrip().split("type:", 1)[1].strip()
+                print (f"tablet type = {tablet}")
+                if tablet == "PAD":
                     # this is is a pad device for the buttons tab
                     #self.pad_device_c = builder.get_object('pad_device')
+                    print(f"have a pad, device = {device}")
                     self.pad_device_c.append(device, device)
-                    if device == self.tab_config['DEVICE']:
+                    if device == self.tab_conf['DEVICE']:
                         self.pad_device_c.set_active_id(device)
-                elif tablet[1].strip() == "STYLUS":
+                    else:
+                        self.pad_device_c.set_active(0)
+                elif tablet == "STYLUS":
+                    print(f"have a pen, device = {device}")
                     self.pen_device_c.append(device, device)
-                    if device == self.tab_config['PEN']:
+                    if device == self.tab_conf['PEN']:
                         self.pen_device_c.set_active_id(device)
+                    else:
+                        self.pen_device_c.set_active(0)
 
         pad_dev = ""
         if d_lines != []:
             pad_dev = self.pad_device_c.get_active_id()
             pen_dev = self.pen_device_c.get_active_id()
+            
 
 
     def on_button_help_ok_clicked(self, button):
