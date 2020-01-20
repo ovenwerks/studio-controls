@@ -442,7 +442,6 @@
                             <property name="active">0</property>
                             <items>
                               <item id="alsa" translatable="yes">alsa</item>
-                              <item id="firewire" translatable="yes">firewire</item>
                               <item id="dummy" translatable="yes">dummy</item>
                             </items>
                             <signal name="changed" handler="jack_driver_changed" swapped="no"/>

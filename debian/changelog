@@ -12,12 +12,13 @@ ubuntustudio-controls (1.11.3) UNRELEASED; urgency=medium
   * Allow user to name Pulse bridges
   * Fix error with no pulse bridge
   * Make pulse bridge connections into a drop down
+  * Removed inoperable firewire backend - use ALSA
 
   [ Brian Hechinger ]
   *  NO-OP: Updated formatting for PEP8
-  * Converted config file handling from home-grown to configparser 
+  * Converted config file handling from home-grown to configparser  
 
- -- Len Ovens <len@ubuntustudio.org>  Sat, 05 Oct 2019 10:50:22 -0700
+ -- Erich Eickmeyer <erich@ericheickmeyer.com>  Sun, 19 Jan 2020 21:09:53 -0800
 
 ubuntustudio-controls (1.11.3) eoan; urgency=medium
 
