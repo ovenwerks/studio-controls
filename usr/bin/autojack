@@ -764,11 +764,20 @@ def ses_cb_quit(*args, **kwargs):
     os._exit(0)
 
 
+def handler(signum, frame):
+    ''' a handler for system signals that may be sent by the system.
+        we want to trap sigint, sigkill and sigterm and do the same as
+        above. '''
+    logging.warning(f"Got signal number: {str(signum)} - Dying.")
+    subprocess.run(["/usr/bin/killall", "-9", "jackdbus", "jackd", "a2jmidid"], shell=False)
+    subprocess.run(["/usr/bin/pulseaudio", "-k"], shell=False)
+    os._exit(0)
+
+
 def ses_cb_stop(*args, **kwargs):
     ''' dbus call back when stop signal caught. This stops jack. '''
     logging.info("Got stop signal.")
     subprocess.run(["/usr/bin/killall", "-9", "jackdbus", "jackd", "a2jmidid"], shell=False)
-    # reload pulse with default modules so it works without jack
     subprocess.run(["/usr/bin/pulseaudio", "-k"], shell=False)
 
 
@@ -832,10 +841,24 @@ def main():
     # set up logging
     logfile = expanduser("~/.log/autojack.log")
     logging.basicConfig(filename=logfile, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s', level=logging.DEBUG)
-    #logging.basicConfig(format='%(levelname)s:%(message)s', level=logging.DEBUG)
-    #logging.basicConfig(format='%(asctime)s %(message)s')'%(asctime)s - %(name)s - %(levelname)s - %(message)s'
     logging.debug('logging online')
     dbus.mainloop.glib.DBusGMainLoop(set_as_default=True)
+    signal.signal(signal.SIGHUP, handler)
+    signal.signal(signal.SIGINT, handler)
+    signal.signal(signal.SIGQUIT, handler)
+    signal.signal(signal.SIGILL, handler)
+    signal.signal(signal.SIGTRAP, handler)
+    signal.signal(signal.SIGABRT, handler)
+    signal.signal(signal.SIGBUS, handler)
+    signal.signal(signal.SIGFPE, handler)
+    #signal.signal(signal.SIGKILL, handler)
+    signal.signal(signal.SIGUSR1, handler)
+    signal.signal(signal.SIGSEGV, handler)
+    signal.signal(signal.SIGUSR2, handler)
+    signal.signal(signal.SIGPIPE, handler)
+    signal.signal(signal.SIGALRM, handler)
+    signal.signal(signal.SIGTERM, handler)
+
     config_start()
     import_device_array()
     system_bus = dbus.SystemBus()
