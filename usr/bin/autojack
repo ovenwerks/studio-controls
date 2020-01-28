@@ -93,6 +93,7 @@ def get_dev_info(x):
             subdevice.append(cap_pid)
             device.append(subdevice)
     # change this to create a list, USB cards may have devices and subdevices
+    logging.debug(f"Device list: {str(device)}")
     return device
 
 
@@ -171,6 +172,7 @@ def import_config():
         'USB-SINGLE': "False",
         'USBDEV': "",
         "PULSE": "True",
+        "LOG-LEVEL": "15",
     }
 
     config['TABLET'] = {
@@ -286,6 +288,10 @@ def reconfig():
     oldpulse_in = pulse_in
     oldpulse_out = pulse_out
     import_config()
+    if def_config['LOG-LEVEL'] != old_def_config['LOG-LEVEL']:
+        logger = logging.getLogger()
+        logger.setLevel(int(def_config['LOG-LEVEL']))
+        logging.debug(f"log level: {def_config['LOG-LEVEL']}")
 
     newlist = [def_config['JACK'], def_config['DRIVER'], def_config['CHAN-IN'], def_config['CHAN-OUT'],
                def_config['RATE'], def_config['FRAME'], def_config['PERIOD'], def_config['DEV'], def_config['USBDEV']]
@@ -304,21 +310,28 @@ def reconfig():
     if def_config['PULSE-IN'] != old_def_config['PULSE-IN']:
         pulse_dirty = True
         disconnect_pa(old_def_config)
-        subprocess.run(["/usr/bin/pactl", "unload-module", "module-jack-source"], shell=False)
+        cp = subprocess.run(["/usr/bin/pactl", "unload-module", "module-jack-source"],
+                            universal_newlines=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=False)
+        logging.debug(f"remove jackd_source: {cp.stdout.strip()}")
         for piname in pulse_in:
             def_config['PULSE'] = "True"
-            subprocess.run(["/usr/bin/pactl", "load-module", "module-jack-source", f"client_name={piname}", "channels=2",
-                            "connect=no"], shell=False)
+            cp = subprocess.run(["/usr/bin/pactl", "load-module", "module-jack-source", f"client_name={piname}",
+                                "channels=2", "connect=no"],
+                                universal_newlines=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=False)
+            logging.debug(f"Load jackd_source: {cp.stdout.strip()}")
             
     if def_config['PULSE-OUT'] != old_def_config['PULSE-OUT']:
         if not pulse_dirty:
             pulse_dirty = True
             disconnect_pa(old_def_config)
-        subprocess.run(["/usr/bin/pactl", "unload-module", "module-jack-sink"], shell=False)
+        cp = subprocess.run(["/usr/bin/pactl", "unload-module", "module-jack-sink"],
+                            universal_newlines=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=False)
+        logging.debug(f"PA unload jack-sink: {cp.stdout.strip()}")
         for poname in pulse_out:
             def_config['PULSE'] = "True"
-            subprocess.run(["/usr/bin/pactl", "load-module", "module-jack-sink", f"client_name={poname}", "channels=2",
-                            "connect=no"], shell=False)
+            cp = subprocess.run(["/usr/bin/pactl", "load-module", "module-jack-sink", f"client_name={poname}", "channels=2",
+                            "connect=no"], universal_newlines=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=False)
+            logging.debug(f"PA load jack-sink: {cp.stdout.strip()}")
 
     if [def_config['PJ-IN-CON'], def_config['PJ-OUT-CON']] != [old_def_config['PJ-IN-CON'], old_def_config['PJ-OUT-CON']]:
         # need to pass old_def_config
@@ -330,8 +343,11 @@ def reconfig():
         connect_pa()
 
     if old_def_config['A2J'] != def_config['A2J']:
-        subprocess.run(["/usr/bin/killall", "-9", "a2jmidid"], shell=False)
+        cp = subprocess.run(["/usr/bin/killall", "-9", "a2jmidid"],
+                            universal_newlines=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=False)
+        logging.debug(f"kill old a2j: {cp.stdout.strip()}")
         if def_config['A2J'] == "True":
+            # Can't add logging for background processes. Will show up in syslog
             subprocess.Popen(["/usr/bin/a2jmidid", "-e"], shell=False).pid
 
     if [def_config['USBAUTO'], def_config['USB-SINGLE'], zdev] != [old_def_config['USBAUTO'],
@@ -378,22 +394,35 @@ def config_start():
     logging.info("Running: config_start()")
 
     import_config()
+    logger = logging.getLogger()
+    logger.setLevel(int(def_config['LOG-LEVEL']))
+    logging.debug(f"log level: {def_config['LOG-LEVEL']}")
+
     # if at session start we should wait a few seconds for pulse
     # to be fully running
     time.sleep(2)
     # Stop jack if running
-    subprocess.run(["/usr/bin/killall", "-9", "jackdbus", "jackd", "a2jmidid"], shell=False)
+    cp = subprocess.run(["/usr/bin/killall", "-q", "-9", "jackdbus", "jackd", "a2jmidid"],
+                        universal_newlines=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=False)
+    logging.debug(f"Kill old Procs: {cp.stdout.strip()}")
     if def_config['JACK'] == "False":
         # restart Pulse
-        subprocess.run(["/usr/bin/pulseaudio", "-k"], shell=False)
-        logging.debug("JACK == {j}".format(j=def_config['JACK']))
+        cp = subprocess.run(["/usr/bin/pulseaudio", "-k"],
+                    universal_newlines=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=False)
+        logging.debug(f"JACK == {def_config['JACK']} restart pulse: {cp.stdout.strip()}")
         return
 
     # Assume start of session where pulse may be fully loaded
     # get rid of anything that can automatically interfere
-    subprocess.run(["/usr/bin/pactl", "unload-module", "module-jackdbus-detect"], shell=False)
-    subprocess.run(["/usr/bin/pactl", "unload-module", "module-udev-detect"], shell=False)
-    subprocess.run(["/usr/bin/pactl", "unload-module", "module-alsa-card"], shell=False)
+    cp = subprocess.run(["/usr/bin/pactl", "unload-module", "module-jackdbus-detect"],
+                        universal_newlines=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=False)
+    logging.debug(f"remove jackdbus_detect: {cp.stdout.strip()}")
+    cp = subprocess.run(["/usr/bin/pactl", "unload-module", "module-udev-detect"],
+                        universal_newlines=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=False)
+    logging.debug(f"remove module-udev-detect: {cp.stdout.strip()}")
+    cp = subprocess.run(["/usr/bin/pactl", "unload-module", "module-alsa-card"],
+                        universal_newlines=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=False)
+    logging.debug(f"remove module-alsa-card: {cp.stdout.strip()}")
     if os.path.exists(f"/proc/asound/{def_config['USBDEV'].split(',')[0]}") and def_config['USBDEV'] != "":
         mdev = def_config['USBDEV']
     else:
@@ -401,30 +430,38 @@ def config_start():
     # Now start jackdbus with the configured device
     # the commands are all different so...
     if def_config['DRIVER'] == "alsa":
-        subprocess.run(["/usr/bin/jack_control", "ds", "alsa", "dps", "capture", "none", "dps", "playback", "none"],
-                       shell=False)
-        subprocess.run(["/usr/bin/jack_control", "dps", "device", f"hw:{mdev}", "dps", "rate", def_config['RATE']],
-                       shell=False)
-        subprocess.run(
-            ["/usr/bin/jack_control", "dps", "period", def_config['FRAME'], "dps", "nperiods", def_config['PERIOD'],
-             "start"],
-            shell=False)
+        cp = subprocess.run(["/usr/bin/jack_control", "ds", "alsa", "dps", "capture", "none", "dps", "playback", "none"],
+                        universal_newlines=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=False)
+        logging.debug(f"Jackdbus: {cp.stdout.strip()}")
+        cp = subprocess.run(["/usr/bin/jack_control", "dps", "device", f"hw:{mdev}", "dps", "rate", def_config['RATE']],
+                        universal_newlines=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=False)
+        logging.debug(f"Jackdbus: {cp.stdout.strip()}")
+        cp = subprocess.run(["/usr/bin/jack_control", "dps", "period", def_config['FRAME'], "dps", "nperiods",
+                        def_config['PERIOD'], "start"],
+                        universal_newlines=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=False)
+        logging.debug(f"Jackdbus: {cp.stdout.strip()}")
     elif def_config['DRIVER'] == "firewire":
-        subprocess.run(["/usr/bin/jack_control", "ds", "firewire"], shell=False)
-        subprocess.run(["/usr/bin/jack_control", "dps", "device", f"hw:{mdev}", "dps", "rate", def_config['RATE']],
-                       shell=False)
-        subprocess.run(
-            ["/usr/bin/jack_control", "dps", "period", def_config['FRAME'], "dps", "nperiods", def_config['PERIOD'],
-             "start"],
-            shell=False)
+        cp = subprocess.run(["/usr/bin/jack_control", "ds", "firewire"],
+                        universal_newlines=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=False)
+        logging.debug(f"Jackdbus: {cp.stdout.strip()}")
+        cp = subprocess.run(["/usr/bin/jack_control", "dps", "device", f"hw:{mdev}", "dps", "rate", def_config['RATE']],
+                        universal_newlines=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=False)
+        logging.debug(f"Jackdbus: {cp.stdout.strip()}")
+        cp = subprocess.run(["/usr/bin/jack_control", "dps", "period", def_config['FRAME'], "dps", "nperiods",
+                        def_config['PERIOD'], "start"],
+                        universal_newlines=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=False)
+        logging.debug(f"Jackdbus: {cp.stdout.strip()}")
     elif def_config['DRIVER'] == "dummy":
-        subprocess.run(["/usr/bin/jack_control", "ds", "dummy"], shell=False)
-        subprocess.run(
-            ["/usr/bin/jack_control", "dps", "rate", def_config['RATE'], "dps" "period", def_config['FRAME']],
-            shell=False)
-        subprocess.run(["/usr/bin/jack_control", "dps", "capture", def_config['CHAN-IN'], "dps", "playback",
+        cp = subprocess.run(["/usr/bin/jack_control", "ds", "dummy"],
+                        universal_newlines=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=False)
+        logging.debug(f"Jackdbus: {cp.stdout.strip()}")
+        cp = subprocess.run(["/usr/bin/jack_control", "dps", "rate", def_config['RATE'], "dps" "period", def_config['FRAME']],
+                        universal_newlines=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=False)
+        logging.debug(f"Jackdbus: {cp.stdout.strip()}")
+        cp = subprocess.run(["/usr/bin/jack_control", "dps", "capture", def_config['CHAN-IN'], "dps", "playback",
                         def_config['CHAN-OUT'], "start"],
-                       shell=False)
+                        universal_newlines=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=False)
+        logging.debug(f"Jackdbus: {cp.stdout.strip()}")
     else:
         # we should never get here
         logging.error("programming error! if you find this in your log file please file" +
@@ -435,12 +472,15 @@ def config_start():
 
     for piname in pulse_in:
         def_config['PULSE'] = "True"
-        subprocess.run(["/usr/bin/pactl", "load-module", "module-jack-source", f"client_name={piname}",
-                        "channels=2", "connect=no"], shell=False)
+        cp = subprocess.run(["/usr/bin/pactl", "load-module", "module-jack-source", f"client_name={piname}",
+                        "channels=2", "connect=no"],
+                        universal_newlines=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=False)
+        logging.debug(f"Pulseaudio: {cp.stdout.strip()}")
     for poname in pulse_out:
         def_config['PULSE'] = "True"
-        subprocess.run(["/usr/bin/pactl", "load-module", "module-jack-sink", f"client_name={poname}", "channels=2",
-                        "connect=no"], shell=False)
+        cp = subprocess.run(["/usr/bin/pactl", "load-module", "module-jack-sink", f"client_name={poname}", "channels=2",
+                        "connect=no"], universal_newlines=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=False)
+        logging.debug(f"Pulseaudio: {cp.stdout.strip()}")
 
     for cname in zdev:
         if cname != "":
@@ -459,6 +499,7 @@ def config_start():
                     start_slave(f"{device[0]},0,0")
 
     if def_config['A2J'] == "True":
+        # Can't set up logging
         subprocess.Popen(["/usr/bin/a2jmidid", "-e"], shell=False).pid
 
 
@@ -487,10 +528,13 @@ def connect_pa():
         else:
             p = int(port[(port.rfind("_") + 1):]) + 1
             port2 = f"{port[0:port.rfind('_') + 1]}{p}"
-        subprocess.run(["/usr/bin/jack_connect", port,
-                        f"{pj_name}:front-left"], shell=False)
-        subprocess.run(["/usr/bin/jack_connect", port2,
-                        f"{pj_name}:front-right"], shell=False)
+        cp = subprocess.run(["/usr/bin/jack_connect", port, f"{pj_name}:front-left"],
+                        universal_newlines=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=False)
+        logging.debug(f"Jack connect to pulse in left: {cp.stdout.strip()}")
+        cp = subprocess.run(["/usr/bin/jack_connect", port2, f"{pj_name}:front-right"],
+                        universal_newlines=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=False)
+        logging.debug(f"Jack connect to pulse in right: {cp.stdout.strip()}")
+
 
     for i, pj_name in enumerate(pulse_out):
         port2 = ""
@@ -506,10 +550,12 @@ def connect_pa():
         else:
             p = int(port[(port.rfind("_") + 1):]) + 1
             port2 = f"{port[0:port.rfind('_') + 1]}{p}"
-        subprocess.run(["/usr/bin/jack_connect", port,
-                        f"{pj_name}:front-left"], shell=False)
-        subprocess.run(["/usr/bin/jack_connect", port2,
-                        f"{pj_name}:front-right"], shell=False)
+        cp = subprocess.run(["/usr/bin/jack_connect", port, f"{pj_name}:front-left"],
+                        universal_newlines=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=False)
+        logging.debug(f"Pulse out left connect to jack: {cp.stdout.strip()}")
+        cp = subprocess.run(["/usr/bin/jack_connect", port2, f"{pj_name}:front-right"],
+                        universal_newlines=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=False)
+        logging.debug(f"Pulse out right connect to jack: {cp.stdout.strip()}")
 
 
 def disconnect_pa(our_config):
@@ -519,17 +565,25 @@ def disconnect_pa(our_config):
     p_out_con = our_config['PJ-OUT-CON'].strip('"').split()
     for i, name in enumerate(our_config['PULSE-IN'].strip('"').split()):
         if int(p_in_con[i]):
-            subprocess.run(["/usr/bin/jack_disconnect", f"{name}:front-left",
-                           f"system:capture_{p_in_con[i]}"], shell=False)
-            subprocess.run(["/usr/bin/jack_disconnect", f"{name}:front-right",
-                           f"system:capture_{str(int(p_in_con[i]) + 1)}"], shell=False)
+            cp = subprocess.run(["/usr/bin/jack_disconnect", f"{name}:front-left",
+                            f"system:capture_{p_in_con[i]}"],
+                        universal_newlines=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=False)
+            logging.debug(f"jack dissconnect PA: {cp.stdout.strip()}")
+            cp = subprocess.run(["/usr/bin/jack_disconnect", f"{name}:front-right",
+                            f"system:capture_{str(int(p_in_con[i]) + 1)}"],
+                        universal_newlines=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=False)
+            logging.debug(f"jack dissconnect PA: {cp.stdout.strip()}")
 
     for i, name in enumerate(our_config['PULSE-OUT'].strip('"').split()):
         if int(p_out_con[i]):
-            subprocess.run(["/usr/bin/jack_disconnect", f"{name}:front-left",
-                           f"system:playback_{p_out_con[i]}"], shell=False)
-            subprocess.run(["/usr/bin/jack_disconnect", f"{name}:front-right",
-                           f"system:playback_{str(int(p_out_con[i]) + 1)}"], shell=False)
+            cp = subprocess.run(["/usr/bin/jack_disconnect", f"{name}:front-left",
+                           f"system:playback_{p_out_con[i]}"],
+                        universal_newlines=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=False)
+            logging.debug(f"jack dissconnect PA: {cp.stdout.strip()}")
+            cp = subprocess.run(["/usr/bin/jack_disconnect", f"{name}:front-right",
+                           f"system:playback_{str(int(p_out_con[i]) + 1)}"],
+                        universal_newlines=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=False)
+            logging.debug(f"jack dissconnect PA: {cp.stdout.strip()}")
 
 
 def msg_cb_new(*args, **kwargs):
@@ -759,8 +813,12 @@ def ses_cb_quit(*args, **kwargs):
     ''' dbus call back when quit signal caught. This is for use in
     testing and the GUI never sends this. '''
     logging.warning("Got quit signal.")
-    subprocess.run(["/usr/bin/killall", "-9", "jackdbus", "jackd", "a2jmidid"], shell=False)
-    subprocess.run(["/usr/bin/pulseaudio", "-k"], shell=False)
+    cp = subprocess.run(["/usr/bin/killall", "-9", "jackdbus", "jackd", "a2jmidid"],
+                        universal_newlines=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=False)
+    logging.debug(f"Kill jack and friends: {cp.stdout.strip()}")
+    cp = subprocess.run(["/usr/bin/pulseaudio", "-k"],
+                        universal_newlines=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=False)
+    logging.debug(f"Restart PA: {cp.stdout.strip()}")
     os._exit(0)
 
 
@@ -769,16 +827,24 @@ def handler(signum, frame):
         we want to trap sigint, sigkill and sigterm and do the same as
         above. '''
     logging.warning(f"Got signal number: {str(signum)} - Dying.")
-    subprocess.run(["/usr/bin/killall", "-9", "jackdbus", "jackd", "a2jmidid"], shell=False)
-    subprocess.run(["/usr/bin/pulseaudio", "-k"], shell=False)
+    cp = subprocess.run(["/usr/bin/killall", "-9", "jackdbus", "jackd", "a2jmidid"],
+                        universal_newlines=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=False)
+    logging.debug(f"Kill jack and friends: {cp.stdout.strip()}")
+    cp = subprocess.run(["/usr/bin/pulseaudio", "-k"],
+                        universal_newlines=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=False)
+    logging.debug(f"Restart PA: {cp.stdout.strip()}")
     os._exit(0)
 
 
 def ses_cb_stop(*args, **kwargs):
     ''' dbus call back when stop signal caught. This stops jack. '''
     logging.info("Got stop signal.")
-    subprocess.run(["/usr/bin/killall", "-9", "jackdbus", "jackd", "a2jmidid"], shell=False)
-    subprocess.run(["/usr/bin/pulseaudio", "-k"], shell=False)
+    cp = subprocess.run(["/usr/bin/killall", "-9", "jackdbus", "jackd", "a2jmidid"],
+                        universal_newlines=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=False)
+    logging.debug(f"Kill jack and friends: {cp.stdout.strip()}")
+    cp = subprocess.run(["/usr/bin/pulseaudio", "-k"],
+                        universal_newlines=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=False)
+    logging.debug(f"Restart PA: {cp.stdout.strip()}")
 
 
 def ses_cb_start(*args, **kwargs):
@@ -841,7 +907,7 @@ def main():
     # set up logging
     logfile = expanduser("~/.log/autojack.log")
     logging.basicConfig(filename=logfile, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s', level=logging.DEBUG)
-    logging.debug('logging online')
+    logging.info('logging online')
     dbus.mainloop.glib.DBusGMainLoop(set_as_default=True)
     signal.signal(signal.SIGHUP, handler)
     signal.signal(signal.SIGINT, handler)
@@ -858,6 +924,10 @@ def main():
     signal.signal(signal.SIGPIPE, handler)
     signal.signal(signal.SIGALRM, handler)
     signal.signal(signal.SIGTERM, handler)
+    subprocess.run(["/usr/bin/dbus-send", "--type=signal", "/",
+                    "org.ubuntustudio.control.event.quit_signal"], shell=False)
+    logging.info('kill other autojack intances')
+    time.sleep(3)
 
     config_start()
     import_device_array()
@@ -877,11 +947,6 @@ def main():
                                  signal_name='ping_signal')
     user_bus.add_signal_receiver(ses_cb_tablet, dbus_interface='org.ubuntustudio.control.event',
                                  signal_name='tablet_signal')
-
-    subprocess.run(["/usr/bin/dbus-send", "--type=signal", "/",
-                    "org.ubuntustudio.control.event.quit_signal"], shell=False)
-    logging.debug('kill other autojack intances')
-    time.sleep(3)
     user_bus.add_signal_receiver(ses_cb_quit, dbus_interface='org.ubuntustudio.control.event',
                                  signal_name='quit_signal')
 
