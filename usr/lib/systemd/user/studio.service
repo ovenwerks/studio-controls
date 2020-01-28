@@ -1,15 +1,13 @@
 [Unit]
-Description=autojack - Ubuntu Studio session daemon
+Description=Studio - Studio autojack session daemon
 
 # Runs autojack which starts Studio audio in the same way the session
 # ended as well as providing a back end for ubuntustudio-controls for
 # changing various settings.
-BindsTo=graphical-session.target
-After=graphical-session.target
+PartOf=graphical-session.target
 
 [Service]
 Type=simple
-TimeoutStartSec="infinity"
 ExecStart=/usr/bin/autojack
 TimeoutStopSec=10
 ExecStop=/usr/bin/dbus-send --type=signal / org.ubuntustudio.control.event.quit_signal

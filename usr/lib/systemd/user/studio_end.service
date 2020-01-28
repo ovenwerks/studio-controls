@@ -1,0 +1,11 @@
+[Unit]
+Description=Studio - session daemon
+
+# Stops autojack which starts Studio audio in the same way the session
+# ended as well as providing a back end for studio-controls for
+# changing various settings.
+PartOf=exit.target
+
+[Service]
+Type=simple
+ExecStart=/usr/bin/dbus-send --type=signal / org.ubuntustudio.control.event.quit_signal
