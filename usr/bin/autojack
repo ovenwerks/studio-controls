@@ -905,7 +905,14 @@ def main():
     procs = []
     last_master = ""
     # set up logging
+    logpath = expanduser("~/.log")
+    # make sure the logfile directory exists
+    if not os.path.exists(logpath):
+        os.makedirs(logpath)
     logfile = expanduser("~/.log/autojack.log")
+    if os.path.isfile(logfile):
+        os.replace(logfile, f"{logfile}.old")
+
     logging.basicConfig(filename=logfile, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s', level=logging.DEBUG)
     logging.info('logging online')
     dbus.mainloop.glib.DBusGMainLoop(set_as_default=True)

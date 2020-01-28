@@ -119,7 +119,6 @@
                   <object class="GtkLabel" id="label_tweak">
                     <property name="visible">True</property>
                     <property name="can_focus">False</property>
-                    <property name="ypad">4</property>
                     <property name="label" translatable="yes">These are system Settings that can be changed on the fly depending on the work being done. For low latency Audio work, The Governor should be set to performance and Boost should be off. For best battery life choose ondemand or powersave (depending on your CPU)</property>
                     <property name="wrap">True</property>
                   </object>
@@ -191,6 +190,48 @@
                     <property name="expand">False</property>
                     <property name="fill">True</property>
                     <property name="position">1</property>
+                  </packing>
+                </child>
+                <child>
+                  <object class="GtkBox">
+                    <property name="visible">True</property>
+                    <property name="can_focus">False</property>
+                    <property name="homogeneous">True</property>
+                    <child>
+                      <object class="GtkLabel">
+                        <property name="visible">True</property>
+                        <property name="can_focus">False</property>
+                        <property name="label" translatable="yes">Logging level</property>
+                      </object>
+                      <packing>
+                        <property name="expand">False</property>
+                        <property name="fill">True</property>
+                        <property name="position">0</property>
+                      </packing>
+                    </child>
+                    <child>
+                      <object class="GtkComboBoxText" id="logging_comb">
+                        <property name="visible">True</property>
+                        <property name="can_focus">False</property>
+                        <property name="active">0</property>
+                        <items>
+                          <item id="29" translatable="yes">Warnings</item>
+                          <item id="19" translatable="yes">Info</item>
+                          <item id="9" translatable="yes">Debug</item>
+                        </items>
+                        <signal name="changed" handler="logging_change" swapped="no"/>
+                      </object>
+                      <packing>
+                        <property name="expand">False</property>
+                        <property name="fill">True</property>
+                        <property name="position">1</property>
+                      </packing>
+                    </child>
+                  </object>
+                  <packing>
+                    <property name="expand">False</property>
+                    <property name="fill">True</property>
+                    <property name="position">2</property>
                   </packing>
                 </child>
               </object>

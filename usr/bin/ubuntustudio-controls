@@ -132,6 +132,7 @@ class UbuntuStudioControls:
         self.rt_warning = builder.get_object('rt_warning')
         self.combo_governor = builder.get_object('combo_governor')
         self.combo_boost = builder.get_object('combo_boost')
+        self.logging_comb = builder.get_object('logging_comb')
         '''audio tab stuff'''
         '''master tab'''
         self.jack_device_combo = builder.get_object('jack_device_combo')
@@ -237,6 +238,7 @@ class UbuntuStudioControls:
             'USBAUTO': "True",
             'USB-SINGLE': "False",
             'USBDEV': "",
+            'LOG-LEVEL': "19",
         }
 
         # This is going to bite us sometime...
@@ -353,6 +355,7 @@ class UbuntuStudioControls:
         except jack.JackError:
             self.def_config['JACK'] = "False"
 
+        self.logging_comb.set_active_id(self.def_config['LOG-LEVEL'])
         # fill in Jack master widgets
         self.jack_rate_combo.set_active_id(self.def_config['RATE'])
         self.combobox_late.set_active_id(self.def_config['FRAME'])
@@ -386,6 +389,7 @@ class UbuntuStudioControls:
             "on_main_button_help_clicked": self.on_main_button_help_clicked,
             "combo_governor_changed_cb": self.combo_governor_changed_cb,
             "combo_boost_changed_cb": self.combo_boost_changed_cb,
+            "logging_change": self.logging_changed,
             "rt_button_hit": self.rt_button_hit,
             "on_button_msg_ok_clicked": self.on_button_msg_ok_clicked,
             "on_button_rt_info_ok_clicked": self.on_button_rt_info_ok_clicked,
@@ -667,6 +671,13 @@ class UbuntuStudioControls:
             self.combo_boost.set_active(1)
         else:
             self.combo_boost.set_active(0)
+
+    def logging_changed(self, widget):
+        newval = widget.get_active_id()
+        if self.def_config['LOG-LEVEL'] != newval:
+            self.def_config['LOG-LEVEL'] = newval
+            self.cb_audio_apply(widget)
+
 
     # Audio setup call backs
     def cb_zita_add(self, button):
@@ -981,14 +992,7 @@ class UbuntuStudioControls:
         subprocess.run(["/usr/bin/dbus-send", "--type=signal", "/", "org.ubuntustudio.control.event.quit_signal"],
                        shell=False)
         # do it
-        logpath = expanduser("~/.log")
-        # make sure the logfile directory exists
-        if not os.path.exists(logpath):
-            os.makedirs(logpath)
-        # if there is already a log file rename it to .old
-        if os.path.isfile(f"{logpath}/autojack.log"):
-            os.replace(f"{logpath}/autojack.log", f"{logpath}/autojack.log.old")
-        subprocess.Popen(["/usr/bin/autojack"], stdin=subprocess.DEVNULL, stdout=open(f"{logpath}/autojack.log", 'w'),
+        subprocess.Popen(["/usr/bin/autojack"], stdin=subprocess.DEVNULL, stdout=subprocess.DEVNULL,
                          stderr=subprocess.STDOUT, shell=False).pid
 
     def refresh_tablet(self):
