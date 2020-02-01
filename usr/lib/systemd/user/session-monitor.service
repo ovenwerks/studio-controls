@@ -1,0 +1,23 @@
+[Unit]
+Description=Studio - session monitor
+
+# Stops autojack which starts Studio audio in the same way the session
+# ended as well as providing a back end for studio-controls for
+# changing various settings.
+BindsTo=indicator-sound.service
+After=indicator-sound.service
+
+
+[Service]
+Type=simple
+
+ExecStart=/bin/sleep infinity
+
+TimeoutStopSec=3
+ExecStop=/bin/systemctl --user start systemd-exit.service
+##/usr/bin/dbus-send --type=signal / org.ubuntustudio.control.event.quit
+
+
+
+[Install]
+WantedBy=indicator-sound.service
