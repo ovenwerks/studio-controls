@@ -1,4 +1,5 @@
 
+#!/bin/sh
 # systemd services need a symlink to work.
 
   /bin/mkdir -p /usr/lib/systemd/user/indicator-sound.service.wants/
