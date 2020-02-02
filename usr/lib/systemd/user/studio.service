@@ -4,12 +4,12 @@ Description=Studio autojack session daemon
 # Runs autojack which starts Studio audio in the same way the session
 # ended as well as providing a back end for ubuntustudio-controls for
 # changing various settings.
-BindsTo=basic.target
-After=basic.target
+BindsTo=default.target
 Before=default.target
 
 [Service]
 ExecStart=/usr/bin/autojack
+
 
 [Install]
 WantedBy=default.target

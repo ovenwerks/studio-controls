@@ -1,0 +1,7 @@
+
+# systemd services need a symlink to work.
+
+  /bin/mkdir -p /usr/lib/systemd/user/indicator-sound.service.wants/
+  /bin/mkdir -p /usr/lib/systemd/user/default.service.wants/
+  /bin/ln -s /usr/lib/systemd/user/session-monitor.service /usr/lib/systemd/user/indicator-sound.service.wants/session-monitor.service
+  /bin/ln -s /usr/lib/systemd/user/studio.service /usr/lib/systemd/user/default.service.wants/studio.service
