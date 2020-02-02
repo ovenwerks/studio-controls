@@ -4,9 +4,8 @@ Description=Studio - session monitor
 # Stops autojack which starts Studio audio in the same way the session
 # ended as well as providing a back end for studio-controls for
 # changing various settings.
-BindsTo=indicator-sound.service
-After=indicator-sound.service
-
+BindsTo=indicator-messages.service
+After=indicator-messages.service
 
 [Service]
 Type=simple
@@ -20,4 +19,4 @@ ExecStop=/bin/systemctl --user start systemd-exit.service
 
 
 [Install]
-WantedBy=indicator-sound.service
+WantedBy=indicator-messages.service
