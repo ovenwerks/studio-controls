@@ -15,7 +15,7 @@ ubuntustudio-controls (1.11.3) UNRELEASED; urgency=medium
   * Removed inoperable firewire backend - use ALSA
   * Use log levels for logging
   * move to systemd starting for autojack
-  * Make sure session shuts down on logout
+  * Make sure session shuts down on logout (LP #1860152)
 
   [ Brian Hechinger ]
   *  NO-OP: Updated formatting for PEP8
