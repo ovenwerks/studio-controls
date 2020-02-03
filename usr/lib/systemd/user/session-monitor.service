@@ -12,9 +12,10 @@ Type=simple
 
 ExecStart=/bin/sleep infinity
 
-TimeoutStopSec=3
-ExecStop=/bin/systemctl --user start systemd-exit.service
-##/usr/bin/dbus-send --type=signal / org.ubuntustudio.control.event.quit
+TimeoutStopSec=4
+
+ExecStop=/bin/sleep 3
+ExecStopPost=/bin/systemctl --user start systemd-exit.service
 
 
 
