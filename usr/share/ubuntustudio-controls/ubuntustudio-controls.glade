@@ -1152,8 +1152,47 @@
             <child>
               <object class="GtkBox" id="Tablet">
                 <property name="visible">True</property>
+                <property name="sensitive">False</property>
                 <property name="can_focus">False</property>
                 <property name="orientation">vertical</property>
+                <child>
+                  <object class="GtkGrid">
+                    <property name="visible">True</property>
+                    <property name="can_focus">False</property>
+                    <property name="column_homogeneous">True</property>
+                    <child>
+                      <object class="GtkComboBoxText" id="pad_device">
+                        <property name="visible">True</property>
+                        <property name="can_focus">False</property>
+                        <signal name="changed" handler="tab_device_cb" swapped="no"/>
+                      </object>
+                      <packing>
+                        <property name="left_attach">2</property>
+                        <property name="top_attach">0</property>
+                        <property name="width">2</property>
+                      </packing>
+                    </child>
+                    <child>
+                      <object class="GtkLabel">
+                        <property name="visible">True</property>
+                        <property name="can_focus">False</property>
+                        <property name="label" translatable="yes">Select Tablet Device</property>
+                      </object>
+                      <packing>
+                        <property name="left_attach">1</property>
+                        <property name="top_attach">0</property>
+                      </packing>
+                    </child>
+                    <child>
+                      <placeholder/>
+                    </child>
+                  </object>
+                  <packing>
+                    <property name="expand">False</property>
+                    <property name="fill">True</property>
+                    <property name="position">0</property>
+                  </packing>
+                </child>
                 <child>
                   <object class="GtkNotebook" id="tablet_buttons">
                     <property name="visible">True</property>
@@ -1164,41 +1203,7 @@
                         <property name="can_focus">False</property>
                         <property name="orientation">vertical</property>
                         <child>
-                          <object class="GtkGrid">
-                            <property name="visible">True</property>
-                            <property name="can_focus">False</property>
-                            <property name="column_homogeneous">True</property>
-                            <child>
-                              <object class="GtkComboBoxText" id="pad_device">
-                                <property name="visible">True</property>
-                                <property name="can_focus">False</property>
-                              </object>
-                              <packing>
-                                <property name="left_attach">2</property>
-                                <property name="top_attach">0</property>
-                                <property name="width">2</property>
-                              </packing>
-                            </child>
-                            <child>
-                              <object class="GtkLabel">
-                                <property name="visible">True</property>
-                                <property name="can_focus">False</property>
-                                <property name="label" translatable="yes">Select Pad Device</property>
-                              </object>
-                              <packing>
-                                <property name="left_attach">1</property>
-                                <property name="top_attach">0</property>
-                              </packing>
-                            </child>
-                            <child>
-                              <placeholder/>
-                            </child>
-                          </object>
-                          <packing>
-                            <property name="expand">False</property>
-                            <property name="fill">True</property>
-                            <property name="position">0</property>
-                          </packing>
+                          <placeholder/>
                         </child>
                         <child>
                           <object class="GtkBox">
@@ -1266,7 +1271,7 @@
                             <property name="can_focus">False</property>
                             <property name="homogeneous">True</property>
                             <child>
-                              <object class="GtkComboBoxText">
+                              <object class="GtkComboBoxText" id="tab_but_num">
                                 <property name="visible">True</property>
                                 <property name="can_focus">False</property>
                                 <property name="active">0</property>
@@ -1284,6 +1289,7 @@
                                   <item id="15" translatable="yes">Button 15</item>
                                   <item id="16" translatable="yes">Button 16</item>
                                 </items>
+                                <signal name="changed" handler="tab_but_num_cb" swapped="no"/>
                               </object>
                               <packing>
                                 <property name="expand">False</property>
@@ -1292,7 +1298,7 @@
                               </packing>
                             </child>
                             <child>
-                              <object class="GtkComboBoxText">
+                              <object class="GtkComboBoxText" id="tab_but_mod1">
                                 <property name="visible">True</property>
                                 <property name="can_focus">False</property>
                                 <property name="active">0</property>
@@ -1302,6 +1308,7 @@
                                   <item translatable="yes">Control</item>
                                   <item translatable="yes">Alternate</item>
                                 </items>
+                                <signal name="changed" handler="tab_but_mod_cb" swapped="no"/>
                               </object>
                               <packing>
                                 <property name="expand">False</property>
@@ -1310,7 +1317,7 @@
                               </packing>
                             </child>
                             <child>
-                              <object class="GtkComboBoxText">
+                              <object class="GtkComboBoxText" id="tab_but_mod2">
                                 <property name="visible">True</property>
                                 <property name="can_focus">False</property>
                                 <items>
@@ -1319,6 +1326,7 @@
                                   <item translatable="yes">Control</item>
                                   <item translatable="yes">Alternate</item>
                                 </items>
+                                <signal name="changed" handler="tab_but_mod_cb" swapped="no"/>
                               </object>
                               <packing>
                                 <property name="expand">False</property>
@@ -1327,9 +1335,10 @@
                               </packing>
                             </child>
                             <child>
-                              <object class="GtkEntry">
+                              <object class="GtkEntry" id="tab_but_key">
                                 <property name="visible">True</property>
                                 <property name="can_focus">True</property>
+                                <signal name="changed" handler="tab_but_mod_cb" swapped="no"/>
                               </object>
                               <packing>
                                 <property name="expand">False</property>
@@ -1363,76 +1372,15 @@ Look at keyboard shortcuts used by the graphics programs to fill these in.
                           </packing>
                         </child>
                         <child>
-                          <placeholder/>
-                        </child>
-                        <child>
-                          <placeholder/>
-                        </child>
-                        <child>
-                          <placeholder/>
-                        </child>
-                      </object>
-                    </child>
-                    <child type="tab">
-                      <object class="GtkLabel" id="button_lab">
-                        <property name="visible">True</property>
-                        <property name="can_focus">False</property>
-                        <property name="label" translatable="yes">Button Bindings</property>
-                      </object>
-                      <packing>
-                        <property name="menu_label">Buttons</property>
-                        <property name="tab_fill">False</property>
-                      </packing>
-                    </child>
-                    <child>
-                      <object class="GtkBox" id="pen-box">
-                        <property name="visible">True</property>
-                        <property name="can_focus">False</property>
-                        <property name="orientation">vertical</property>
-                        <child>
-                          <object class="GtkGrid">
-                            <property name="visible">True</property>
-                            <property name="can_focus">False</property>
-                            <property name="column_homogeneous">True</property>
-                            <child>
-                              <object class="GtkLabel">
-                                <property name="visible">True</property>
-                                <property name="can_focus">False</property>
-                                <property name="label" translatable="yes">Pen Device</property>
-                              </object>
-                              <packing>
-                                <property name="left_attach">0</property>
-                                <property name="top_attach">0</property>
-                              </packing>
-                            </child>
-                            <child>
-                              <object class="GtkComboBoxText" id="pen_device">
-                                <property name="visible">True</property>
-                                <property name="can_focus">False</property>
-                              </object>
-                              <packing>
-                                <property name="left_attach">1</property>
-                                <property name="top_attach">0</property>
-                                <property name="width">2</property>
-                              </packing>
-                            </child>
-                          </object>
-                          <packing>
-                            <property name="expand">False</property>
-                            <property name="fill">True</property>
-                            <property name="position">0</property>
-                          </packing>
-                        </child>
-                        <child>
                           <object class="GtkLabel">
                             <property name="visible">True</property>
                             <property name="can_focus">False</property>
-                            <property name="label" translatable="yes">Tablet Placement on Screen (and size)</property>
+                            <property name="label" translatable="yes">Drawing Area on Screen</property>
                           </object>
                           <packing>
                             <property name="expand">False</property>
                             <property name="fill">True</property>
-                            <property name="position">1</property>
+                            <property name="position">4</property>
                           </packing>
                         </child>
                         <child>
@@ -1485,7 +1433,7 @@ Look at keyboard shortcuts used by the graphics programs to fill these in.
                               </packing>
                             </child>
                             <child>
-                              <object class="GtkSpinButton" id="tablet_top_x">
+                              <object class="GtkSpinButton" id="tab_top_x">
                                 <property name="visible">True</property>
                                 <property name="can_focus">True</property>
                               </object>
@@ -1495,7 +1443,7 @@ Look at keyboard shortcuts used by the graphics programs to fill these in.
                               </packing>
                             </child>
                             <child>
-                              <object class="GtkSpinButton" id="tablet_bot_x">
+                              <object class="GtkSpinButton" id="tab_bot_x">
                                 <property name="visible">True</property>
                                 <property name="can_focus">True</property>
                               </object>
@@ -1505,7 +1453,7 @@ Look at keyboard shortcuts used by the graphics programs to fill these in.
                               </packing>
                             </child>
                             <child>
-                              <object class="GtkSpinButton" id="tablet_top_y">
+                              <object class="GtkSpinButton" id="tab_top_y">
                                 <property name="visible">True</property>
                                 <property name="can_focus">True</property>
                               </object>
@@ -1515,7 +1463,7 @@ Look at keyboard shortcuts used by the graphics programs to fill these in.
                               </packing>
                             </child>
                             <child>
-                              <object class="GtkSpinButton" id="tablet_bot_y">
+                              <object class="GtkSpinButton" id="tab_bot_y">
                                 <property name="visible">True</property>
                                 <property name="can_focus">True</property>
                               </object>
@@ -1531,8 +1479,38 @@ Look at keyboard shortcuts used by the graphics programs to fill these in.
                           <packing>
                             <property name="expand">False</property>
                             <property name="fill">True</property>
-                            <property name="position">2</property>
+                            <property name="position">5</property>
                           </packing>
+                        </child>
+                        <child>
+                          <placeholder/>
+                        </child>
+                      </object>
+                    </child>
+                    <child type="tab">
+                      <object class="GtkLabel" id="button_lab">
+                        <property name="visible">True</property>
+                        <property name="can_focus">False</property>
+                        <property name="label" translatable="yes">Button Bindings</property>
+                      </object>
+                      <packing>
+                        <property name="menu_label">Buttons</property>
+                        <property name="tab_fill">False</property>
+                      </packing>
+                    </child>
+                    <child>
+                      <object class="GtkBox" id="pen-box">
+                        <property name="visible">True</property>
+                        <property name="can_focus">False</property>
+                        <property name="orientation">vertical</property>
+                        <child>
+                          <placeholder/>
+                        </child>
+                        <child>
+                          <placeholder/>
+                        </child>
+                        <child>
+                          <placeholder/>
                         </child>
                         <child>
                           <placeholder/>
@@ -1563,11 +1541,24 @@ Look at keyboard shortcuts used by the graphics programs to fill these in.
                   <packing>
                     <property name="expand">False</property>
                     <property name="fill">True</property>
-                    <property name="position">0</property>
+                    <property name="position">1</property>
                   </packing>
                 </child>
                 <child>
-                  <placeholder/>
+                  <object class="GtkButton">
+                    <property name="label" translatable="yes">Apply Tablet Settings</property>
+                    <property name="visible">True</property>
+                    <property name="can_focus">True</property>
+                    <property name="focus_on_click">False</property>
+                    <property name="receives_default">True</property>
+                    <property name="halign">end</property>
+                    <signal name="clicked" handler="tab_apply_cb" swapped="no"/>
+                  </object>
+                  <packing>
+                    <property name="expand">False</property>
+                    <property name="fill">False</property>
+                    <property name="position">2</property>
+                  </packing>
                 </child>
               </object>
               <packing>
@@ -1578,7 +1569,6 @@ Look at keyboard shortcuts used by the graphics programs to fill these in.
               <object class="GtkLabel" id="tablet_tab_label">
                 <property name="visible">True</property>
                 <property name="can_focus">False</property>
-                <property name="label" translatable="yes">Drawing Tablet Settings</property>
               </object>
               <packing>
                 <property name="position">2</property>
