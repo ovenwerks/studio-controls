@@ -1,4 +1,4 @@
-ubuntustudio-controls (1.11.3) UNRELEASED; urgency=medium
+ubuntustudio-controls (1.12) focal; urgency=medium
 
   [ Len Ovens ]
   * Check if device really has gone on device removed signal
