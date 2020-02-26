@@ -9,3 +9,4 @@
   if [ -f "/etc/xdg/autostart/autojack.desktop" ]; then
     rm /etc/xdg/autostart/autojack.desktop
   fi
+#DEBHELPER#
