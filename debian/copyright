@@ -5,11 +5,16 @@ Source: https://launchpad.net/ubuntustudio-controls
 Files: *
 Copyright: 2008 Andrew Hunter <andrew@aehunter.net>
            2008 Luis de Bethencourt Guimera
+           2012 Kaj Ailomaa <zequence@ubuntu.com>
+           2012-2020 Len Ovens <len@ubuntustudio.org>
+           2020 Erich Eickmeyer <erich@ericheickmeyer.com>
 License: GPL-2+
 
 Files: debian/*
 Copyright: 2008 Andrew Hunter <andrew@aehunter.net>
            2018 Simon Quigley <tsimonq2@ubuntu.com>
+           2018-2020 Len Ovens <len@ubuntustudio.org>
+           2018-2020 Erich Eickmeyer <erich@ericheickmeyer.com>
 License: GPL-2+
 
 License: GPL-2+
