@@ -79,7 +79,7 @@ case "$1" in
 			cp /usr/share/ubuntustudio-controls/audio.conf /etc/security/limits.d/audio.conf
 		fi
     if [ ${PKEXEC_UID} -gt 999 ]; then
-      /usr/sbin/adduser `id -nu ${PKEXEC_UID}` audio
+      /usr/sbin/usermod `id -nu ${PKEXEC_UID}` -aG audio
     fi
 		;;
 
