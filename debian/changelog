@@ -1,3 +1,9 @@
+ubuntustudio-controls (1.12.1) focal; urgency=medium
+
+  * Fix for inappropriate useradd in ubuntustudio-system (should be usermod)
+
+ -- Erich Eickmeyer <erich@ericheickmeyer.com>  Sat, 29 Feb 2020 15:00:37 -0800
+
 ubuntustudio-controls (1.12) focal; urgency=medium
 
   [ Len Ovens ]
