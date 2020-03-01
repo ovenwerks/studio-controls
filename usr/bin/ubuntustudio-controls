@@ -1017,6 +1017,8 @@ class UbuntuStudioControls:
         ''' refresh tablet tab in gui. By the time we open -controls
             The tablet should be set with whatever the config file has
             so we read the device values.'''
+        return
+        ''' not used yet '''
         d_lines = []
         self.pad_device_c.append(self.tab_conf['DEVICE'], self.tab_conf['DEVICE'])
         self.pad_device_c.set_active(0)
