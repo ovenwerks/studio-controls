@@ -1,3 +1,10 @@
+ubuntustudio-controls (1.12.2) focal; urgency=medium
+
+  [ Len Ovens ]
+  * Hide tablet GUI until next cycle
+
+ -- Erich Eickmeyer <erich@erich-Ubuntu>  Sun, 01 Mar 2020 16:05:13 -0800
+
 ubuntustudio-controls (1.12.1) focal; urgency=medium
 
   * Fix for inappropriate useradd in ubuntustudio-system (should be usermod)
