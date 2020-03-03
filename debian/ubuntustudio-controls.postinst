@@ -1,11 +1,4 @@
 #!/bin/sh
-# systemd services need a symlink to work.
-
-  /bin/mkdir -p /usr/lib/systemd/user/indicator-messages.service.wants/
-  /bin/mkdir -p /usr/lib/systemd/user/default.target.wants/
-  /bin/ln -s /usr/lib/systemd/user/session-monitor.service /usr/lib/systemd/user/indicator-messages.service.wants/session-monitor.service
-  /bin/ln -s /usr/lib/systemd/user/studio.service /usr/lib/systemd/user/default.target.wants/studio.service
-
   if [ -f "/etc/xdg/autostart/autojack.desktop" ]; then
     rm /etc/xdg/autostart/autojack.desktop
   fi
