@@ -1,3 +1,9 @@
+ubuntustudio-controls (1.12.3) focal; urgency=medium
+
+  * Remove symlink creation from postinst, make relative symlinks
+
+ -- Erich Eickmeyer <erich@ericheickmeyer.com>  Mon, 02 Mar 2020 20:58:50 -0800
+
 ubuntustudio-controls (1.12.2) focal; urgency=medium
 
   [ Len Ovens ]
