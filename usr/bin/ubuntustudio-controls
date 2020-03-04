@@ -172,10 +172,15 @@ class UbuntuStudioControls:
         self.tab_but_key = builder.get_object('tab_but_key')
         # need 12 buttons too
         ''' pen '''
-        self.pen_top_x = builder.get_object('pen_top_x')
-        self.pen_top_y = builder.get_object('pen_top_y')
-        self.pen_bot_x = builder.get_object('pen_bot_x')
-        self.pen_bot_y = builder.get_object('pen_bot_y')
+        self.tab_top_x = builder.get_object('tab_top_x')
+        self.tab_top_y = builder.get_object('tab_top_y')
+        self.tab_bot_x = builder.get_object('tab_bot_x')
+        self.tab_bot_y = builder.get_object('tab_bot_y')
+        #default is 0->100
+        self.tab_top_x.set_range(0, 65000)
+        self.tab_top_y.set_range(0, 65000)
+        self.tab_bot_x.set_range(0, 65000)
+        self.tab_bot_y.set_range(0, 65000)
         #self.pen_device_c = builder.get_object('pen_device')
 
         '''Dbus monitoring'''
@@ -252,11 +257,6 @@ class UbuntuStudioControls:
         # People who have more than one tablet will want to save
         # settings for all of them not just one of them.
         # but for now we assume one tablet
-        w = Gtk.Window()
-        screen = w.get_screen()
-        m = screen.get_monitor_at_window(screen.get_active_window())
-        curmon = screen.get_monitor_geometry(m)
-        pos = f"{str(curmon.x)} {str(curmon.y)} {str(curmon.width + curmon.x)} {str(curmon.height + curmon.y)}"
         self.config['TABLET'] = {
             'DEVICE': "none",
             'BUTTON1': "none none none",
@@ -271,7 +271,7 @@ class UbuntuStudioControls:
             'BUTTON14': "none none none",
             'BUTTON15': "none none none",
             'BUTTON16': "none none none",
-            'POSITION': pos,
+            'POSITION': "",
             'PEN': "none",
         }
         self.tab_conf = self.config['TABLET']
@@ -1017,9 +1017,10 @@ class UbuntuStudioControls:
         ''' refresh tablet tab in gui. By the time we open -controls
             The tablet should be set with whatever the config file has
             so we read the device values.'''
-        return
-        ''' not used yet '''
+        # first add any device from config
         d_lines = []
+        if self.tab_conf['DEVICE'] == "":
+            self.tab_conf['DEVICE'] = "none"
         self.pad_device_c.append(self.tab_conf['DEVICE'], self.tab_conf['DEVICE'])
         self.pad_device_c.set_active(0)
 
@@ -1038,27 +1039,73 @@ class UbuntuStudioControls:
                     print(f"have a pad, device = {device}")
                     if device != self.tab_conf['DEVICE']:
                         self.pad_device_c.append(device, device)
-
-
         pad_dev = ""
         if d_lines != []:
             pad_dev = self.pad_device_c.get_active_id()
+        # display current button values
+        button_set = self.tab_conf[self.tab_but_num.get_active_id()].split()
+        if button_set == []:
+            button_set = ['none', 'none', 'none']
+        self.tab_but_mod1.set_active_id(button_set[0])
+        self.tab_but_mod2.set_active_id(button_set[1])
+        if button_set[2] == "none":
+            self.tab_but_key.set_text("")
+        else:
+            self.tab_but_key.set_text(button_set[2])
+        # display current tablet position (and size) values
+        pad_pos = self.tab_conf['POSITION'].split()
+        if pad_pos == []:
+            # if no prior size use current display size
+            # XXX at some time we will provide a convenience dropdown for:
+            # this display1, diplay2, desktop, select window(?)
+            w = Gtk.Window()
+            screen = w.get_screen()
+            m = screen.get_monitor_at_window(screen.get_active_window())
+            curmon = screen.get_monitor_geometry(m)
+            pad_pos = [str(curmon.x), str(curmon.y), str(curmon.width + curmon.x), str(curmon.height + curmon.y)]
+        print(str(pad_pos))
+        self.tab_top_x.set_value(int(pad_pos[0]))
+        self.tab_top_y.set_value(int(pad_pos[1]))
+        self.tab_bot_x.set_value(int(pad_pos[2]))
+        self.tab_bot_y.set_value(int(pad_pos[3]))
 
 
     def tab_device_cb(self, widget):
         ''' device is changed may have been none before so
             refill all tablet spots '''
+        self.tab_conf['DEVICE'] = widget.get_active_id()
+        # Do we really want to do below??? We only keep one sets of buttons.
+        return
+        # so block it out for now with return. when we save more than one set of device settings we can add it back
         self.refresh_tablet()
 
     def tab_but_num_cb(self, widget):
         ''' button number changed, refill related widgets '''
+        self.refresh_tablet()
 
     def tab_but_mod_cb(self, widget):
         ''' one of the button variables has changed, save the three '''
+        mod1 = str(self.tab_but_mod1.get_active_id())
+        mod2 = str(self.tab_but_mod2.get_active_id())
+        key = str(self.tab_but_key.get_text())
+        if key == "":
+            key = "none"
+        save_string = f"{mod1} {mod2} {key}"
+        self.tab_conf[self.tab_but_num.get_active_id()] = save_string
 
     def tab_apply_cb(self, widget):
         ''' wrap it all up and send it to the device '''
-            
+        # save the position
+        tx = str(int(self.tab_top_x.get_value()))
+        ty = str(int(self.tab_top_y.get_value()))
+        bx = str(int(self.tab_bot_x.get_value()))
+        print(bx)
+        by = str(int(self.tab_bot_y.get_value()))
+        self.tab_conf['POSITION'] = f"{tx} {ty} {bx} {by}"
+        print(f"saved position: {self.tab_conf['POSITION']}")
+        self.config_save()
+        subprocess.run(["/usr/bin/dbus-send", "--type=signal", "/", "org.ubuntustudio.control.event.tablet_signal"],
+                   shell=False)
 
 
     def on_button_help_ok_clicked(self, button):
