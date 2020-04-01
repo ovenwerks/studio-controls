@@ -2,4 +2,6 @@
   if [ -f "/etc/xdg/autostart/autojack.desktop" ]; then
     rm /etc/xdg/autostart/autojack.desktop
   fi
+#Remove systemd service file for non-Ubuntu systems
+rm /lib/systemd/system/studio-controls.service
 #DEBHELPER#
