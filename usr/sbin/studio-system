@@ -1,6 +1,6 @@
 #! /bin/sh
 #
-# Script to change do system side things for ubuntustudio-controls
+# Script to change do system side things for studio-controls
 #
 #
 GOVERNOR="ondemand"
@@ -8,8 +8,8 @@ NO_TURBO="0"
 
 set_governors() {
   # do this here in case we hit exit 0 before the end
-  echo "NO_TURBO=$NO_TURBO\n" > /etc/default/ubuntustudio
-  echo "GOVERNOR=${GOVERNOR}\n" >> /etc/default/ubuntustudio
+  echo "NO_TURBO=$NO_TURBO\n" > /etc/default/studio
+  echo "GOVERNOR=${GOVERNOR}\n" >> /etc/default/studio
   AVAILABLE="/sys/devices/system/cpu/cpu0/cpufreq/scaling_available_governors"
   [ -f $AVAILABLE ] || exit 0
   read governors < $AVAILABLE
@@ -45,15 +45,15 @@ set_governors() {
 			echo -n $GOVERNOR > $CPUFREQ
 		done
   #reswrite just in case we corrected something
-  echo "NO_TURBO=$NO_TURBO\n" > /etc/default/ubuntustudio
-  echo "GOVERNOR=${GOVERNOR}\n" >> /etc/default/ubuntustudio
+  echo "NO_TURBO=$NO_TURBO\n" > /etc/default/studio
+  echo "GOVERNOR=${GOVERNOR}\n" >> /etc/default/studio
 
 }
 
 # any setting in this file will override the above defaults.
-# ubuntustudio-controls will normally write the defaults file
-if [ -f /etc/default/ubuntustudio ] ; then
-	. /etc/default/ubuntustudio
+# studio-controls will normally write the defaults file
+if [ -f /etc/default/studio ] ; then
+	. /etc/default/studio
 fi
 
 case "$1" in
@@ -76,7 +76,7 @@ case "$1" in
 		if [ -f /etc/security/limits.d/audio.conf.disabled ]; then
 			mv /etc/security/limits.d/audio.conf.disabled /etc/security/limits.d/audio.conf
 		elif ! [ -f /etc/security/limits.d/audio.conf ]; then
-			cp /usr/share/ubuntustudio-controls/audio.conf /etc/security/limits.d/audio.conf
+			cp /usr/share/studio-controls/audio.conf /etc/security/limits.d/audio.conf
 		fi
     if [ ${PKEXEC_UID} -gt 999 ]; then
       /usr/sbin/usermod `id -nu ${PKEXEC_UID}` -aG audio
@@ -85,16 +85,16 @@ case "$1" in
 
 	boost)
 		if [ -f /sys/devices/system/cpu/intel_pstate/no_turbo ]; then
-			echo "NO_TURBO=0\n" > /etc/default/ubuntustudio
-      echo "GOVERNOR=${GOVERNOR}" >> /etc/default/ubuntustudio
+			echo "NO_TURBO=0\n" > /etc/default/studio
+      echo "GOVERNOR=${GOVERNOR}" >> /etc/default/studio
 			echo "0" | tee /sys/devices/system/cpu/intel_pstate/no_turbo
 		fi
 		;;
 
 	noboost)
 		if [ -f /sys/devices/system/cpu/intel_pstate/no_turbo ]; then
-			echo "NO_TURBO=1\n" > /etc/default/ubuntustudio
-      echo "GOVERNOR=${GOVERNOR}" >> /etc/default/ubuntustudio
+			echo "NO_TURBO=1\n" > /etc/default/studio
+      echo "GOVERNOR=${GOVERNOR}" >> /etc/default/studio
 			echo "1" | tee /sys/devices/system/cpu/intel_pstate/no_turbo
 		fi
 		;;

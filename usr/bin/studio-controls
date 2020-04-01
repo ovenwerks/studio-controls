@@ -82,7 +82,7 @@ class RTSetup:
     def __init__(self):
         self.enabled_path = "/etc/security/limits.d/audio.conf"
         self.disabled_path = "/etc/security/limits.d/audio.conf.disabled"
-        self.backup_file = "/usr/share/ubuntustudio-controls/audio.conf"
+        self.backup_file = "/usr/share/studio-controls/audio.conf"
 
     def set_governor(self, enable):
         if enable == True:
@@ -92,18 +92,18 @@ class RTSetup:
                 gov = "powersave"
             else:
                 gov = "ondemand"
-        subprocess.run(["/usr/bin/pkexec", "/usr/sbin/ubuntustudio-system", gov], shell=False)
+        subprocess.run(["/usr/bin/pkexec", "/usr/sbin/studio-system", gov], shell=False)
 
     def set_boost(self, enable):
         boost_path = "/sys/devices/system/cpu/intel_pstate/no_turbo"
         if os.path.exists(boost_path):
             if enable == True:
-                subprocess.run(["/usr/bin/pkexec", "/usr/sbin/ubuntustudio-system", "boost"], shell=False)
+                subprocess.run(["/usr/bin/pkexec", "/usr/sbin/studio-system", "boost"], shell=False)
             else:
-                subprocess.run(["/usr/bin/pkexec", "/usr/sbin/ubuntustudio-system", "noboost"], shell=False)
+                subprocess.run(["/usr/bin/pkexec", "/usr/sbin/studio-system", "noboost"], shell=False)
 
 
-class UbuntuStudioControls:
+class StudioControls:
     config = configparser.ConfigParser()
     def_config = config['DEFAULT']
     #tab_conf = config['TABLET']
@@ -118,7 +118,7 @@ class UbuntuStudioControls:
         self.sysinfo = SysInfo()
         '''Create the GUI'''
         builder = Gtk.Builder()
-        builder.add_from_file("/usr/share/ubuntustudio-controls/ubuntustudio-controls.glade")
+        builder.add_from_file("/usr/share/studio-controls/studio-controls.glade")
         '''Get windows'''
         self.window_main = builder.get_object('window_main')
         self.window_help = builder.get_object('window_help')
@@ -180,9 +180,9 @@ class UbuntuStudioControls:
 
         '''Dbus monitoring'''
         user_bus = dbus.SessionBus()
-        user_bus.add_signal_receiver(self.db_ses_cb, dbus_interface='org.ubuntustudio.control.event',
+        user_bus.add_signal_receiver(self.db_ses_cb, dbus_interface='org.studio.control.event',
                                      signal_name='V3_1_signal')
-        user_bus.add_signal_receiver(self.db_new_usb, dbus_interface='org.ubuntustudio.control.event',
+        user_bus.add_signal_receiver(self.db_new_usb, dbus_interface='org.studio.control.event',
                                      signal_name='usb_signal')
 
         '''Check if audio.conf and/or audio.conf.disabled exists, returns are true or false'''
@@ -666,7 +666,7 @@ class UbuntuStudioControls:
         self.window_help.show()
 
     def rt_button_hit(self, button):
-        subprocess.run(["/usr/bin/pkexec", "/usr/sbin/ubuntustudio-system", "fix"], shell=False)
+        subprocess.run(["/usr/bin/pkexec", "/usr/sbin/studio-system", "fix"], shell=False)
         self.rt_button.set_label("Logout required")
         self.rt_button.set_sensitive(False)
         self.message_dialog_rt_info.show()
@@ -927,13 +927,13 @@ class UbuntuStudioControls:
         self.def_config['JACK'] = "True"
         self.config_save()
         if autojack:
-            subprocess.run(["/usr/bin/dbus-send", "--type=signal", "/", "org.ubuntustudio.control.event.start_signal"],
+            subprocess.run(["/usr/bin/dbus-send", "--type=signal", "/", "org.studio.control.event.start_signal"],
                            shell=False)
         else:
             time.sleep(5)
             if autojack:
                 subprocess.run(
-                    ["/usr/bin/dbus-send", "--type=signal", "/", "org.ubuntustudio.control.event.start_signal"],
+                    ["/usr/bin/dbus-send", "--type=signal", "/", "org.studio.control.event.start_signal"],
                     shell=False)
             else:
                 self.start_autojack()
@@ -943,13 +943,13 @@ class UbuntuStudioControls:
         self.def_config['JACK'] = "False"
         self.config_save()
         if autojack:
-            subprocess.run(["/usr/bin/dbus-send", "--type=signal", "/", "org.ubuntustudio.control.event.stop_signal"],
+            subprocess.run(["/usr/bin/dbus-send", "--type=signal", "/", "org.studio.control.event.stop_signal"],
                            shell=False)
         else:
             time.sleep(5)
             if autojack:
                 subprocess.run(
-                    ["/usr/bin/dbus-send", "--type=signal", "/", "org.ubuntustudio.control.event.stop_signal"],
+                    ["/usr/bin/dbus-send", "--type=signal", "/", "org.studio.control.event.stop_signal"],
                     shell=False)
             else:
                 self.start_autojack()
@@ -959,13 +959,13 @@ class UbuntuStudioControls:
         global autojack
         self.config_save()
         if autojack:
-            subprocess.run(["/usr/bin/dbus-send", "--type=signal", "/", "org.ubuntustudio.control.event.config_signal"],
+            subprocess.run(["/usr/bin/dbus-send", "--type=signal", "/", "org.studio.control.event.config_signal"],
                            shell=False)
         else:
             time.sleep(5)
             if autojack:
                 subprocess.run(
-                    ["/usr/bin/dbus-send", "--type=signal", "/", "org.ubuntustudio.control.event.config_signal"],
+                    ["/usr/bin/dbus-send", "--type=signal", "/", "org.studio.control.event.config_signal"],
                     shell=False)
             else:
                 self.start_autojack()
@@ -1007,7 +1007,7 @@ class UbuntuStudioControls:
         -controls'''
         print("Starting Autojack...")
         # first tell any old autojack to die
-        subprocess.run(["/usr/bin/dbus-send", "--type=signal", "/", "org.ubuntustudio.control.event.quit_signal"],
+        subprocess.run(["/usr/bin/dbus-send", "--type=signal", "/", "org.studio.control.event.quit_signal"],
                        shell=False)
         # do it
         subprocess.Popen(["/usr/bin/autojack"], stdin=subprocess.DEVNULL, stdout=subprocess.DEVNULL,
@@ -1070,11 +1070,11 @@ class UbuntuStudioControls:
     def on_button_rt_info_ok_clicked(self, button):
         self.message_dialog_rt_info.hide()
 
-    subprocess.run(["/usr/bin/dbus-send", "--type=signal", "/", "org.ubuntustudio.control.event.ping_signal"],
+    subprocess.run(["/usr/bin/dbus-send", "--type=signal", "/", "org.studio.control.event.ping_signal"],
                    shell=False)
 
 
-us = UbuntuStudioControls()
+us = StudioControls()
 us.window_main.show_all()
 
 Gtk.main()

@@ -2,7 +2,7 @@
 
 set -eu
 
-DESC="Ubuntustudio Controls"
+DESC="Studio Controls"
 
 PATH=/usr/local/sbin:/usr/local/bin:/sbin:/bin:/usr/sbin:/usr/bin
 
@@ -21,8 +21,8 @@ check_turbo_avail() {
 
 # any setting in this file will override the above defaults.
 # ubuntustudio-controls will normally write the defaults file
-if [ -f /etc/default/ubuntustudio ] ; then
-	. /etc/default/ubuntustudio
+if [ -f /etc/default/studio ] ; then
+	. /etc/default/studio
 fi
 
 # if not enabled then exit gracefully

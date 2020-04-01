@@ -1,29 +1,29 @@
-.TH ubuntustudio-controls 1 "16 June 2018" "version 1.5"
+.TH studio-controls 1 "16 June 2018" "version 1.5"
 .SH NAME
-ubuntustudio-controls \- Is an audio setup utility for Ubuntu Studio
+studio-controls \- Is an audio setup utility for sound studio use
 .SH SYNOPSIS
-ubuntustudio-controls
+studio-controls
 .SH DESCRIPTION
-Ubuntustudio-controls is an audio setup utility. It has a GUI that first
+Studio-controls is an audio setup utility. It has a GUI that first
 checks that the user has correct real time permissions to run professional
 audio applications. The user is warned if real time permissions are not
 correct and if the user desires, corrects permissions. The user will be
 asked to log out and back in so these permissions can take effect.
 .LP
 The running of jackdbus and extra utilities is also set up with
-ubuntustudio-controls. Along with jackdbus itself, extra audio devices
+studio-controls. Along with jackdbus itself, extra audio devices
 can be set up as jack clients, USB devices can become jack master when
 plugged in or added as jack clients. A2jmidid can be started to bridge
 ALSA MIDI devices and applications to jack. Pulseaudio can be bridged
 and connected to the right outputs of an output device.
 .LP
-Ubuntustudio-controls tries to be non-invasive and when jack is turned off
+Studio-controls tries to be non-invasive and when jack is turned off
 the system should run normally using Pulseaudio for sound.
 .SH OPTIONS
-Ubuntustudio-controls does not take any options.
+Studio-controls does not take any options.
 .SH SEE ALSO
-autojack(2), ubuntustudio-system(2)
+autojack(2), studio-system(2)
 .SH BUGS
 No known bugs.
 .SH AUTHOR
-Len Ovens (len@ubuntustudio.org)
+Len Ovens (len@ovenwerks.net)

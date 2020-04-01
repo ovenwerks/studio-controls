@@ -14,7 +14,7 @@ ExecStart=/bin/sleep infinity
 
 TimeoutStopSec=4
 
-ExecStop=/bin/sleep 3
+ExecStop=/bin/sleep 5
 ExecStopPost=/bin/systemctl --user start systemd-exit.service
 
 

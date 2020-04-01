@@ -1,4 +1,4 @@
-Ubuntustudio-controls version 1.11.3
+studio-controls version 1.11.3
 
 New for this version
 - Bug fixes: check if device removed signal is true

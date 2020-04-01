@@ -10,7 +10,7 @@
 # name is present in XDEV then slave mode is assumed. If DEV has the
 # device name, then master is chosen.
 #
-# autojack also monitors dbus for messages from ubuntustudio-controls to:
+# autojack also monitors dbus for messages from studio-controls to:
 # - stop jack
 # - re/start jack
 # - remove a USB device as jack master to allow safe device removal
@@ -610,7 +610,7 @@ def msg_cb_new(*args, **kwargs):
         # make sure device is USB and is not midi only
         if device[1] and device[2]:
             # tell gui devicelist has changed so it can up date device dropdowns
-            subprocess.run(["/usr/bin/dbus-send", "--type=signal", "/", "org.ubuntustudio.control.event.usb_signal"],
+            subprocess.run(["/usr/bin/dbus-send", "--type=signal", "/", "org.studio.control.event.usb_signal"],
                            shell=False)
 
             cid = f"{device[0]},0,0"
@@ -647,7 +647,7 @@ def msg_cb_removed(*args, **kwargs):
 
     if args[0].find("sound-card") >= 0:
         # tell gui devicelist has changed
-        subprocess.run(["/usr/bin/dbus-send", "--type=signal", "/", "org.ubuntustudio.control.event.usb_signal"],
+        subprocess.run(["/usr/bin/dbus-send", "--type=signal", "/", "org.studio.control.event.usb_signal"],
                        shell=False)
 
         a_if = args[0].split("sound-card", 1)
@@ -893,13 +893,13 @@ def ses_cb_ping(*args, **kwargs):
     ''' dbus call back when config signal caught '''
     logging.info("Got ping signal.")
     time.sleep(3)
-    subprocess.run(["/usr/bin/dbus-send", "--type=signal", "/", "org.ubuntustudio.control.event.V3_1_signal"],
+    subprocess.run(["/usr/bin/dbus-send", "--type=signal", "/", "org.studio.control.event.V3_1_signal"],
                    shell=False)
 
 
 def main():
     ''' Autojack runs at session start and manages audio for the session.
-    this is the daemon for ubuntustudio-controls'''
+    this is the daemon for studio-controls'''
     global last_master
     global procs
     procs = []
@@ -932,7 +932,7 @@ def main():
     signal.signal(signal.SIGALRM, handler)
     signal.signal(signal.SIGTERM, handler)
     subprocess.run(["/usr/bin/dbus-send", "--type=signal", "/",
-                    "org.ubuntustudio.control.event.quit_signal"], shell=False)
+                    "org.studio.control.event.quit_signal"], shell=False)
     logging.info('kill other autojack intances')
     time.sleep(3)
 
@@ -944,21 +944,21 @@ def main():
                                    signal_name='UnitRemoved')
 
     user_bus = dbus.SessionBus()
-    user_bus.add_signal_receiver(ses_cb_stop, dbus_interface='org.ubuntustudio.control.event',
+    user_bus.add_signal_receiver(ses_cb_stop, dbus_interface='org.studio.control.event',
                                  signal_name='stop_signal')
-    user_bus.add_signal_receiver(ses_cb_start, dbus_interface='org.ubuntustudio.control.event',
+    user_bus.add_signal_receiver(ses_cb_start, dbus_interface='org.studio.control.event',
                                  signal_name='start_signal')
-    user_bus.add_signal_receiver(ses_cb_config, dbus_interface='org.ubuntustudio.control.event',
+    user_bus.add_signal_receiver(ses_cb_config, dbus_interface='org.studio.control.event',
                                  signal_name='config_signal')
-    user_bus.add_signal_receiver(ses_cb_ping, dbus_interface='org.ubuntustudio.control.event',
+    user_bus.add_signal_receiver(ses_cb_ping, dbus_interface='org.studio.control.event',
                                  signal_name='ping_signal')
-    user_bus.add_signal_receiver(ses_cb_tablet, dbus_interface='org.ubuntustudio.control.event',
+    user_bus.add_signal_receiver(ses_cb_tablet, dbus_interface='org.studio.control.event',
                                  signal_name='tablet_signal')
-    user_bus.add_signal_receiver(ses_cb_quit, dbus_interface='org.ubuntustudio.control.event',
+    user_bus.add_signal_receiver(ses_cb_quit, dbus_interface='org.studio.control.event',
                                  signal_name='quit_signal')
 
     subprocess.run(["/usr/bin/dbus-send", "--type=signal", "/",
-                    "org.ubuntustudio.control.event.V3_1_signal"], shell=False)
+                    "org.studio.control.event.V3_1_signal"], shell=False)
 
     loop = GLib.MainLoop()
     loop.run()

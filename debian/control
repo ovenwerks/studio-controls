@@ -1,14 +1,14 @@
-Source: ubuntustudio-controls
+Source: studio-controls
 Section: admin
 Priority: optional
-Maintainer: Ubuntu Studio Development Team <ubuntu-studio-devel@lists.ubuntu.com>
+Maintainer: Len Ovens <len@ovenwerks.net>
 Build-Depends: debhelper (>= 11)
 Standards-Version: 4.3.0
-Vcs-Git: https://git.launchpad.net/ubuntustudio-controls
-Vcs-Browser: https://git.launchpad.net/ubuntustudio-controls
-Homepage: https://launchpad.net/ubuntustudio-controls
+Vcs-Git: https://github.com/ovenwerks/studio-controls.git
+Vcs-Browser: https://github.com/ovenwerks/studio-controls.git
+Homepage: https://github.com/ovenwerks/studio-controls.git
 
-Package: ubuntustudio-controls
+Package: studio-controls
 Architecture: all
 Depends: a2jmidid,
          jackd2,
@@ -23,8 +23,8 @@ Depends: a2jmidid,
          ${misc:Depends}
 Suggests: carla
 Conflicts: cadence
-Description: Ubuntu Studio Controls
- Ubuntu Studio Controls is a small application that enables/disables realtime
+Description: Studio Controls
+ Studio Controls is a small application that enables/disables realtime
  privilege for users and controls jackdbus. It allows Jackdbus to be run from
  session start. It also will detect USB audio devices getting plugged in after
  session start and optionally connect them to jackdbus as a client or switch

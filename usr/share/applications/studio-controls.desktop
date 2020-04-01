@@ -1,9 +1,9 @@
 [Desktop Entry]
-Name=Ubuntu Studio Controls
+Name=Studio Controls
 GenericName=Multimedia Controls
 Comment=Setup Audio, Video and Graphics
-Exec=ubuntustudio-controls
-Icon=ubuntustudio-controls
+Exec=studio-controls
+Icon=studio-controls
 Terminal=false
 Type=Application
 Categories=Settings;Audio
