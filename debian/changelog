@@ -1,8 +1,9 @@
-ubuntustudio-controls (1.12.3) UNRELEASED; urgency=high
+ubuntustudio-controls (1.12.4) focal; urgency=high
 
+  [ Len Ovens ]
   * Fix USB bridge checkbox so it actually changes states (LP #1872250)
 
- -- Len Ovens <len@ubuntustudio.org>  Sun, 12 Apr 2020 17:28:03 -0700
+ -- Erich Eickmeyer <erich@ericheickmeyer.com>  Sun, 12 Apr 2020 17:58:04 -0700
 
 ubuntustudio-controls (1.12.3) focal; urgency=medium
 
