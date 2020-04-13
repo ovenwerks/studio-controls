@@ -4,15 +4,15 @@
  "http://www.freedesktop.org/standards/PolicyKit/1/policyconfig.dtd">
 <policyconfig>
 
-  <action id="com.ubuntustudio.pkexec.ubuntustudio-controls">
-    <message>Authentication is required to run Ubuntu Studio Controls</message>
+  <action id="com.studiocontrols.pkexec.studio-controls">
+    <message>Authentication is required to run Studio Controls</message>
     <icon_name>ubuntustudio-controls</icon_name>
     <defaults>
       <allow_any>yes</allow_any>
       <allow_inactive>yes</allow_inactive>
       <allow_active>yes</allow_active>
     </defaults>
-    <annotate key="org.freedesktop.policykit.exec.path">/usr/sbin/ubuntustudio-system</annotate>
+    <annotate key="org.freedesktop.policykit.exec.path">/usr/sbin/studio-system</annotate>
     <!--annotate key="org.freedesktop.policykit.exec.allow_gui">true</annotate -->
   </action>
 
