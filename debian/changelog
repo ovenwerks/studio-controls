@@ -1,3 +1,9 @@
+ubuntustudio-controls (1.12.3) UNRELEASED; urgency=high
+
+  * Fix USB bridge checkbox so it actually changes states (LP #1872250)
+
+ -- Len Ovens <len@ubuntustudio.org>  Sun, 12 Apr 2020 17:28:03 -0700
+
 ubuntustudio-controls (1.12.3) focal; urgency=medium
 
   * Remove symlink creation from postinst, make relative symlinks

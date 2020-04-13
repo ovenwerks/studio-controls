@@ -362,10 +362,8 @@ def reconfig():
                 # USB device
                 if def_config['USBAUTO'] != old_def_config['USBAUTO'] or def_config['USB-SINGLE'] != old_def_config[
                     'USB-SINGLE']:
-                    def_config['USBAUTO'] = old_def_config['USBAUTO']
-                    def_config['USB-SINGLE'] = old_def_config['USB-SINGLE']
                     kill_slave(f"{device[0]},0,0")
-                    if old_def_config['USBAUTO'] == "True":
+                    if def_config['USBAUTO'] == "True":
                         start_slave(f"{device[0]},0,0")
             else:
                 # not USB device
