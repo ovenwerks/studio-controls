@@ -613,8 +613,12 @@ class StudioControls:
                             with open(f"/proc/asound/card{str(x)}/pcm{str(y)}{d_type[0]}/sub{str(z)}/info",
                                       "r") as info_file:
                                 for line in info_file:
-                                    if re.match("^name:", line.rstrip()):
-                                        dname = line.rstrip().split(": ", 1)[1]
+                                    clean_line = line.rstrip()
+                                    if re.match("^name:", clean_line):
+                                        line_list = clean_line.split(": ", 1)
+                                        dname = ""
+                                        if len(line_list) > 1:
+                                            dname = line_list[1]
                                         next_id = f"{cname},{str(y)},{str(z)}"
                                         next_d = f"{next_id} {d_type} ({dname})"
                             #   Have everything we need now

@@ -1,3 +1,9 @@
+ubuntustudio-controls (1.12.4) UNRELEASED; urgency=medium
+
+  * Check if device has a description before trying to use it (lp: #1872187)
+
+ -- Len Ovens <len@ovenwerks.net>  Tue, 28 Apr 2020 11:59:36 -0700
+
 ubuntustudio-controls (1.12.4) focal; urgency=high
 
   [ Len Ovens ]

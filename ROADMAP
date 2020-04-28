@@ -9,19 +9,23 @@ Bugs:
 	fixed - zita needs to read in all rates
 
 Features:
+	- default should be changed from hw:0,0,0 to the first PCH so
+		we skip any hdmi (which should never be default... or even used with jack)
+	- bluetooth via pulse. use: pacmd load-module module-loopback latency_msec=5
+		and: pacmd unload-module module-loopback
+		need to figue out how to auto route jack->pulse bridge to loop
+		and loop to bt device.
+
 	- logrotate for shorter log files
 	- jack client should start once and detect jack stop callback
 		check DSP regularly and add xruns.
 	- jack detection when jack is stopped should only happen once
 		when entering audio settings page.
 	- add pre/post jack start/stop scripting
-	- add usb bridge and pulse bridge tabs
-		- USB bridge tab should have a way to set devices
-			not to bridge.
-		- pulse bridge should allow for naming bridges
+	- USB bridge tab should have a way to set devices
+		not to bridge.
 	- add drawing tablet support
 		- start with setting size and setting buttons
-	- add the rest of the supported backends
 	- add button to system page to select between lowlatency or generic
 		kernel as default.
 	- monitor headphone plug status if PCH is being used for output
