@@ -15,6 +15,15 @@ Features:
 		and: pacmd unload-module module-loopback
 		need to figue out how to auto route jack->pulse bridge to loop
 		and loop to bt device.
+	- USB bridge tab should have a way to set devices
+		not to bridge.
+	- add drawing tablet support
+		- start listing xsetwacom and xsetpointer devices and allowing
+		user to take pointers and add them to wacom devices (if possiblle)
+		- add module that allows setting of display settings in tablets that
+		have displays.
+		- Then see if we can match plasma utility for setting size and 
+		setting buttons etc.
 
 	- logrotate for shorter log files
 	- jack client should start once and detect jack stop callback
@@ -22,10 +31,6 @@ Features:
 	- jack detection when jack is stopped should only happen once
 		when entering audio settings page.
 	- add pre/post jack start/stop scripting
-	- USB bridge tab should have a way to set devices
-		not to bridge.
-	- add drawing tablet support
-		- start with setting size and setting buttons
 	- add button to system page to select between lowlatency or generic
 		kernel as default.
 	- monitor headphone plug status if PCH is being used for output

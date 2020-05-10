@@ -163,21 +163,6 @@ class StudioControls:
         self.pj_in_con = builder.get_object('pj_in_con')
         self.pj_out_con = builder.get_object('pj_out_con')
 
-        ''' tablet '''
-        ''' pad '''
-        self.pad_device_c = builder.get_object('pad_device')
-        self.tab_but_num = builder.get_object('tab_but_num')
-        self.tab_but_mod1 = builder.get_object('tab_but_mod1')
-        self.tab_but_mod2 = builder.get_object('tab_but_mod2')
-        self.tab_but_key = builder.get_object('tab_but_key')
-        # need 12 buttons too
-        ''' pen '''
-        self.pen_top_x = builder.get_object('pen_top_x')
-        self.pen_top_y = builder.get_object('pen_top_y')
-        self.pen_bot_x = builder.get_object('pen_bot_x')
-        self.pen_bot_y = builder.get_object('pen_bot_y')
-        #self.pen_device_c = builder.get_object('pen_device')
-
         '''Dbus monitoring'''
         user_bus = dbus.SessionBus()
         user_bus.add_signal_receiver(self.db_ses_cb, dbus_interface='org.studio.control.event',
@@ -247,34 +232,6 @@ class StudioControls:
             'USBDEV': "",
             'LOG-LEVEL': "19",
         }
-
-        # This is going to bite us sometime...
-        # People who have more than one tablet will want to save
-        # settings for all of them not just one of them.
-        # but for now we assume one tablet
-        w = Gtk.Window()
-        screen = w.get_screen()
-        m = screen.get_monitor_at_window(screen.get_active_window())
-        curmon = screen.get_monitor_geometry(m)
-        pos = f"{str(curmon.x)} {str(curmon.y)} {str(curmon.width + curmon.x)} {str(curmon.height + curmon.y)}"
-        self.config['TABLET'] = {
-            'DEVICE': "none",
-            'BUTTON1': "none none none",
-            'BUTTON2': "none none none",
-            'BUTTON3': "none none none",
-            'BUTTON8': "none none none",
-            'BUTTON9': "none none none",
-            'BUTTON10': "none none none",
-            'BUTTON11': "none none none",
-            'BUTTON12': "none none none",
-            'BUTTON13': "none none none",
-            'BUTTON14': "none none none",
-            'BUTTON15': "none none none",
-            'BUTTON16': "none none none",
-            'POSITION': pos,
-            'PEN': "none",
-        }
-        self.tab_conf = self.config['TABLET']
 
         global autojack
         global newusb
@@ -393,7 +350,6 @@ class StudioControls:
         self.i_in = 0
         self.i_out = 0
         self.refresh_pulse_tab(self.i_in, self.i_out)
-        self.refresh_tablet()
 
         handlers = {
             "on_window_main_delete_event": self.on_window_main_delete_event,
@@ -432,10 +388,6 @@ class StudioControls:
             "pj_in_name_cb": self.pj_in_name_cb,
             "pj_out_name_cb": self.pj_out_name_cb,
 
-            "tab_device_cb": self.tab_device_cb,
-            "tab_but_num_cb": self.tab_but_num_cb,
-            "tab_but_mod_cb": self.tab_but_mod_cb,
-            "tab_apply_cb": self.tab_apply_cb,
         }
         builder.connect_signals(handlers)
 
@@ -1016,53 +968,6 @@ class StudioControls:
         # do it
         subprocess.Popen(["/usr/bin/autojack"], stdin=subprocess.DEVNULL, stdout=subprocess.DEVNULL,
                          stderr=subprocess.STDOUT, shell=False).pid
-
-    def refresh_tablet(self):
-        ''' refresh tablet tab in gui. By the time we open -controls
-            The tablet should be set with whatever the config file has
-            so we read the device values.'''
-        return
-        ''' not used yet '''
-        d_lines = []
-        self.pad_device_c.append(self.tab_conf['DEVICE'], self.tab_conf['DEVICE'])
-        self.pad_device_c.set_active(0)
-
-        device_list = subprocess.check_output(["/usr/bin/xsetwacom", "list"], shell=False)
-        d_lines = device_list.decode()
-        for line in d_lines.split('\n'):
-            if len(line):
-                # we have a line
-                device = line.rstrip().split("id:", 1)[0].strip()
-                print (f"tablet device = {device}")
-                tablet = line.rstrip().split("type:", 1)[1].strip()
-                print (f"tablet type = {tablet}")
-                if tablet == "PAD":
-                    # this is is a pad device for the buttons tab
-                    #self.pad_device_c = builder.get_object('pad_device')
-                    print(f"have a pad, device = {device}")
-                    if device != self.tab_conf['DEVICE']:
-                        self.pad_device_c.append(device, device)
-
-
-        pad_dev = ""
-        if d_lines != []:
-            pad_dev = self.pad_device_c.get_active_id()
-
-
-    def tab_device_cb(self, widget):
-        ''' device is changed may have been none before so
-            refill all tablet spots '''
-        self.refresh_tablet()
-
-    def tab_but_num_cb(self, widget):
-        ''' button number changed, refill related widgets '''
-
-    def tab_but_mod_cb(self, widget):
-        ''' one of the button variables has changed, save the three '''
-
-    def tab_apply_cb(self, widget):
-        ''' wrap it all up and send it to the device '''
-            
 
 
     def on_button_help_ok_clicked(self, button):

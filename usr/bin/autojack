@@ -130,7 +130,6 @@ def import_config():
     ''' sets default parmeters, then reads values from configuration file'''
     global config
     global def_config
-    global tab_conf
     global config_path
     global config_file
     global zdev
@@ -146,7 +145,6 @@ def import_config():
 
     config = configparser.ConfigParser()
     def_config = config['DEFAULT']
-    #tab_conf = config['TABLET']
     config_path = "~/.config/autojack"
     config_file = "{path}/autojackrc".format(path=config_path)
     old_config_file = "~/.config/autojackrc"
@@ -174,25 +172,6 @@ def import_config():
         "PULSE": "True",
         "LOG-LEVEL": "15",
     }
-
-    config['TABLET'] = {
-        'DEVICE': "",
-        'BUTTON1': "",
-        'BUTTON2': "",
-        'BUTTON3': "",
-        'BUTTON8': "",
-        'BUTTON9': "",
-        'BUTTON10': "",
-        'BUTTON11': "",
-        'BUTTON12': "",
-        'BUTTON13': "",
-        'BUTTON14': "",
-        'BUTTON15': "",
-        'BUTTON16': "",
-        'POSITION': "",
-        'PEN': "",
-    }
-    tab_conf = config['TABLET']
 
     # read in autojack config file
     c_file = expanduser(config_file)
@@ -861,30 +840,9 @@ def ses_cb_tablet(*args, **kwargs):
     ''' dbus call back when tablet signal caught
         This reads the config file and sets the tablet
         buttons, pen and size/position'''
-    global tab_conf
+    ''' not sure what we will do with this, if anything
+		tablet plans changed/on hold for now; '''
     logging.info("Got tablet signal.")
-    import_config()
-    '''
-        'DEVICE': "",
-        device is a dual number like 256c:006e
-        for setting it becomes: 'HID 256c:006e Pad pad'
-        how we save it will depend on how it gets listed
-        'BUTTON1': "", normally the top button 'undo'
-        'BUTTON2': "", 
-        'BUTTON3': "",
-        buttons 4,5,6,7 extra
-        'BUTTON8': "",
-        'BUTTON9': "",
-        'BUTTON10': "",
-        'BUTTON11': "",
-        'BUTTON12': "",
-        'BUTTON13': "",
-        'BUTTON14': "",
-        'BUTTON15': "",
-        'BUTTON16': "",
-    '''
-    position = tab_conf['POSITION'].strip('"').split()
-    pen = tab_conf['PEN'].strip('"').split()
 
 
 def ses_cb_ping(*args, **kwargs):
