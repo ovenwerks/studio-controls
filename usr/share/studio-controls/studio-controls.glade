@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<!-- Generated with glade 3.22.1 -->
+<!-- Generated with glade 3.22.2 -->
 <interface>
   <requires lib="gtk+" version="3.12"/>
   <object class="GtkAdjustment" id="adjustment1">
@@ -30,7 +30,7 @@
     <property name="default_width">500</property>
     <property name="gravity">center</property>
     <signal name="delete-event" handler="on_window_main_delete_event" swapped="no"/>
-    <child>
+    <child type="titlebar">
       <placeholder/>
     </child>
     <child>
@@ -579,6 +579,46 @@
                           <packing>
                             <property name="left_attach">1</property>
                             <property name="top_attach">2</property>
+                          </packing>
+                        </child>
+                        <child>
+                          <object class="GtkLabel">
+                            <property name="visible">True</property>
+                            <property name="can_focus">False</property>
+                            <property name="label" translatable="yes">Device Blacklist (devices to ignore):</property>
+                          </object>
+                          <packing>
+                            <property name="left_attach">0</property>
+                            <property name="top_attach">1</property>
+                          </packing>
+                        </child>
+                        <child>
+                          <object class="GtkComboBoxText" id="blacklist_add">
+                            <property name="visible">True</property>
+                            <property name="can_focus">False</property>
+                            <property name="active">0</property>
+                            <items>
+                              <item id="label" translatable="yes">Add a Device to the Blaclist</item>
+                            </items>
+                            <signal name="changed" handler="cb_blacklist_add" swapped="no"/>
+                          </object>
+                          <packing>
+                            <property name="left_attach">1</property>
+                            <property name="top_attach">1</property>
+                          </packing>
+                        </child>
+                        <child>
+                          <object class="GtkComboBoxText" id="blacklist_remove">
+                            <property name="visible">True</property>
+                            <property name="can_focus">False</property>
+                            <items>
+                              <item id="label" translatable="yes">Remove a Device from the blacklist</item>
+                            </items>
+                            <signal name="changed" handler="cb_blacklist_remove" swapped="no"/>
+                          </object>
+                          <packing>
+                            <property name="left_attach">2</property>
+                            <property name="top_attach">1</property>
                           </packing>
                         </child>
                         <child>
@@ -1270,7 +1310,7 @@
     <property name="transient_for">window_main</property>
     <property name="attached_to">window_main</property>
     <property name="text" translatable="yes">For changes to take effect, you need to do a fresh login.</property>
-    <child>
+    <child type="titlebar">
       <placeholder/>
     </child>
     <child internal-child="vbox">
@@ -1330,7 +1370,7 @@
     <property name="attached_to">window_main</property>
     <property name="text" translatable="yes">It seems you have made settings previously and not done a fresh login, or you already have realtime settings in effect, but you are not using the file supplied with the package jackd.
 If you want to use this application for administering realtime settings, please remove any custom settings and reboot your computer.</property>
-    <child>
+    <child type="titlebar">
       <placeholder/>
     </child>
     <child internal-child="vbox">
@@ -1388,7 +1428,7 @@ If you want to use this application for administering realtime settings, please 
     <property name="resizable">False</property>
     <property name="destroy_with_parent">True</property>
     <signal name="delete-event" handler="on_window_help_delete_event" swapped="no"/>
-    <child>
+    <child type="titlebar">
       <placeholder/>
     </child>
     <child>

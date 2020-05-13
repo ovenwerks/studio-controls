@@ -154,6 +154,8 @@ class StudioControls:
         self.usb_single_ck = builder.get_object('usb_single_ck')
         self.combo_zita_add = builder.get_object('combo_zita_add')
         self.combo_zita_remove = builder.get_object('combo_zita_remove')
+        self.blacklist_add = builder.get_object('blacklist_add')
+        self.blacklist_remove = builder.get_object('blacklist_remove')
 
         '''pulse tab'''
         self.pj_in_combo = builder.get_object('pj_in_combo')
@@ -226,11 +228,12 @@ class StudioControls:
             'PJ-IN-CON': '1',
             'PJ-OUT-CON': '1',
             'A2J': "True",
-            'DEV': "0,0,0",
+            'DEV': "none",
             'USBAUTO': "True",
             'USB-SINGLE': "False",
             'USBDEV': "",
             'LOG-LEVEL': "19",
+            'BLACKLIST': "",
         }
 
         global autojack
@@ -316,6 +319,7 @@ class StudioControls:
         self.pulse_out = self.def_config['PULSE-OUT'].strip('"').split()
         self.p_in_con = self.def_config['PJ-IN-CON'].strip('"').split()
         self.p_out_con = self.def_config['PJ-OUT-CON'].strip('"').split()
+        self.blacklist = self.def_config['BLACKLIST'].strip('"').split()
 
         # Find out if jack is running
         try:
@@ -377,6 +381,8 @@ class StudioControls:
 
             "cb_zita_add": self.cb_zita_add,
             "cb_zita_remove": self.cb_zita_remove,
+            "cb_blacklist_add": self.cb_blacklist_add,
+            "cb_blacklist_remove": self.cb_blacklist_remove,
             "usb_plug_cb": self.usb_plug_cb,
 
             "pj_in_combo_cb": self.pj_in_combo_cb,
@@ -507,9 +513,6 @@ class StudioControls:
             self.chan_out_spin.set_sensitive(True)
             self.combo_periods.set_sensitive(False)
         self.jack_device_combo.get_model().clear()
-        self.jack_device_combo.append("0,0,0", "default")
-        if self.def_config['DEV'] == "0,0,0":
-            self.jack_device_combo.set_active_id("0,0,0")
 
         self.jack_usb_dev_combo.get_model().clear()
         self.jack_usb_dev_combo.append("", "No USB Master")
@@ -530,6 +533,16 @@ class StudioControls:
         self.combo_zita_add.get_model().clear()
         self.combo_zita_add.append("label", "Add (available)")
         self.combo_zita_add.set_active_id("label")
+
+        self.blacklist_remove.get_model().clear()
+        self.blacklist_remove.append("label", "Remove a Device from the Blacklist")
+        self.blacklist_remove.set_active_id("label")
+        for device in self.blacklist:
+            self.blacklist_remove.append(device, device)
+
+        self.blacklist_add.get_model().clear()
+        self.blacklist_add.append("label", "Add a Device to the Blacklist")
+        self.blacklist_add.set_active_id("label")
 
         usb_save = ""
         pci_save = ""
@@ -576,25 +589,30 @@ class StudioControls:
                             #   Have everything we need now
 
                             # this block will fit where ever we know sub-ids and description
-                            if is_usb:
-                                if usb_save == "":
-                                    usb_save = next_id
-                                if next_id != self.def_config['USBDEV'] and self.def_config['DRIVER'] == "alsa":
-                                    self.jack_usb_dev_combo.append(next_id, next_d)
+                            if not next_id in self.blacklist:
+                                self.blacklist_add.append(next_id, next_d)
+                                if is_usb:
+                                    if usb_save == "":
+                                        usb_save = next_id
+                                    if next_id != self.def_config['USBDEV'] and self.def_config['DRIVER'] == "alsa":
+                                        self.jack_usb_dev_combo.append(next_id, next_d)
 
-                            else:
-                                if pci_save == "":
-                                    pci_save = next_id
-                                if self.def_config['DRIVER'] == "alsa":
-                                    self.jack_device_combo.append(next_id, next_d)
-                                    if self.def_config['USBDEV'] == "" and self.def_config['DEV'] == next_id:
-                                        self.jack_device_combo.set_active_id(next_id)
-                                        self.dev_desc = next_d
-                                if self.def_config['DEV'] != next_id and self.zdev.count(next_id) > 0:
-                                    self.combo_zita_remove.append(next_id, next_d)
                                 else:
-                                    if self.def_config['DEV'] != next_id:
-                                        self.combo_zita_add.append(next_id, next_d)
+                                    if pci_save == "":
+                                        pci_save = next_id
+                                    if self.def_config['DRIVER'] == "alsa":
+                                        self.jack_device_combo.append(next_id, next_d)
+                                        if self.def_config['USBDEV'] == "" and self.def_config['DEV'] == next_id:
+                                            self.jack_device_combo.set_active_id(next_id)
+                                            self.dev_desc = next_d
+                                        if self.def_config['USBDEV'] == "" and self.def_config['DEV'] == "none" and next_id == "PCH,0,0":
+                                            self.jack_device_combo.set_active_id(next_id)
+                                            self.dev_desc = next_d
+                                    if self.def_config['DEV'] != next_id and self.zdev.count(next_id) > 0:
+                                        self.combo_zita_remove.append(next_id, next_d)
+                                    else:
+                                        if self.def_config['DEV'] != next_id:
+                                            self.combo_zita_add.append(next_id, next_d)
 
         if pci_save == "" and self.def_config['USBDEV'] == "":
             self.def_config['USBDEV'] = usb_save
@@ -665,6 +683,22 @@ class StudioControls:
         a_id = str(button.get_active_id())
         if a_id != "None" and a_id != "label":
             self.zdev.remove(str(a_id))
+            if not self.dirty:
+                self.dirty = True
+
+    def cb_blacklist_add(self, widget):
+        a_id = str(widget.get_active_id())
+        if a_id != "None" and a_id != "label":
+            self.blacklist.append(str(a_id))
+            self.def_config['BLACKLIST'] = ' '.join(self.blacklist)
+            if not self.dirty:
+                self.dirty = True
+
+    def cb_blacklist_remove(self, widget):
+        a_id = str(widget.get_active_id())
+        if a_id != "None" and a_id != "label":
+            self.blacklist.remove(str(a_id))
+            self.def_config['BLACKLIST'] = ' '.join(self.blacklist)
             if not self.dirty:
                 self.dirty = True
 

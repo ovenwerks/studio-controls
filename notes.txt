@@ -1,3 +1,42 @@
+studio-controls version 1.???
+
+New for this version
+- add Blacklist to keep things like webcams adding a mic
+
+studio-controls version 1.99.0
+
+New for this version
+- Update to new icon
+- remove tablet code as direction has changed
+- finish rebrand
+
+studio-controls version 1.12.5
+
+New for this version
+- Check if device has a description before trying to use it
+
+studio-controls version 1.12.4
+
+New for this version
+- Start rebranding to plain Studio Controls
+- Add systemd service for non-Ubuntu systems
+- Fix USB bridge checkbox so it actually changes states (LP #1872250)
+- Finish rebranding (icons are placeholders)
+
+studio-controls version 1.12.3
+
+New for this version
+- Change adduser to usermod -aG
+- Update copyright & AUTHORS
+
+studio-controls version 1.12.0
+
+New for this version
+- Add logging level control to GUI
+- Change from autostart to systemd unit
+- Make sure session ends so audio device is not locked
+- 
+
 studio-controls version 1.11.3
 
 New for this version

@@ -137,6 +137,7 @@ def import_config():
     global pulse_out
     global p_in_con
     global p_out_con
+    global blacklist
     zdev = []
     pulse_in = []
     pulse_out = []
@@ -171,6 +172,7 @@ def import_config():
         'USBDEV': "",
         "PULSE": "True",
         "LOG-LEVEL": "15",
+        "BLACKLIST": "",
     }
 
     # read in autojack config file
@@ -242,6 +244,7 @@ def import_config():
     if def_config['DEV'] == "default":
         def_config['DEV'] = "0,0,0"
     zdev = def_config['XDEV'].strip('"').split()
+    blacklist = def_config['BLACKLIST'].strip('"').split()
     pulse_in = def_config['PULSE-IN'].strip('"').split()
     pulse_out = def_config['PULSE-OUT'].strip('"').split()
     p_in_con = def_config['PJ-IN-CON'].strip('"').split()
@@ -255,6 +258,7 @@ def reconfig():
     to do this without stopping jack if not needed'''
     global devices
     global zdev
+    global blacklist
     global pulse_in
     global pulse_out
     global config
@@ -264,6 +268,7 @@ def reconfig():
     old_def_config = old_config['DEFAULT']
     old_config.read_dict(config)
     oldzdev = zdev
+    oldblacklist = blacklist
     oldpulse_in = pulse_in
     oldpulse_out = pulse_out
     import_config()
@@ -308,8 +313,9 @@ def reconfig():
         logging.debug(f"PA unload jack-sink: {cp.stdout.strip()}")
         for poname in pulse_out:
             def_config['PULSE'] = "True"
-            cp = subprocess.run(["/usr/bin/pactl", "load-module", "module-jack-sink", f"client_name={poname}", "channels=2",
-                            "connect=no"], universal_newlines=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=False)
+            cp = subprocess.run(["/usr/bin/pactl", "load-module", "module-jack-sink", f"client_name={poname}",
+                            "channels=2", "connect=no"], universal_newlines=True, stdout=subprocess.PIPE,
+                            stderr=subprocess.STDOUT, shell=False)
             logging.debug(f"PA load jack-sink: {cp.stdout.strip()}")
 
     if [def_config['PJ-IN-CON'], def_config['PJ-OUT-CON']] != [old_def_config['PJ-IN-CON'], old_def_config['PJ-OUT-CON']]:
@@ -329,9 +335,11 @@ def reconfig():
             # Can't add logging for background processes. Will show up in syslog
             subprocess.Popen(["/usr/bin/a2jmidid", "-e"], shell=False).pid
 
-    if [def_config['USBAUTO'], def_config['USB-SINGLE'], zdev] != [old_def_config['USBAUTO'],
-                                                                   old_def_config['USB-SINGLE'],
-                                                                   oldzdev]:
+    # need to add blacklist to this part, jackmaster will already be ok
+    if ([def_config['USBAUTO'], def_config['USB-SINGLE'], zdev, blacklist] != [old_def_config['USBAUTO'],
+        old_def_config['USB-SINGLE'], oldzdev, oldblacklist]):
+        logging.debug("reconfig - usbauto/usb-single/extra-dev/blacklist changed")
+
         import_device_array()
         for device in devices:
             if device[3][2] and device[3][2] == device[3][4]:
@@ -339,11 +347,16 @@ def reconfig():
                 continue
             if device[1]:
                 # USB device
-                if def_config['USBAUTO'] != old_def_config['USBAUTO'] or def_config['USB-SINGLE'] != old_def_config[
-                    'USB-SINGLE']:
-                    kill_slave(f"{device[0]},0,0")
-                    if def_config['USBAUTO'] == "True":
-                        start_slave(f"{device[0]},0,0")
+                tempname = f"{device[0]},0,0"
+                dev_has_pid = False
+                if device[3][2]:
+                    dev_has_pid = True
+                if def_config['USBAUTO'] == "True" and not tempname in blacklist:
+                    if not dev_has_pid:
+                        start_slave(tempname)
+                else:
+                    kill_slave(tempname)
+
             else:
                 # not USB device
                 if zdev != oldzdev:
@@ -353,7 +366,7 @@ def reconfig():
                         tempname = f"{device[0]},{str(device[i][0])},0"
                         if device[i][2]:
                             dev_has_pid = True
-                        if tempname in zdev:
+                        if tempname in zdev and not tempname in blacklist:
                             if not dev_has_pid:
                                 start_slave(tempname)
                         else:
@@ -576,6 +589,9 @@ def msg_cb_new(*args, **kwargs):
         # then we don't care
         return
 
+    # let things settle
+    time.sleep(2)
+
     import_config()
 
     if args[0].find("sound-card") >= 0:
@@ -712,9 +728,17 @@ def start_slave(ldev):
     global devices
     global def_config
     global procs
+    global blacklist
 
+    logging.debug(f"Start slave: {ldev}")
     dsr = def_config['RATE']
     import_device_array()
+    #ldev should be what can compare to blacklist
+    if ldev in blacklist:
+        #don't start a slave blacklisted device
+        logging.debug(f"Blacklisted: {ldev} don't start")
+        return
+
     dname, l_dev, sub = ldev.split(",", 2)
     for device in devices:
         if device[0] == dname and device[2] > int(l_dev):
@@ -841,7 +865,7 @@ def ses_cb_tablet(*args, **kwargs):
         This reads the config file and sets the tablet
         buttons, pen and size/position'''
     ''' not sure what we will do with this, if anything
-		tablet plans changed/on hold for now; '''
+        tablet plans changed/on hold for now; '''
     logging.info("Got tablet signal.")
 
 
