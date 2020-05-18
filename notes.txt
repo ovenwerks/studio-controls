@@ -2,6 +2,7 @@ studio-controls version 1.???
 
 New for this version
 - add Blacklist to keep things like webcams adding a mic
+- clean up white space in studio_system
 
 studio-controls version 1.99.0
 

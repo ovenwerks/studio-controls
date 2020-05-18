@@ -4,19 +4,11 @@
  least order to be worked on. (some later things rely on sooner
  things)
 
-Bugs:
-	Fixed - Backends All use different commands to do the same things
-	fixed - zita needs to read in all rates
-
 Features:
-	- default should be changed from hw:0,0,0 to the first PCH so
-		we skip any hdmi (which should never be default... or even used with jack)
 	- bluetooth via pulse. use: pacmd load-module module-loopback latency_msec=5
 		and: pacmd unload-module module-loopback
 		need to figue out how to auto route jack->pulse bridge to loop
 		and loop to bt device.
-	- USB bridge tab should have a way to set devices
-		not to bridge.
 	- add drawing tablet support
 		- start listing xsetwacom and xsetpointer devices and allowing
 		user to take pointers and add them to wacom devices (if possiblle)
@@ -24,20 +16,21 @@ Features:
 		have displays.
 		- Then see if we can match plasma utility for setting size and 
 		setting buttons etc.
-
-	- logrotate for shorter log files
-	- jack client should start once and detect jack stop callback
-		check DSP regularly and add xruns.
-	- jack detection when jack is stopped should only happen once
-		when entering audio settings page.
 	- add pre/post jack start/stop scripting
-	- add button to system page to select between lowlatency or generic
-		kernel as default.
 	- monitor headphone plug status if PCH is being used for output
 		switch to headphones or speakers in alsa. use alsa level/mute
-		controls but add hook for user script. This will involve
-		moving autojackrc into .config/autojack/ so new V3 for ping.
-		So two commits.
+		controls but add hook for user script.
+	- special case HDMI... needs large buffer if we can detect HDMI,
+		buffer should only allow 4096 to show. Zita should use 4096
+		as well.
+	- USB devices should not have a buffer size 16, PCH should be 64 and
+		above. USB devices at 32 should probably set periods to 3.
+
+	- logrotate for shorter log files
+	- jack detection when jack is stopped should only happen once
+		when entering audio settings page.
+	- add button to system page to select between lowlatency or generic
+		kernel as default.
 	- add use of internals (net manager, audio and net adapters)
 		option to use audioadapter instead of zita bridge?
 		that may only work for one device, zita can do many.

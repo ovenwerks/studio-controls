@@ -7,46 +7,46 @@ GOVERNOR="ondemand"
 NO_TURBO="0"
 
 set_governors() {
-  # do this here in case we hit exit 0 before the end
-  echo "NO_TURBO=$NO_TURBO\n" > /etc/default/studio
-  echo "GOVERNOR=${GOVERNOR}\n" >> /etc/default/studio
-  AVAILABLE="/sys/devices/system/cpu/cpu0/cpufreq/scaling_available_governors"
-  [ -f $AVAILABLE ] || exit 0
-  read governors < $AVAILABLE
-  case "$GOVERNOR" in
-    performance)
-      case $governors in
-        *performance*)
-          GOVERNOR="performance"
-          ;;
-        *)
-          exit 0
-          ;;
-      esac
-      ;;
-    *)
-      case $governors in
-        *ondemand*)
-          GOVERNOR="ondemand"
-          ;;
-        *powersave*)
-          GOVERNOR="powersave"
-          ;;
-        *)
-          exit 0
-          ;;
-      esac
-    ;;
-  esac
+	# do this here in case we hit exit 0 before the end
+	echo "NO_TURBO=$NO_TURBO\n" > /etc/default/studio
+	echo "GOVERNOR=${GOVERNOR}\n" >> /etc/default/studio
+	AVAILABLE="/sys/devices/system/cpu/cpu0/cpufreq/scaling_available_governors"
+	[ -f $AVAILABLE ] || exit 0
+	read governors < $AVAILABLE
+	case "$GOVERNOR" in
+		performance)
+			case $governors in
+				*performance*)
+					GOVERNOR="performance"
+					;;
+				*)
+					exit 0
+					;;
+			esac
+			;;
+		*)
+			case $governors in
+				*ondemand*)
+					GOVERNOR="ondemand"
+					;;
+				*powersave*)
+					GOVERNOR="powersave"
+					;;
+				*)
+					exit 0
+					;;
+			esac
+			;;
+	esac
 
 	for CPUFREQ in /sys/devices/system/cpu/cpu*/cpufreq/scaling_governor
 		do
 			[ -f $CPUFREQ ] || continue
 			echo -n $GOVERNOR > $CPUFREQ
 		done
-  #reswrite just in case we corrected something
-  echo "NO_TURBO=$NO_TURBO\n" > /etc/default/studio
-  echo "GOVERNOR=${GOVERNOR}\n" >> /etc/default/studio
+	#reswrite just in case we corrected something
+	echo "NO_TURBO=$NO_TURBO\n" > /etc/default/studio
+	echo "GOVERNOR=${GOVERNOR}\n" >> /etc/default/studio
 
 }
 
@@ -58,19 +58,19 @@ fi
 
 case "$1" in
 	performance)
-    GOVERNOR="performance"
-    set_governors
-    ;;
+		GOVERNOR="performance"
+		set_governors
+		;;
 
 	ondemand)
 		GOVERNOR="ondemand"
-    set_governors
+		set_governors
 		;;
 
 	powersave)
-    GOVERNOR="powersave"
-    set_governors
-    ;;
+		GOVERNOR="powersave"
+		set_governors
+		;;
 
 	fix)
 		if [ -f /etc/security/limits.d/audio.conf.disabled ]; then
@@ -78,15 +78,15 @@ case "$1" in
 		elif ! [ -f /etc/security/limits.d/audio.conf ]; then
 			cp /usr/share/studio-controls/audio.conf /etc/security/limits.d/audio.conf
 		fi
-    if [ ${PKEXEC_UID} -gt 999 ]; then
-      /usr/sbin/usermod `id -nu ${PKEXEC_UID}` -aG audio
-    fi
+		if [ ${PKEXEC_UID} -gt 999 ]; then
+			/usr/sbin/usermod `id -nu ${PKEXEC_UID}` -aG audio
+		fi
 		;;
 
 	boost)
 		if [ -f /sys/devices/system/cpu/intel_pstate/no_turbo ]; then
 			echo "NO_TURBO=0\n" > /etc/default/studio
-      echo "GOVERNOR=${GOVERNOR}" >> /etc/default/studio
+			echo "GOVERNOR=${GOVERNOR}" >> /etc/default/studio
 			echo "0" | tee /sys/devices/system/cpu/intel_pstate/no_turbo
 		fi
 		;;
@@ -94,7 +94,7 @@ case "$1" in
 	noboost)
 		if [ -f /sys/devices/system/cpu/intel_pstate/no_turbo ]; then
 			echo "NO_TURBO=1\n" > /etc/default/studio
-      echo "GOVERNOR=${GOVERNOR}" >> /etc/default/studio
+			echo "GOVERNOR=${GOVERNOR}" >> /etc/default/studio
 			echo "1" | tee /sys/devices/system/cpu/intel_pstate/no_turbo
 		fi
 		;;
@@ -109,7 +109,7 @@ case "$1" in
 		;;
 
 	*)
-	 exit 0
-	 ;;
+		exit 0
+		;;
 
 	esac
