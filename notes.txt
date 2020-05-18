@@ -1,53 +1,8 @@
-studio-controls version 1.???
+studio-controls version 1.99 (2.0?)
 
 New for this version
 - add Blacklist to keep things like webcams adding a mic
-- clean up white space in studio_system
-
-studio-controls version 1.99.0
-
-New for this version
 - Update to new icon
-- remove tablet code as direction has changed
 - finish rebrand
 
-studio-controls version 1.12.5
-
-New for this version
-- Check if device has a description before trying to use it
-
-studio-controls version 1.12.4
-
-New for this version
-- Start rebranding to plain Studio Controls
-- Add systemd service for non-Ubuntu systems
-- Fix USB bridge checkbox so it actually changes states (LP #1872250)
-- Finish rebranding (icons are placeholders)
-
-studio-controls version 1.12.3
-
-New for this version
-- Change adduser to usermod -aG
-- Update copyright & AUTHORS
-
-studio-controls version 1.12.0
-
-New for this version
-- Add logging level control to GUI
-- Change from autostart to systemd unit
-- Make sure session ends so audio device is not locked
-- 
-
-studio-controls version 1.11.3
-
-New for this version
-- Bug fixes: check if device removed signal is true
-		Save last valid internal device so removing USB device
-		allows controls to switch to something sane.
-- moved config file to it's own directory so that we can add
-		more files like post start scripts.
-- Converted config file to use configparser for less accident prone
-		maintenance.
-- Declutter audio setup GUI by splitting it into three tabs
-- Pulse bridges can have custom names
-- pulse bridges can have custom auto connects
+See CHANGELOG for history
