@@ -1,0 +1,2 @@
+event=jack/headphone HEADPHONE plug
+action=/etc/acpi/studio.sh plug

@@ -166,13 +166,15 @@ def import_config():
         'PJ-IN-CON': '1',
         'PJ-OUT-CON': '1',
         'A2J': "True",
-        'DEV': "0,0,0",
+        'DEV': "PCH,0,0",
         'USBAUTO': "True",
         'USB-SINGLE': "False",
         'USBDEV': "",
         "PULSE": "True",
         "LOG-LEVEL": "15",
         "BLACKLIST": "",
+        "PHONE-ACTION": "switch",
+        "PHONE-DEVICE": "PCH,0,0",
     }
 
     # read in autojack config file
@@ -417,6 +419,8 @@ def config_start():
         mdev = def_config['USBDEV']
     else:
         mdev = def_config['DEV']
+    if os.path.isfile(expanduser('~/.config/jack/conf.xml')):
+        os.remove(expanduser('~/.config/jack/conf.xml'))
     # Now start jackdbus with the configured device
     # the commands are all different so...
     if def_config['DRIVER'] == "alsa":
@@ -483,7 +487,7 @@ def config_start():
     if def_config['USBAUTO'] == "True":
         import_device_array()
         for device in devices:
-            if device[1]:
+            if device[1]:~/.config/jack/conf.xml
                 # this is a USB device
                 if f"{device[0]},0,0" != def_config['USBDEV']:
                     start_slave(f"{device[0]},0,0")
@@ -612,6 +616,7 @@ def msg_cb_new(*args, **kwargs):
                 # spurious indication, ignore
                 logging.debug(f" We already have that device - spurious signal, ignoring")
                 return
+            # XXXX this should be split, driver alsa matters for USBDEV but not for USBAUTO
             if def_config['JACK'] == "True" and def_config['DRIVER'] == "alsa":
                 if def_config['USBDEV'] == cid:
                     # change_jack_master(cid, "sm")
@@ -624,7 +629,7 @@ def msg_cb_new(*args, **kwargs):
                     # connect_pa()
                 elif def_config['USBAUTO'] == "True":
                     start_slave(cid)
-
+                # if this device = PHONE-DEVICE  then call phones-switch(true)
 
 def msg_cb_removed(*args, **kwargs):
     ''' dbus call back when a USB device removal has been detected by udev '''
@@ -657,6 +662,7 @@ def msg_cb_removed(*args, **kwargs):
             if not device[1]:
                 # not a usb device
                 return
+            # if this device = PHONE-DEVICE  then call phones-switch(False)
             if def_config['USBDEV'] == cid:
                 if last_master == def_config['USBDEV']:
                     kill_slave(def_config['DEV'])
@@ -732,6 +738,7 @@ def start_slave(ldev):
 
     logging.debug(f"Start slave: {ldev}")
     dsr = def_config['RATE']
+    buff_size = def_config['ZFRAME']
     import_device_array()
     #ldev should be what can compare to blacklist
     if ldev in blacklist:
@@ -740,6 +747,10 @@ def start_slave(ldev):
         return
 
     dname, l_dev, sub = ldev.split(",", 2)
+    if dname == "HDMI":
+        buff_size = 4096
+    if (dname == "PCH") and (buff_size < 128):
+        buff_size = 128
     for device in devices:
         if device[0] == dname and device[2] > int(l_dev):
             if device[3 + int(l_dev)][1]:
@@ -751,7 +762,7 @@ def start_slave(ldev):
                     if def_config['USB-SINGLE'] == "False":
                         procout = subprocess.Popen(
                             ["/usr/bin/zita-j2a", "-j", f"{ldev}-out", "-d", f"hw:{ldev}", "-r", dsr, "-p",
-                             def_config['ZFRAME'], "-n", def_config['PERIOD'], "-c", "100"], shell=False)
+                             buff_size, "-n", def_config['PERIOD'], "-c", "100"], shell=False)
                         pidout = procout.pid
                         procs.append(procout)
                         device[3 + int(l_dev)][2] = pidout
@@ -762,13 +773,13 @@ def start_slave(ldev):
                     logging.info(f"Got {dsr} as the closest rate to {def_config['RATE']}")
                     procout = subprocess.Popen(
                         ["/usr/bin/zita-j2a", "-j", f"{ldev}-out", "-d", f"hw:{ldev}", "-r", dsr, "-p",
-                            def_config['ZFRAME'], "-n", def_config['PERIOD'], "-c", "100"], shell=False)
+                            buff_size, "-n", def_config['PERIOD'], "-c", "100"], shell=False)
                     pidout = procout.pid
                     procs.append(procout)
                     device[3 + int(l_dev)][2] = pidout
             if device[3 + int(l_dev)][3]:
                 procin = subprocess.Popen(
-                    ["/usr/bin/zita-a2j", "-j", f"{ldev}-in", "-d", f"hw:{ldev}", "-r", dsr, "-p", def_config['ZFRAME'],
+                    ["/usr/bin/zita-a2j", "-j", f"{ldev}-in", "-d", f"hw:{ldev}", "-r", dsr, "-p", buff_size,
                      "-n", def_config['PERIOD'], "-c", "100"], shell=False)
                 pidin = procin.pid
                 procs.append(procin)
@@ -877,6 +888,74 @@ def ses_cb_ping(*args, **kwargs):
                    shell=False)
 
 
+def phones_switch(plugged):
+    ''' Does the actual phones signal and level switching '''
+    logging.debug(f"Changing Headphone to plugged in = {str(plugged)}")
+    global def_config
+    if def_config['JACK'] == "False":
+        # we can't do anything up to pulse (I think)
+        return
+    global xdev
+    out_L = "system:playback_1"
+    out_R = "system:playback_2"
+    if def_config['PHONE-ACTION'] == "switch":
+        if def_config['PHONE-DEVICE'] != def_config['DEV']:
+            # set jack port names
+            out_L = f"{def_config['PHONE-DEVICE']}:playback_1"
+            out_R = f"{def_config['PHONE-DEVICE']}:playback_2"
+            # find out if this is already an xdev
+            if not def_config['PHONE-DEVICE'] in xdev:
+                # we have to start a zita proc
+                start_slave(def_config['PHONE-DEVICE'])
+            # should move or copy all connections from 'PJ-OUT-CON'
+            # to 'PHONE-DEVICE'
+        if def_config['PHONE-DEVICE'] == "PCH,0,0":
+            if plugged:
+                subprocess.run(["/usr/bin/amixer", "-D", "hw:PCH", "--", "sset",
+                    "Headphone", "0dB", "on"], shell=False)
+                subprocess.run(["/usr/bin/amixer", "-D", "hw:PCH", "--", "sset",
+                    "Front", "off"], shell=False)
+            else:
+                subprocess.run(["/usr/bin/amixer", "-D", "hw:PCH", "--", "sset",
+                    "Front", "0dB", "on"], shell=False)
+                subprocess.run(["/usr/bin/amixer", "-D", "hw:PCH", "--", "sset",
+                    "Headphone", "off"], shell=False)
+
+            # turn speaker off and PH on
+    elif def_config['PHONE-ACTION'] == "script":
+        # run a script to perform this instead
+        # XXX get straight level switching working first
+        logging.warn("Script not available yet")
+
+    # otherwise assume none
+        '''"PHONE-ACTION": "switch",
+        "PHONE-DEVICE": "PCH,0,0",
+        '''
+
+
+def phones_check():
+    ''' check to see if there are phones plugged in'''
+    logging.debug("Checking for phones plugged in")
+    # haven't figgured this out yet
+    # if it is a non-internal device (USB) then it's presence is enough
+
+
+def phones_plug(*args, **kwargs):
+    ''' callback means headphones have been plugged in lets make sure
+        phones are unmuted and have a level higher than -inf.
+        We also may want to mute speakers '''
+    logging.info("Got phones plugged in signal.")
+    phones_switch(True)
+
+
+def phones_unplug(*args, **kwargs):
+    ''' callback means headphones have been unplugged in lets make sure
+        phones are muted and the speakers  are unmuted and have a
+        level higher than -inf.'''
+    logging.info("Got phones unplugged signal.")
+    phones_switch(False)
+
+
 def main():
     ''' Autojack runs at session start and manages audio for the session.
     this is the daemon for studio-controls'''
@@ -922,6 +1001,10 @@ def main():
     system_bus.add_signal_receiver(msg_cb_new, dbus_interface='org.freedesktop.systemd1.Manager', signal_name='UnitNew')
     system_bus.add_signal_receiver(msg_cb_removed, dbus_interface='org.freedesktop.systemd1.Manager',
                                    signal_name='UnitRemoved')
+    system_bus.add_signal_receiver(phones_plug, dbus_interface='org.studio.control.event',
+                                signal_name='plug_signal')
+    system_bus.add_signal_receiver(phones_unplug, dbus_interface='org.studio.control.event',
+                                signal_name='unplug_signal')
 
     user_bus = dbus.SessionBus()
     user_bus.add_signal_receiver(ses_cb_stop, dbus_interface='org.studio.control.event',
@@ -942,7 +1025,7 @@ def main():
 
     loop = GLib.MainLoop()
     loop.run()
-
+~/.config/jack/conf.xml
 
 if __name__ == '__main__':
     main()

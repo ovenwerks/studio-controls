@@ -598,7 +598,7 @@
                             <property name="can_focus">False</property>
                             <property name="active">0</property>
                             <items>
-                              <item id="label" translatable="yes">Add a Device to the Blaclist</item>
+                              <item id="label" translatable="yes">Add a Device to the Blacklist</item>
                             </items>
                             <signal name="changed" handler="cb_blacklist_add" swapped="no"/>
                           </object>
@@ -622,13 +622,43 @@
                           </packing>
                         </child>
                         <child>
-                          <placeholder/>
+                          <object class="GtkLabel">
+                            <property name="visible">True</property>
+                            <property name="can_focus">False</property>
+                            <property name="label" translatable="yes">Headphone plug in Action and Device</property>
+                          </object>
+                          <packing>
+                            <property name="left_attach">0</property>
+                            <property name="top_attach">3</property>
+                          </packing>
                         </child>
                         <child>
-                          <placeholder/>
+                          <object class="GtkComboBoxText" id="hp_action">
+                            <property name="visible">True</property>
+                            <property name="can_focus">False</property>
+                            <property name="active">1</property>
+                            <items>
+                              <item id="none" translatable="yes">No Action</item>
+                              <item id="switch" translatable="yes">Switch outputs to Headphones</item>
+                              <item id="script" translatable="yes">User Script</item>
+                            </items>
+                            <signal name="changed" handler="hp_action_cb" swapped="no"/>
+                          </object>
+                          <packing>
+                            <property name="left_attach">1</property>
+                            <property name="top_attach">3</property>
+                          </packing>
                         </child>
                         <child>
-                          <placeholder/>
+                          <object class="GtkComboBoxText" id="hp_device">
+                            <property name="visible">True</property>
+                            <property name="can_focus">False</property>
+                            <property name="active">0</property>
+                          </object>
+                          <packing>
+                            <property name="left_attach">2</property>
+                            <property name="top_attach">3</property>
+                          </packing>
                         </child>
                         <child>
                           <placeholder/>
@@ -1309,7 +1339,8 @@
     <property name="gravity">center</property>
     <property name="transient_for">window_main</property>
     <property name="attached_to">window_main</property>
-    <property name="text" translatable="yes">For changes to take effect, you need to do a fresh login.</property>
+    <property name="message_type">warning</property>
+    <property name="text" translatable="yes">For changes to take effect, you need to do a reboot.</property>
     <child type="titlebar">
       <placeholder/>
     </child>
@@ -1360,7 +1391,7 @@
     <property name="title" translatable="yes">RT info</property>
     <property name="resizable">False</property>
     <property name="window_position">center-always</property>
-    <property name="default_width">200</property>
+    <property name="default_width">400</property>
     <property name="default_height">115</property>
     <property name="type_hint">dialog</property>
     <property name="skip_taskbar_hint">True</property>
@@ -1368,6 +1399,7 @@
     <property name="gravity">center</property>
     <property name="transient_for">window_main</property>
     <property name="attached_to">window_main</property>
+    <property name="message_type">warning</property>
     <property name="text" translatable="yes">It seems you have made settings previously and not done a fresh login, or you already have realtime settings in effect, but you are not using the file supplied with the package jackd.
 If you want to use this application for administering realtime settings, please remove any custom settings and reboot your computer.</property>
     <child type="titlebar">

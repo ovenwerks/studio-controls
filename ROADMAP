@@ -5,6 +5,7 @@
  things)
 
 Features:
+    - Show and use USB,1,0 and other sub devices
 	- bluetooth via pulse. use: pacmd load-module module-loopback latency_msec=5
 		and: pacmd unload-module module-loopback
 		need to figue out how to auto route jack->pulse bridge to loop
@@ -22,7 +23,7 @@ Features:
 		controls but add hook for user script.
 	- special case HDMI... needs large buffer if we can detect HDMI,
 		buffer should only allow 4096 to show. Zita should use 4096
-		as well.
+		as well. (zita is fixed)
 	- USB devices should not have a buffer size 16, PCH should be 64 and
 		above. USB devices at 32 should probably set periods to 3.
 

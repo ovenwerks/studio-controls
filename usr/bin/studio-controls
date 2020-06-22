@@ -156,6 +156,8 @@ class StudioControls:
         self.combo_zita_remove = builder.get_object('combo_zita_remove')
         self.blacklist_add = builder.get_object('blacklist_add')
         self.blacklist_remove = builder.get_object('blacklist_remove')
+        self.hp_action = builder.get_object('hp_action')
+        self.hp_device = builder.get_object('hp_device')
 
         '''pulse tab'''
         self.pj_in_combo = builder.get_object('pj_in_combo')
@@ -234,6 +236,8 @@ class StudioControls:
             'USBDEV': "",
             'LOG-LEVEL': "19",
             'BLACKLIST': "",
+            'PHONE-ACTION': "switch",
+            'PHONE-DEVICE': "PCH,0,0",
         }
 
         global autojack
@@ -384,6 +388,7 @@ class StudioControls:
             "cb_blacklist_add": self.cb_blacklist_add,
             "cb_blacklist_remove": self.cb_blacklist_remove,
             "usb_plug_cb": self.usb_plug_cb,
+            "hp_action_cb": self.hp_action_cb,
 
             "pj_in_combo_cb": self.pj_in_combo_cb,
             "pj_out_combo_cb": self.pj_out_combo_cb,
@@ -702,6 +707,12 @@ class StudioControls:
             if not self.dirty:
                 self.dirty = True
 
+    def hp_action_cb(self, widget):
+        a_id = str(widget.get_active_id())
+        if a_id == "script":
+            print("Script is called ~/.config/autojack/phones.sh")
+            # this needs to be shown as a dialog
+
     def jack_device_changed(self, button):
         a_id = str(button.get_active_id())
         a_desc = str(button.get_active_text())
@@ -989,6 +1000,8 @@ class StudioControls:
             self.def_config['USBAUTO'] = str(self.usb_plug_check.get_active())
             self.def_config['USB-SINGLE'] = str(self.usb_single_ck.get_active())
             self.def_config['XDEV'] = ' '.join(self.zdev)
+            self.def_config['PHONE-ACTION'] = str(self.hp_action.get_active())
+            self.def_config['PHONE-DEVICE'] = str(self.hp_device.get_active())
             self.config.write(rc_file)
 
     def start_autojack(self):
