@@ -487,7 +487,7 @@ def config_start():
     if def_config['USBAUTO'] == "True":
         import_device_array()
         for device in devices:
-            if device[1]:~/.config/jack/conf.xml
+            if device[1]:
                 # this is a USB device
                 if f"{device[0]},0,0" != def_config['USBDEV']:
                     start_slave(f"{device[0]},0,0")
