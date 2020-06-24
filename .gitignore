@@ -13,6 +13,9 @@ pyvenv.cfg
 .venv
 pip-selfcheck.json
 
+# backup files
+*~
+
 ### Python template
 # Byte-compiled / optimized / DLL files
 __pycache__/

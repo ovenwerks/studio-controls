@@ -3,6 +3,11 @@ studio-controls version TBD
  [ Erich Eickmeyer ]
  - Add white glow to icon to increase visibilty
 
+ [ Len Ovens ]
+ - Start work on head phone detection
+ - Force PCH devices to be at least 128 buffer in extra devices
+ - Remove old jackdbus settings file before starting jack
+
 studio-controls version 1.99.1
 
 - add Blacklist to keep things like webcams adding a mic
