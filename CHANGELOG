@@ -11,6 +11,9 @@ studio-controls version 1.99.2
  - Fixed extra devices that are not sub device 0 don't work
  - Fixed Apply for input only
  - USB units with sub devices other than 0 will now auto connect
+ - Added extra logging level for lots of output
+ - Added better method of finding device sample rate
+ - Added new depend: python3-alsaaudio
 
 studio-controls version 1.99.1
 

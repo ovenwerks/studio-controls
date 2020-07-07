@@ -4,6 +4,10 @@
  least order to be worked on. (some later things rely on sooner
  things)
 
+Fixes:
+	Pulse bridge deal with MONO devices
+	
+
 Features:
 	- bluetooth via pulse. use: pacmd load-module module-loopback latency_msec=5
 		and: pacmd unload-module module-loopback

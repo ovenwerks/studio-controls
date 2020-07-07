@@ -218,6 +218,7 @@
                           <item id="29" translatable="yes">Warnings</item>
                           <item id="19" translatable="yes">Info</item>
                           <item id="9" translatable="yes">Debug</item>
+                          <item id="7" translatable="yes">Extra</item>
                         </items>
                         <signal name="changed" handler="logging_change" swapped="no"/>
                       </object>
@@ -888,15 +889,6 @@
                             <property name="left_attach">2</property>
                             <property name="top_attach">4</property>
                           </packing>
-                        </child>
-                        <child>
-                          <placeholder/>
-                        </child>
-                        <child>
-                          <placeholder/>
-                        </child>
-                        <child>
-                          <placeholder/>
                         </child>
                         <child>
                           <placeholder/>

@@ -27,6 +27,7 @@ import signal
 import configparser
 import logging
 import jack
+import alsaaudio
 
 def get_dev_info(x):
     '''uses audio device number to make a device structure with device
@@ -93,7 +94,7 @@ def get_dev_info(x):
             subdevice.append(cap_pid)
             device.append(subdevice)
     # change this to create a list, USB cards may have devices and subdevices
-    logging.debug(f"Device list: {str(device)}")
+    logging.log(7, f"Device list: {str(device)}")
     return device
 
 
@@ -733,59 +734,49 @@ def msg_cb_removed(*args, **kwargs):
         import_device_array()
 
 
-def get_card_rate(filename, l_usb):
-    ''' Takes a filename and searches for lines that include the word:
-    Rates or rates. From each of those lines any numbers are takes and
-    compared to the list of rates already found and added to that list if
-    it is not already there. The return is the closest rate to jack
-    master sample rate'''
-    global def_config
+def get_card_rate(rtdev):
+    ''' find out closest SR jack master that device handles'''
+    dname, l_dev, sub = rtdev.split(",", 2)
+    backup_rate = ""
+    if os.path.isfile(f"/proc/asound/{dname}/pcm{l_dev}p/sub{sub}/hw_params"):
+        p_file = f"/proc/asound/{dname}/pcm{l_dev}p/sub{sub}/hw_params"
+        dtype = 0
+    elif os.path.isfile(f"/proc/asound/{dname}/pcm{l_dev}c/sub{sub}/hw_params"):
+        p_file = f"/proc/asound/{dname}/pcm{l_dev}c/sub{sub}/hw_params"
+        dtype = 1
+    else:
+        logging.warn(f"missing info file for: {ldev} adding client may fail.")
+        return def_config['RATE']
 
-    dsr = def_config['RATE']
-    full_list = []
-    if os.path.isfile(filename):
-        with open(filename, "r") as card_file:
+    adev_h = alsaaudio.PCM(type=dtype, device=f"hw:{rtdev}")
+
+    adev_h.setrate(int(def_config['RATE']))
+    with open(p_file, "r") as card_file:
+        for line in card_file:
+            if 'rate:' in line:
+                fnd_rate = line.split()[1]
+                backup_rate = fnd_rate
+    if fnd_rate == def_config['RATE']:
+        logging.debug(f"Good supports jack rate: {def_config['RATE']}")
+        adev_h.close()
+        return fnd_rate
+    for try_rate in ['48000', '44100', '88200', '96000', '32000']:
+        adev_h.setrate(int(try_rate))
+        with open(p_file, "r") as card_file:
             for line in card_file:
-                srlist = []
-                if 'Rates' in line:
-                    srlist = line.rstrip().split()
-                elif 'rates' in line:
-                    srlist = line.rstrip().split()
-                if srlist != []:
-                    for word in srlist:
-                        word = word.strip(',')
-                        if word.isdigit():
-                            if word not in full_list:
-                                full_list.append(word)
-        # full_list should have a list of all sample rates
-        esr = lsr = 0
-        hsr = 1000000
-        if not l_usb:
-            hsr = 48000
-            lsr = 44100
-        for word in full_list:
-            if int(word) > hsr:
-                continue
-            if int(word) < lsr:
-                continue
-            if int(word) < int(def_config['RATE']):
-                if int(word) > lsr:
-                    lsr = int(word)
-            elif int(word) > int(def_config['RATE']):
-                if int(word) < hsr:
-                    hsr = int(word)
-            elif int(word) == int(def_config['RATE']):
-                esr = int(word)
-        if not esr:
-            if hsr < int(def_config['RATE']):
-                dsr = str(hsr)
-            elif lsr > int(def_config['RATE']):
-                dsr = str(lsr)
-            elif (hsr - int(def_config['RATE'])) < (int(def_config['RATE']) - lsr):
-                dsr = str(hsr)
-            else:
-                dsr = str(lsr)
-    return dsr
+                if 'rate:' in line:
+                    fnd_rate = line.split()[1]
+                    if fnd_rate == try_rate:
+                        logging.debug(f"Closest we could find: {fnd_rate}")
+                        adev_h.close()
+                        return fnd_rate
+
+    if backup_rate:
+        adev_h.close()
+        return backup_rate
+    logging.debug(f"Unable to confirm working rate, using: {def_config['RATE']}")
+    adev_h.close()
+    return def_config['RATE']
 
 
 def start_slave(ldev):
@@ -797,7 +788,6 @@ def start_slave(ldev):
     global blacklist
 
     logging.debug(f"Start slave: {ldev}")
-    dsr = def_config['RATE']
     buff_size = def_config['ZFRAME']
     import_device_array()
     #ldev should be what can compare to blacklist
@@ -807,6 +797,7 @@ def start_slave(ldev):
         return
 
     dname, l_dev, sub = ldev.split(",", 2)
+    dsr = get_card_rate(ldev)
     if dname == "HDMI":
         logging.info("HDMI device, setting buffer to 4096")
         buff_size = "4096"
@@ -818,25 +809,11 @@ def start_slave(ldev):
             # we found it and it seems to have this sub
             if device[3 + int(l_dev)][1]:
                 if not device[3 + int(l_dev)][2]:
-                    if device[1]:
-                        # this is usb devices we should find /proc/dname/stream?
-                        if os.path.isfile(f"/proc/asound/{dname}/stream0"):
-                            dsr = get_card_rate(f"/proc/asound/{dname}/stream0", True)
-                        logging.info(f"Got {dsr} as the closest rate to {def_config['RATE']}")
-                        if def_config['USB-SINGLE'] == "False":
-                            cmd = f"/usr/bin/zita-j2a -j {ldev}-out -d hw:{ldev} -r {dsr} -p {buff_size} -n {def_config['PERIOD']} -c 100"
-                            logging.debug(f"USB device comand line: {cmd}")
-                            procout = subprocess.Popen(shlex.split(cmd), shell=False)
-                            pidout = procout.pid
-                            procs.append(procout)
-                            device[3 + int(l_dev)][2] = pidout
+                    if device[1] and (def_config['USB-SINGLE'] == "True"):
+                        logging.info("USB device set input only, no playback bridge")
                     else:
-                        # this is internal and so we look at /proc/dname/codec* if it is a file
-                        if os.path.isfile(f"/proc/asound/{dname}/codec#0"):
-                            dsr = get_card_rate(f"/proc/asound/{dname}/codec#0", False)
-                        logging.info(f"Got {dsr} as the closest rate to {def_config['RATE']}")
                         cmd = f"/usr/bin/zita-j2a -j {ldev}-out -d hw:{ldev} -r {dsr} -p {buff_size} -n {def_config['PERIOD']} -c 100"
-                        logging.debug(f"extra device comand line: {cmd}")
+                        logging.debug(f"device bridging comand line: {cmd}")
                         procout = subprocess.Popen(shlex.split(cmd), shell=False)
                         pidout = procout.pid
                         procs.append(procout)
@@ -998,6 +975,9 @@ def phones_switch(plugged):
             out_L = f"{def_config['PHONE-DEVICE']}:playback_1"
             out_R = f"{def_config['PHONE-DEVICE']}:playback_2"
             logging.debug(f"Headphone jack ports: {str(out_L)} {str(out_R)}")
+            if not plugged:
+                switch_outputs(out_L, "system:playback_1")
+                switch_outputs(out_R, "system:playback_2")
             # find out if this is already an zdev
             if not def_config['PHONE-DEVICE'] in zdev:
                 logging.debug("Headphone device has no jack port ... Creating them")
@@ -1010,6 +990,8 @@ def phones_switch(plugged):
         # run a script to perform this instead
         # XXX get straight level switching working first
         logging.warn("Script not available yet")
+        '''if os.path.isfile(expanduser('~/.config/jack/conf.xml')):
+        '''
 
     # otherwise assume none
         '''"PHONE-ACTION": "switch",
