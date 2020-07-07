@@ -170,7 +170,7 @@ class StudioControls:
         '''Dbus monitoring'''
         user_bus = dbus.SessionBus()
         user_bus.add_signal_receiver(self.db_ses_cb, dbus_interface='org.studio.control.event',
-                                     signal_name='V3_1_signal')
+                                     signal_name='V3_2_signal')
         user_bus.add_signal_receiver(self.db_new_usb, dbus_interface='org.studio.control.event',
                                      signal_name='usb_signal')
 
@@ -227,8 +227,8 @@ class StudioControls:
             'XDEV': "",
             'PULSE-IN': 'pulse_in',
             'PULSE-OUT': 'pulse_out',
-            'PJ-IN-CON': '1',
-            'PJ-OUT-CON': '1',
+            'PJ-IN-CON': 'system:capture_1',
+            'PJ-OUT-CON': 'system:playback_1',
             'A2J': "True",
             'DEV': "none",
             'USBAUTO': "True",
@@ -245,15 +245,13 @@ class StudioControls:
         global jack_alive
         global jack_died
         global xrun_count
-        global max_in
-        global max_out
-        max_in = 18
-        max_out = 18
+        global jack_ports_changed
         xrun_count = 0
         autojack = False
         newusb = False
         jack_alive = False
         jack_died = False
+        jack_ports_changed = True
         self.dirty = False
 
         # read in autojack config file
@@ -418,6 +416,7 @@ class StudioControls:
         newusb = True
         print("autojack sees usb change")
 
+
     def check_jack_status(self, user_data):
         '''Check if jack has died and the client needs to be
         closed. Check if jack is running then set jack status indicator.
@@ -430,15 +429,13 @@ class StudioControls:
         global jack_alive
         global jack_died
         global xrun_count
-        global max_in
-        global max_out
+        global jack_ports_changed
 
         # sent by jackdied() callback
         if jack_died:
             jack_client.deactivate()
             jack_client.close()
-            max_in = 18
-            max_out = 18
+            self.refresh_pulse_io()
             self.dirty = True
             jack_died = False
             jack_alive = False
@@ -448,6 +445,10 @@ class StudioControls:
             self.refresh_dropdowns()
             self.dirty = False
             newusb = False
+
+        if jack_ports_changed:
+            jack_ports_changed = False
+            self.refresh_pulse_io()
 
         if jack_alive:
             load = jack_client.cpu_load()
@@ -467,14 +468,18 @@ class StudioControls:
                 return True
             self.jack_state.set_text(" Running")
             self.jack_ind.set_from_icon_name("gtk-apply", 0)
+            # if jack is shutting down we need to know
             jack_client.set_shutdown_callback(self.jackdied)
+            # count xruns
             jack_client.set_xrun_callback(self.jackxrun)
+            # get notified if a new port is created
+            jack_client.set_port_registration_callback(self.new_jack_port)
             jack_client.activate()
             jack_alive = True
-            max_in = len(jack_client.get_ports('system.*', is_audio=True, is_output=True))
-            max_out = len(jack_client.get_ports('system.*', is_audio=True, is_input=True))
+            jack_ports_changed = True
             self.refresh_pulse_tab(self.i_in, self.i_out)
         return True
+
 
     def jackdied(state, why, extra):
         '''gets called by jack if it is exiting, we can't clean up
@@ -484,13 +489,120 @@ class StudioControls:
         jack_died = True
         jack_alive = False
 
+
     def jackxrun(xruntime, extra):
+        ''' Got an xrun, count it '''
         global xrun_count
         xrun_count = xrun_count + 1
 
+
+    def new_jack_port(port_id, new, extra):
+        ''' jack has added a port tell someone '''
+        global jack_ports_changed
+        jack_ports_changed = True
+
+
     def xrun_reset(self, button):
+        ''' user asked for an xrun reset so do it '''
         global xrun_count
         xrun_count = 0
+
+
+    def refresh_pulse_io(self):
+        ''' the ports that can be connected to pulse ports varies
+        with what jack offers. This refreshes the two drop downs '''
+        global jack_client
+        global jack_alive
+
+        self.pj_in_con.set_sensitive(False)
+        self.pj_out_con.set_sensitive(False)
+        self.pj_in_con.get_model().clear()
+        self.pj_in_con.append("0", "no connection")
+        self.pj_in_con.set_active(0)
+        self.pj_out_con.get_model().clear()
+        self.pj_out_con.append("0", "no connection")
+        self.pj_out_con.set_active(0)
+        active_in = self.p_in_con[self.i_in]
+        if (self.p_in_con != []) and (active_in != "0"):
+            self.pj_in_con.append(active_in, active_in)
+            self.pj_in_con.set_active_id(active_in)
+        active_out = self.p_out_con[self.i_out]
+        if (self.p_out_con != []) and (active_out != "0"):
+            self.pj_out_con.append(active_out, active_out)
+            self.pj_out_con.set_active_id(active_out)
+
+        if jack_alive:
+            # get capture ports with audio and hardware
+            jack_cap = jack_client.get_ports("", is_audio=True, is_output=True, is_physical=True)
+            jack_play = jack_client.get_ports("", is_audio=True, is_input=True, is_physical=True)
+            left_ch = True
+            last_dev = ""
+            last_port = ""
+            for jport in jack_cap:
+                port = str(jport).split('\'', 2)[1]
+                dev = port.split(':', 1)[0]
+                if left_ch:
+                    last_dev = dev
+                    last_port = port
+                    left_ch = False
+                else:
+                    this_port = last_port
+                    if dev == last_dev:
+                        right_ch = port.rsplit('_', 1)[1]
+                        self.pj_in_con.append(last_port, f"{last_port} and {str(right_ch)}")
+                        left_ch = True
+                    else:
+                        self.pj_in_con.append(port, f"{last_port} (mono)")
+                        last_dev = dev
+                        last_port = port
+
+                    if this_port == active_in:
+                        self.pj_in_con.remove(self.pj_in_con.get_active())
+                        self.pj_in_con.set_active_id(active_in)
+            if not left_ch:
+                self.pj_in_con.append(port, f"{last_port} (mono)")
+                if last_port == active_in:
+                    self.pj_in_con.remove(self.pj_in_con.get_active())
+                    self.pj_in_con.set_active_id(active_in)
+
+            left_ch = True
+            last_dev = ""
+            last_port = ""
+            for jport in jack_play:
+                port = str(jport).split('\'', 2)[1]
+                dev = port.split(':', 1)[0]
+                if left_ch:
+                    last_dev = dev
+                    last_port = port
+                    left_ch = False
+                else:
+                    this_port = last_port
+                    if dev == last_dev:
+                        right_ch = port.rsplit('_', 1)[1]
+                        self.pj_out_con.append(last_port, f"{last_port} and {str(right_ch)}")
+                        left_ch = True
+                    else:
+                        self.pj_out_con.append(port, f"{last_port} (mono)")
+                        last_dev = dev
+                        last_port = port
+
+                    if this_port == active_out:
+                        self.pj_out_con.remove(self.pj_out_con.get_active())
+                        self.pj_out_con.set_active_id(active_out)
+                    left_ch = True
+            if not left_ch:
+                self.pj_out_con.append(last_port, f"{last_port} (mono)")
+                if last_port == active_out:
+                    self.pj_out_con.remove(self.pj_out_con.get_active())
+                    self.pj_out_con.set_active_id(active_out)
+
+        else:
+            self.pj_in_con.append("none", "Ports can not be displayed unless Jack is running.")
+            self.pj_out_con.append("none", "Ports can not be displayed unless Jack is running.")
+
+        self.pj_in_con.set_sensitive(True)
+        self.pj_out_con.set_sensitive(True)
+
 
     def refresh_dropdowns(self):
         '''this call refreshes the device lists for all drop downs
@@ -549,6 +661,10 @@ class StudioControls:
         self.blacklist_add.append("label", "Add a Device to the Blacklist")
         self.blacklist_add.set_active_id("label")
 
+        self.hp_device.get_model().clear()
+        self.hp_device.append(self.def_config['PHONE-DEVICE'], self.def_config['PHONE-DEVICE'])
+        self.hp_device.set_active_id(self.def_config['PHONE-DEVICE'])
+
         usb_save = ""
         pci_save = ""
         for x in range(0, 10):
@@ -596,6 +712,8 @@ class StudioControls:
                             # this block will fit where ever we know sub-ids and description
                             if not next_id in self.blacklist:
                                 self.blacklist_add.append(next_id, next_d)
+                                if next_id != self.def_config['PHONE-DEVICE']:
+                                    self.hp_device.append(next_id, next_d)
                                 if is_usb:
                                     if usb_save == "":
                                         usb_save = next_id
@@ -743,58 +861,35 @@ class StudioControls:
     def refresh_pulse_tab(self, i_in, i_out):
         ''' Fill in all pulse related widgets '''
         '''self.combo_out_ports.set_active_id(self.def_config['PORTS'])'''
-        global jack_alive
-        global max_in
-        global max_out
-        self.pj_in_con.set_sensitive(False)
+        global jack_ports_changed
         self.pj_in_combo.set_sensitive(False)
         self.pj_in_name.set_sensitive(False)
-        self.pj_out_con.set_sensitive(False)
         self.pj_out_combo.set_sensitive(False)
         self.pj_out_name.set_sensitive(False)
 
-        self.pj_in_con.get_model().clear()
-        self.pj_in_con.append("0", "no connection")
-        self.pj_in_con.set_active(0)
-        for i in range(1, max_in, 2):
-            self.pj_in_con.append(f"{str(i)}", f"{str(i)} and {str(i + 1)}")
         self.pj_in_combo.get_model().clear()
         for i, pj_name in enumerate(self.pulse_in):
             self.pj_in_combo.append(str(i), pj_name)
         if len(self.pulse_in):
             self.pj_in_combo.set_active(i_in)
             self.pj_in_name.set_text(self.pulse_in[i_in])
-            if (int(self.p_in_con[i_in]) > max_in) and (jack_alive):
-                self.pj_in_con.append(self.p_in_con[i_in],
-                    f"{self.p_in_con[i_in]} and {str(int(self.p_in_con[i_in]) + 1)} (invalid)")
-            self.pj_in_con.set_active_id(self.p_in_con[i_in])
         else:
             self.pj_in_name.set_text("")
 
-        self.pj_out_con.get_model().clear()
-        self.pj_out_con.append("0", "no connection")
-        self.pj_out_con.set_active(0)
-        for i in range(1, max_out, 2):
-            self.pj_out_con.append(f"{str(i)}", f"{str(i)} and {str(i + 1)}")
         self.pj_out_combo.get_model().clear()
         for i, pj_name in enumerate(self.pulse_out):
             self.pj_out_combo.append(str(i), pj_name)
         if len(self.pulse_out):
             self.pj_out_combo.set_active(i_out)
             self.pj_out_name.set_text(self.pulse_out[i_out])
-            if (int(self.p_out_con[i_out]) > max_out) and (jack_alive):
-                self.pj_out_con.append(self.p_out_con[i_out],
-                    f"{self.p_out_con[i_out]} and {str(int(self.p_out_con[i_out]) + 1)} (invalid)")
-            self.pj_out_con.set_active_id(self.p_out_con[i_out])
         else:
             self.pj_out_name.set_text("")
 
-        self.pj_in_con.set_sensitive(True)
         self.pj_in_combo.set_sensitive(True)
         self.pj_in_name.set_sensitive(True)
-        self.pj_out_con.set_sensitive(True)
         self.pj_out_combo.set_sensitive(True)
         self.pj_out_name.set_sensitive(True)
+        jack_ports_changed = True
 
 
     def pj_in_name_cb(self, widget):
@@ -1000,8 +1095,8 @@ class StudioControls:
             self.def_config['USBAUTO'] = str(self.usb_plug_check.get_active())
             self.def_config['USB-SINGLE'] = str(self.usb_single_ck.get_active())
             self.def_config['XDEV'] = ' '.join(self.zdev)
-            self.def_config['PHONE-ACTION'] = str(self.hp_action.get_active())
-            self.def_config['PHONE-DEVICE'] = str(self.hp_device.get_active())
+            self.def_config['PHONE-ACTION'] = str(self.hp_action.get_active_id())
+            self.def_config['PHONE-DEVICE'] = str(self.hp_device.get_active_id())
             self.config.write(rc_file)
 
     def start_autojack(self):

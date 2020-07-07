@@ -4,9 +4,13 @@ studio-controls version 1.99.2
  - Add white glow to icon to increase visibilty
 
  [ Len Ovens ]
- - Start work on head phone detection
+ - Head phone detection for PCH devices added
  - Force PCH devices to be at least 128 buffer in extra devices
  - Remove old jackdbus settings file before starting jack
+ - Pulse connect port extended to all Physical ports
+ - Fixed extra devices that are not sub device 0 don't work
+ - Fixed Apply for input only
+ - USB units with sub devices other than 0 will now auto connect
 
 studio-controls version 1.99.1
 

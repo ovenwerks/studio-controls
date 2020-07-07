@@ -1,6 +1,5 @@
 #!/bin/sh
 # send signal to autojack
-echo Sending ${1} signal
 /usr/bin/dbus-send --system --type=signal / org.studio.control.event.${1}_signal
 
 # Note: in most cases -controls can automatoically switch from speakers

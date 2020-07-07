@@ -5,7 +5,6 @@
  things)
 
 Features:
-    - Show and use USB,1,0 and other sub devices
 	- bluetooth via pulse. use: pacmd load-module module-loopback latency_msec=5
 		and: pacmd unload-module module-loopback
 		need to figue out how to auto route jack->pulse bridge to loop
@@ -18,9 +17,6 @@ Features:
 		- Then see if we can match plasma utility for setting size and 
 		setting buttons etc.
 	- add pre/post jack start/stop scripting
-	- monitor headphone plug status if PCH is being used for output
-		switch to headphones or speakers in alsa. use alsa level/mute
-		controls but add hook for user script.
 	- special case HDMI... needs large buffer if we can detect HDMI,
 		buffer should only allow 4096 to show. Zita should use 4096
 		as well. (zita is fixed)
@@ -28,8 +24,6 @@ Features:
 		above. USB devices at 32 should probably set periods to 3.
 
 	- logrotate for shorter log files
-	- jack detection when jack is stopped should only happen once
-		when entering audio settings page.
 	- add button to system page to select between lowlatency or generic
 		kernel as default.
 	- add use of internals (net manager, audio and net adapters)
