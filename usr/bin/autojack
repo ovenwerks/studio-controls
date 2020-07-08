@@ -358,9 +358,6 @@ def reconfig():
 
         import_device_array()
         for device in devices:
-            if device[3][2] and device[3][2] == device[3][4]:
-                # in and out are same PID this is jack master skip or device in use
-                continue
             if device[1] and device[2]:
                 # USB Audio device
                 for sub in range(int(device[2])):
@@ -368,12 +365,13 @@ def reconfig():
                     dev_has_pid = False
                     if device[3+sub][2] or device[3+sub][4]:
                         dev_has_pid = True
-                    if def_config['USBAUTO'] == "True" and not subname in blacklist:
-                        if dev_has_pid:
+                    if subname != def_config['USBDEV']:
+                        if def_config['USBAUTO'] == "True" and not subname in blacklist:
+                            if dev_has_pid:
+                                kill_slave(subname)
+                            start_slave(subname)
+                        else:
                             kill_slave(subname)
-                        start_slave(subname)
-                    else:
-                        kill_slave(subname)
 
 
 def config_start():
@@ -490,10 +488,20 @@ def config_start():
     if def_config['USBAUTO'] == "True":
         import_device_array()
         for device in devices:
-            if device[1]:
-                # this is a USB device
-                if f"{device[0]},0,0" != def_config['USBDEV']:
-                    start_slave(f"{device[0]},0,0")
+            if device[1] and device[2]:
+                # USB Audio device
+                for sub in range(int(device[2])):
+                    subname = f"{device[0]},{str(sub)},0"
+                    dev_has_pid = False
+                    if device[3+sub][2] or device[3+sub][4]:
+                        dev_has_pid = True
+                    if subname != def_config['USBDEV']:
+                        if not subname in blacklist:
+                            if dev_has_pid:
+                                kill_slave(subname)
+                            start_slave(subname)
+                        else:
+                            kill_slave(subname)
 
     if def_config['A2J'] == "True":
         # Can't set up logging
@@ -700,8 +708,6 @@ def msg_cb_removed(*args, **kwargs):
     # let things settle
     time.sleep(1)
 
-    import_config()
-
     if args[0].find("sound-card") >= 0:
         # tell gui devicelist has changed
         subprocess.run(["/usr/bin/dbus-send", "--type=signal", "/", "org.studio.control.event.usb_signal"],
@@ -816,6 +822,7 @@ def start_slave(ldev):
                         logging.debug(f"device bridging comand line: {cmd}")
                         procout = subprocess.Popen(shlex.split(cmd), shell=False)
                         pidout = procout.pid
+                        logging.debug(f" Device {ldev} out has pid: {pidout}")
                         procs.append(procout)
                         device[3 + int(l_dev)][2] = pidout
                 else:
@@ -826,10 +833,13 @@ def start_slave(ldev):
                     logging.debug(f"Device input comand line: {cmd}")
                     procin = subprocess.Popen(shlex.split(cmd), shell=False)
                     pidin = procin.pid
+                    logging.debug(f" Device {ldev} in has pid: {pidin}")
                     procs.append(procin)
                     device[3 + int(l_dev)][4] = pidin
                 else:
                     logging.debug(f" Device {ldev} capture already bridged")
+    time.sleep(1)
+    import_device_array()
 
 
 def kill_slave(ldev):
@@ -840,7 +850,10 @@ def kill_slave(ldev):
     dname, l_dev, sub = ldev.split(",", 2)
     logging.debug(f"{ldev} kill in progress")
     for device in devices:
+        logging.debug(f"Device is {device[0]}")
         if device[0] == dname and device[2]:
+            logging.debug(f"{device[0]} has {device[2]} sub devices, want sub device {l_dev}")
+            logging.debug(f"{device[0]} sub device {l_dev} has pid: {device[3 + int(l_dev)][2]}")
             if device[3 + int(l_dev)][2]:
                 logging.debug(f"{ldev} found Playback bridge to kill")
                 for i, pr in enumerate(procs):
