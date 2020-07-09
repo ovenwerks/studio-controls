@@ -164,8 +164,8 @@ def import_config():
         'XDEV': "",
         'PULSE-IN': "pulse_in",
         'PULSE-OUT': "pulse_out",
-        'PJ-IN-CON': '1',
-        'PJ-OUT-CON': '1',
+        'PJ-IN-CON': 'system:capture_1',
+        'PJ-OUT-CON': 'system:playback_1',
         'A2J': "True",
         'DEV': "PCH,0,0",
         'USBAUTO': "True",
@@ -306,7 +306,7 @@ def reconfig():
                                 "channels=2", "connect=no"],
                                 universal_newlines=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=False)
             logging.debug(f"Load jackd_source: {cp.stdout.strip()}")
-            
+
     if def_config['PULSE-OUT'] != old_def_config['PULSE-OUT']:
         if not pulse_dirty:
             pulse_dirty = True
@@ -464,6 +464,8 @@ def config_start():
     # maybe check for jack up (need function?)
     time.sleep(2)
 
+    start_jack_client()
+
     for piname in pulse_in:
         def_config['PULSE'] = "True"
         cp = subprocess.run(["/usr/bin/pactl", "load-module", "module-jack-source", f"client_name={piname}",
@@ -483,8 +485,8 @@ def config_start():
 
     # not sure all these delays need to be here. Was checking with old pulse.
     time.sleep(2)
-
     connect_pa()
+
     if def_config['USBAUTO'] == "True":
         import_device_array()
         for device in devices:
@@ -508,7 +510,7 @@ def config_start():
         subprocess.Popen(["/usr/bin/a2jmidid", "-e"], shell=False).pid
 
 
-def jack_client():
+def start_jack_client():
     ''' Create a jack client for monitoring and changing port connections'''
     global jack_client
     global jack_died
@@ -540,6 +542,11 @@ def check_jack_status(user_data):
     global jack_client
     global jack_alive
     global jack_died
+    global jack_count
+    jack_count = jack_count + 1
+    if jack_count == 200:
+        logging.log(7, f"Jack_status: {str(jack_alive)}")
+        jack_count = 0
 
     # sent by jackdied() callback
     if jack_died:
@@ -551,12 +558,70 @@ def check_jack_status(user_data):
     return True
 
 
-def switch_outputs(a_dev, b_dev):
-    '''finds any outputs connected to a_dev and moves them to b_dev'''
+def switch_outputs(left_old, left_new):
+    '''finds any outputs connected to a_dev and moves them to b_dev.
+    Devices are jack client names including the first port of the stereo
+    pair. example: system:playback_1'''
     global def_config
     global jack_client
     global jack_alive
-    logging.debug(f"moving connections from {str(a_dev)} to {str(b_dev)}")
+    logging.debug(f"moving connections from {str(left_old)} to {str(left_new)}")
+    clnt_old = left_old.split(':')[0]
+    clnt_new = left_new.split(':')[0]
+    ports_old = jack_client.get_ports(f"{clnt_old}*", is_audio=True, is_input=True)
+    ports_new = jack_client.get_ports(f"{clnt_new}*", is_audio=True, is_input=True)
+    logging.log(8, f"Ports A: {str(ports_old)} \nPorts b: {str(ports_new)}")
+    right = False
+    right_old = get_right_port(left_old)
+    right_new = get_right_port(left_new)
+    l_old_con = jack_client.get_all_connections(left_old)
+    logging.log(8, f"old left connections {str(l_old_con)}")
+    # first connect all output to new device
+    for raw_p in l_old_con:
+        s_port = str(raw_p).split("'")[1]
+        jack_client.connect(s_port, left_new)
+    r_old_con = jack_client.get_all_connections(right_old)
+    logging.log(8, f"old right connections {str(r_old_con)}")
+    for raw_p in r_old_con:
+        s_port = str(raw_p).split("'")[1]
+        jack_client.connect(s_port, right_new)
+    # then disconnect old ones
+    for raw_p in l_old_con:
+        s_port = str(raw_p).split("'")[1]
+        jack_client.disconnect(s_port, left_old)
+    for raw_p in r_old_con:
+        s_port = str(raw_p).split("'")[1]
+        jack_client.disconnect(s_port, right_old)
+
+
+def get_right_port(left_port):
+    ''' given a port, this returns the jack port of the next port
+    or for a mono device the same port so that it is connected to both
+    left and write'''
+    global jack_client
+    global jack_alive
+    if not jack_alive:
+        return ""
+
+    right = False
+    right_port = left_port
+    for is_input in [True, False]:
+        if is_input:
+            ports = jack_client.get_ports(f"{left_port.split(':')[0]}*", is_audio=True, is_input=True)
+        elif not right:
+            ports = jack_client.get_ports(f"{left_port.split(':')[0]}*", is_audio=True, is_output=True)
+        else:
+            break
+        for raw_p in ports:
+            portname = str(raw_p).split("'")[1]
+            if portname == left_port:
+                logging.log(8, f"{str(portname)} == {str(left_port)}")
+                right = True
+            elif right:
+                right_port = portname
+                logging.log(8, f"Right port: {str(right_port)}")
+                break
+    return right_port
 
 
 def connect_pa():
@@ -570,76 +635,47 @@ def connect_pa():
     if (p_in_con == []) and (p_out_con == []):
         return
 
-    for i, pj_name in enumerate(pulse_in):
-        port2 = ""
-        port = p_in_con[i]
-        if port == "none" or port == "0":
-            continue
-        elif "left" in port:
-            port2 = f"{port[0-(len(port)-5)]}right"
-        elif port.isnumeric():
-            p = int(port)
-            port = f"system:capture_{str(p)}"
-            port2 = f"system:capture_{str(p + 1)}"
-        else:
-            p = int(port[(port.rfind("_") + 1):]) + 1
-            port2 = f"{port[0:port.rfind('_') + 1]}{p}"
-        cp = subprocess.run(["/usr/bin/jack_connect", port, f"{pj_name}:front-left"],
-                        universal_newlines=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=False)
-        logging.debug(f"Jack connect to pulse in left: {cp.stdout.strip()}")
-        cp = subprocess.run(["/usr/bin/jack_connect", port2, f"{pj_name}:front-right"],
-                        universal_newlines=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=False)
-        logging.debug(f"Jack connect to pulse in right: {cp.stdout.strip()}")
+    for i, name in enumerate(pulse_in):
+        if p_in_con[i] != 'none':
+            logging.debug(f"jack connect {p_in_con[i]} from {name}:front-left")
+            jack_client.connect(p_in_con[i], f"{name}:front-left")
+            con_left = p_in_con[i]
+            con_right = get_right_port(con_left)
+            logging.debug(f"jack connect {con_right} from {name}:front-right")
+            jack_client.connect(con_right, f"{name}:front-right")
 
-
-    for i, pj_name in enumerate(pulse_out):
-        port2 = ""
-        port = p_out_con[i]
-        if port == "none" or port == "0":
-            continue
-        elif "left" in port:
-            port2 = f"{port[0:(len(port)-5)]}right"
-        elif port.isnumeric():
-            p = int(port)
-            port = f"system:playback_{str(p)}"
-            port2 = f"system:playback_{str(p + 1)}"
-        else:
-            p = int(port[(port.rfind("_") + 1):]) + 1
-            port2 = f"{port[0:port.rfind('_') + 1]}{p}"
-        cp = subprocess.run(["/usr/bin/jack_connect", port, f"{pj_name}:front-left"],
-                        universal_newlines=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=False)
-        logging.debug(f"Pulse out left connect to jack: {cp.stdout.strip()}")
-        cp = subprocess.run(["/usr/bin/jack_connect", port2, f"{pj_name}:front-right"],
-                        universal_newlines=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=False)
-        logging.debug(f"Pulse out right connect to jack: {cp.stdout.strip()}")
+    for i, name in enumerate(pulse_out):
+        if p_out_con[i] != 'none':
+            logging.debug(f"jack connect {name}:front-left from {p_out_con[i]}")
+            jack_client.connect(f"{name}:front-left", p_out_con[i])
+            con_right = get_right_port(p_out_con[i])
+            logging.debug(f"jack connect {name}:front-right from {con_right}")
+            jack_client.connect(f"{name}:front-right", con_right)
 
 
 def disconnect_pa(our_config):
     '''disconnect Pulse ports we know we have connected.
     The pa-jack bridge is left running.'''
+    global jack_client
+    global jack_alive
     p_in_con = our_config['PJ-IN-CON'].strip('"').split()
     p_out_con = our_config['PJ-OUT-CON'].strip('"').split()
     for i, name in enumerate(our_config['PULSE-IN'].strip('"').split()):
-        if int(p_in_con[i]):
-            cp = subprocess.run(["/usr/bin/jack_disconnect", f"{name}:front-left",
-                            f"system:capture_{p_in_con[i]}"],
-                        universal_newlines=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=False)
-            logging.debug(f"jack dissconnect PA: {cp.stdout.strip()}")
-            cp = subprocess.run(["/usr/bin/jack_disconnect", f"{name}:front-right",
-                            f"system:capture_{str(int(p_in_con[i]) + 1)}"],
-                        universal_newlines=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=False)
-            logging.debug(f"jack dissconnect PA: {cp.stdout.strip()}")
+        if p_in_con[i] != 'none':
+            logging.debug(f"jack disconnect {p_in_con[i]} from {name}:front-left")
+            jack_client.disconnect(p_in_con[i], f"{name}:front-left")
+            con_left = p_in_con[i]
+            con_right = get_right_port(con_left)
+            logging.debug(f"jack disconnect {con_right} from {name}:front-right")
+            jack_client.disconnect(con_right, f"{name}:front-right")
 
     for i, name in enumerate(our_config['PULSE-OUT'].strip('"').split()):
-        if int(p_out_con[i]):
-            cp = subprocess.run(["/usr/bin/jack_disconnect", f"{name}:front-left",
-                           f"system:playback_{p_out_con[i]}"],
-                        universal_newlines=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=False)
-            logging.debug(f"jack dissconnect PA: {cp.stdout.strip()}")
-            cp = subprocess.run(["/usr/bin/jack_disconnect", f"{name}:front-right",
-                           f"system:playback_{str(int(p_out_con[i]) + 1)}"],
-                        universal_newlines=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=False)
-            logging.debug(f"jack dissconnect PA: {cp.stdout.strip()}")
+        if p_out_con[i] != 'none':
+            logging.debug(f"jack disconnect {name}:front-left from {p_out_con[i]}")
+            jack_client.disconnect(f"{name}:front-left", p_out_con[i])
+            con_right = get_right_port(p_out_con[i])
+            logging.debug(f"jack disconnect {name}:front-right from {con_right}")
+            jack_client.disconnect(f"{name}:front-right", con_right)
 
 
 def msg_cb_new(*args, **kwargs):
@@ -955,12 +991,12 @@ def ses_cb_ping(*args, **kwargs):
 
 def phones_switch(plugged):
     ''' Does the actual phones signal and level switching '''
-    logging.debug(f"Changing Headphone to plugged in = {str(plugged)}")
     global def_config
+    global zdev
     if def_config['JACK'] == "False":
         # we can't do anything up to pulse (I think)
         return
-    global zdev
+    logging.debug(f"Changing Headphone to plugged in = {str(plugged)}")
     out_L = "system:playback_1"
     out_R = "system:playback_2"
     logging.debug(f"Headphone PHONE-ACTION = {str(def_config['PHONE-ACTION'])}")
@@ -985,31 +1021,36 @@ def phones_switch(plugged):
         if def_config['PHONE-DEVICE'] != def_config['DEV']:
             logging.debug("Headphone device is not system")
             # set jack port names
-            out_L = f"{def_config['PHONE-DEVICE']}:playback_1"
-            out_R = f"{def_config['PHONE-DEVICE']}:playback_2"
-            logging.debug(f"Headphone jack ports: {str(out_L)} {str(out_R)}")
+            out_L = f"{def_config['PHONE-DEVICE']}-out:playback_1"
+            logging.debug(f"Headphone jack is: {str(out_L)}")
+            hp_is_usb = False
+            if os.path.exists(f"/proc/asound/{def_config['PHONE-DEVICE'].split(',')[0]}/usbbus"):
+                hp_is_usb = True
+            # USB device?
             if not plugged:
                 switch_outputs(out_L, "system:playback_1")
-                switch_outputs(out_R, "system:playback_2")
-            # find out if this is already an zdev
-            if not def_config['PHONE-DEVICE'] in zdev:
-                logging.debug("Headphone device has no jack port ... Creating them")
-                # we have to start a zita proc
-                start_slave(def_config['PHONE-DEVICE'])
-            # should move or copy all connections from 'PJ-OUT-CON'
-            # to 'PHONE-DEVICE' (_only_ if it is a different device)
+                # find out if this is already an zdev
+                if (not def_config['PHONE-DEVICE'] in zdev) and (not hp_is_usb):
+                    logging.debug("Headphone device had no jack port ... kill unneeded bridge")
+                    kill_slave(def_config['PHONE-DEVICE'])
+            else:
+                if not def_config['PHONE-DEVICE'] in zdev and (not hp_is_usb):
+                    logging.debug("Headphone device has no jack port ... create bridge")
+                    # we have to start a zita proc
+                    start_slave(def_config['PHONE-DEVICE'])
+                    time.sleep(1)
+                switch_outputs("system:playback_1", out_L)
 
     elif def_config['PHONE-ACTION'] == "script":
         # run a script to perform this instead
-        # XXX get straight level switching working first
-        logging.warn("Script not available yet")
-        '''if os.path.isfile(expanduser('~/.config/jack/conf.xml')):
-        '''
-
-    # otherwise assume none
-        '''"PHONE-ACTION": "switch",
-        "PHONE-DEVICE": "PCH,0,0",
-        '''
+        logging.debug("Use script")
+        fpath = expanduser('~/.config/autojack/headphone')
+        if os.path.isfile(fpath) and os.access(fpath, os.X_OK):
+            cp = subprocess.run([fpath, str(plugged)],
+                        universal_newlines=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=True)
+            logging.debug(f"Running script: {fpath} {str(plugged)}")
+    else:
+        logging.debug("No action chosen")
 
 
 def phones_check():
@@ -1042,6 +1083,8 @@ def main():
     global procs
     global jack_alive
     global jack_died
+    global jack_count
+    jack_count = 0
     procs = []
     last_master = ""
     jack_alive = False
