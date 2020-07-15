@@ -14,6 +14,11 @@ studio-controls version 1.99.2
  - Added extra logging level for lots of output
  - Added better method of finding device sample rate
  - Added new depend: python3-alsaaudio
+ - Detect headphone plug state on startup
+ - Use direct alsa mixer manipulation
+ - Add manual headphone switching
+ - Add ability use outputs other than system:playback_1/2
+ - general code clean up
 
 studio-controls version 1.99.1
 

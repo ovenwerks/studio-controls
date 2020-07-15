@@ -5,8 +5,6 @@
  things)
 
 Fixes:
-	Pulse bridge deal with MONO devices
-	
 
 Features:
 	- bluetooth via pulse. use: pacmd load-module module-loopback latency_msec=5

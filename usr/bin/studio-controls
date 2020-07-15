@@ -11,6 +11,7 @@ import pwd
 import re
 import resource
 import shutil
+import shlex
 import subprocess
 import glob
 import dbus
@@ -158,6 +159,8 @@ class StudioControls:
         self.blacklist_remove = builder.get_object('blacklist_remove')
         self.hp_action = builder.get_object('hp_action')
         self.hp_device = builder.get_object('hp_device')
+        self.monitor_combo = builder.get_object('monitor_combo')
+        self.hp_switch = builder.get_object('hp_switch')
 
         '''pulse tab'''
         self.pj_in_combo = builder.get_object('pj_in_combo')
@@ -238,6 +241,7 @@ class StudioControls:
             'BLACKLIST': "",
             'PHONE-ACTION': "switch",
             'PHONE-DEVICE': "PCH,0,0",
+            'MONITOR': 'system:playback_1'
         }
 
         global autojack
@@ -247,7 +251,7 @@ class StudioControls:
         global xrun_count
         global jack_ports_changed
         xrun_count = 0
-        autojack = False
+        autojack = True
         newusb = False
         jack_alive = False
         jack_died = False
@@ -387,6 +391,7 @@ class StudioControls:
             "cb_blacklist_remove": self.cb_blacklist_remove,
             "usb_plug_cb": self.usb_plug_cb,
             "hp_action_cb": self.hp_action_cb,
+            "hp_switch_cb": self.hp_switch_cb,
 
             "pj_in_combo_cb": self.pj_in_combo_cb,
             "pj_out_combo_cb": self.pj_out_combo_cb,
@@ -402,6 +407,20 @@ class StudioControls:
 
         self.rtsetup = RTSetup()
         self.timeout_id = GLib.timeout_add(500, self.check_jack_status, None)
+        self.signal_autojack("ping")
+        autojack = False
+
+    def signal_autojack(self, signal):
+        global autojack
+        cmd = f"/usr/bin/dbus-send --type=signal / org.studio.control.event.{signal}_signal"
+        if autojack:
+            subprocess.run(shlex.split(cmd), shell=False)
+        else:
+            time.sleep(5)
+            if autojack:
+                subprocess.run(shlex.split(cmd), shell=False)
+            else:
+                self.start_autojack()
 
     def db_ses_cb(*args, **kwargs):
         ''' this means we got a responce from autojack, Good'''
@@ -517,10 +536,15 @@ class StudioControls:
         self.pj_in_con.set_sensitive(False)
         self.pj_out_con.set_sensitive(False)
         self.pj_in_con.get_model().clear()
+        self.monitor_combo.set_sensitive(False)
+        self.monitor_combo.get_model().clear()
+        self.monitor_combo.append(self.def_config["MONITOR"], self.def_config["MONITOR"])
+        self.monitor_combo.set_active(0)
         self.pj_in_con.append("0", "no connection")
         self.pj_in_con.set_active(0)
         self.pj_out_con.get_model().clear()
         self.pj_out_con.append("0", "no connection")
+        self.pj_out_con.append("monitor", "Main Output Ports")
         self.pj_out_con.set_active(0)
         active_in = self.p_in_con[self.i_in]
         if (self.p_in_con != []) and (active_in != "0"):
@@ -528,7 +552,8 @@ class StudioControls:
             self.pj_in_con.set_active_id(active_in)
         active_out = self.p_out_con[self.i_out]
         if (self.p_out_con != []) and (active_out != "0"):
-            self.pj_out_con.append(active_out, active_out)
+            if active_out != "monitor":
+                self.pj_out_con.append(active_out, active_out)
             self.pj_out_con.set_active_id(active_out)
 
         if jack_alive:
@@ -580,18 +605,24 @@ class StudioControls:
                     if dev == last_dev:
                         right_ch = port.rsplit('_', 1)[1]
                         self.pj_out_con.append(last_port, f"{last_port} and {str(right_ch)}")
+                        self.monitor_combo.append(last_port, f"{last_port} and {str(right_ch)}")
                         left_ch = True
                     else:
                         self.pj_out_con.append(port, f"{last_port} (mono)")
+                        self.monitor_combo.append(port, f"{last_port} (mono)")
                         last_dev = dev
                         last_port = port
 
                     if this_port == active_out:
                         self.pj_out_con.remove(self.pj_out_con.get_active())
                         self.pj_out_con.set_active_id(active_out)
+                    if this_port == self.def_config["MONITOR"]:
+                        self.monitor_combo.remove(self.monitor_combo.get_active())
+                        self.monitor_combo.set_active_id(self.def_config["MONITOR"])
                     left_ch = True
             if not left_ch:
                 self.pj_out_con.append(last_port, f"{last_port} (mono)")
+                self.monitor_combo.append(last_port, f"{last_port} (mono)")
                 if last_port == active_out:
                     self.pj_out_con.remove(self.pj_out_con.get_active())
                     self.pj_out_con.set_active_id(active_out)
@@ -599,9 +630,11 @@ class StudioControls:
         else:
             self.pj_in_con.append("none", "Ports can not be displayed unless Jack is running.")
             self.pj_out_con.append("none", "Ports can not be displayed unless Jack is running.")
+            self.monitor_combo.append("none", "Ports can not be displayed unless Jack is running.")
 
         self.pj_in_con.set_sensitive(True)
         self.pj_out_con.set_sensitive(True)
+        self.monitor_combo.set_sensitive(True)
 
 
     def refresh_dropdowns(self):
@@ -831,6 +864,9 @@ class StudioControls:
             print("Script is called ~/.config/autojack/phones.sh")
             # this needs to be shown as a dialog
 
+    def hp_switch_cb(self, button):
+        self.signal_autojack("phones")
+
     def jack_device_changed(self, button):
         a_id = str(button.get_active_id())
         a_desc = str(button.get_active_text())
@@ -1022,49 +1058,19 @@ class StudioControls:
         global autojack
         self.def_config['JACK'] = "True"
         self.config_save()
-        if autojack:
-            subprocess.run(["/usr/bin/dbus-send", "--type=signal", "/", "org.studio.control.event.start_signal"],
-                           shell=False)
-        else:
-            time.sleep(5)
-            if autojack:
-                subprocess.run(
-                    ["/usr/bin/dbus-send", "--type=signal", "/", "org.studio.control.event.start_signal"],
-                    shell=False)
-            else:
-                self.start_autojack()
+        self.signal_autojack("start")
 
     def cb_jack_stop(self, button):
         global autojack
         self.def_config['JACK'] = "False"
         self.config_save()
-        if autojack:
-            subprocess.run(["/usr/bin/dbus-send", "--type=signal", "/", "org.studio.control.event.stop_signal"],
-                           shell=False)
-        else:
-            time.sleep(5)
-            if autojack:
-                subprocess.run(
-                    ["/usr/bin/dbus-send", "--type=signal", "/", "org.studio.control.event.stop_signal"],
-                    shell=False)
-            else:
-                self.start_autojack()
+        self.signal_autojack("stop")
 
     def cb_audio_apply(self, button):
         '''callback for audio tab apply button'''
         global autojack
         self.config_save()
-        if autojack:
-            subprocess.run(["/usr/bin/dbus-send", "--type=signal", "/", "org.studio.control.event.config_signal"],
-                           shell=False)
-        else:
-            time.sleep(5)
-            if autojack:
-                subprocess.run(
-                    ["/usr/bin/dbus-send", "--type=signal", "/", "org.studio.control.event.config_signal"],
-                    shell=False)
-            else:
-                self.start_autojack()
+        self.signal_autojack("config")
 
     def config_save(self):
         ''' Write audio setting to ~/.config/autojack/autojackrc'''
@@ -1097,6 +1103,7 @@ class StudioControls:
             self.def_config['XDEV'] = ' '.join(self.zdev)
             self.def_config['PHONE-ACTION'] = str(self.hp_action.get_active_id())
             self.def_config['PHONE-DEVICE'] = str(self.hp_device.get_active_id())
+            self.def_config['MONITOR'] = str(self.monitor_combo.get_active_id())
             self.config.write(rc_file)
 
     def start_autojack(self):
@@ -1120,10 +1127,6 @@ class StudioControls:
 
     def on_button_rt_info_ok_clicked(self, button):
         self.message_dialog_rt_info.hide()
-
-    subprocess.run(["/usr/bin/dbus-send", "--type=signal", "/", "org.studio.control.event.ping_signal"],
-                   shell=False)
-
 
 us = StudioControls()
 us.window_main.show_all()
