@@ -33,10 +33,11 @@ def get_dev_info(x):
     '''uses audio device number to make a device structure with device
     info. The layout is:
         device[0] = device name as a string
-        device[1] = bool true is USB device
-        device[2] = bool true is internal device
-        device[3] = number of sub devices (0 means MIDI only)
-        device[4 to n] = subdevice info as a list:
+        device[1] = bool True is USB device
+        device[2] = bool True is internal device
+        device[3] = bool True is firewire device
+        device[4] = number of sub devices (0 means MIDI only)
+        device[5 to n] = subdevice info as a list:
             device[n][0] = sub device number (some devices skip...)
             device[n][1] = bool has playback
             device[n][2] = PID of playback user
@@ -48,6 +49,7 @@ def get_dev_info(x):
     cname = ""
     l_usb = False
     l_internal = False
+    l_fw = False
     sub = 0
     if os.path.exists(f"/proc/asound/card{str(x)}"):
         if os.path.isfile(f"/proc/asound/card{str(x)}/id"):
@@ -62,10 +64,13 @@ def get_dev_info(x):
         l_usb = True
     if os.path.exists(f"/proc/asound/card{str(x)}/codec#0"):
         l_internal = True
+    if os.path.exists(f"/proc/asound/card{str(x)}/firewire"):
+        l_fw = True
 
     device.append(cname)
     device.append(l_usb)
     device.append(l_internal)
+    device.append(l_fw)
     device.append(sub)
 
     for y in range(0, 10):
@@ -91,7 +96,7 @@ def get_dev_info(x):
                             cap_pid = int(line.rstrip().split(": ", 1)[1])
 
         if play or cap:
-            device[3] = device[3] + 1
+            device[4] = device[4] + 1
             subdevice.append(y)
             subdevice.append(play)
             subdevice.append(play_pid)
@@ -133,10 +138,10 @@ def import_device_array():
 
 
 def device_by_name(name):
-    for device in devices:
+    for idx, device in enumerate(devices):
         if device[0] == name.split(',')[0]:
-            return device
-
+            return device, idx
+    return "", -1
 
 def import_config():
     ''' sets default parmeters, then reads values from configuration file'''
@@ -176,7 +181,7 @@ def import_config():
         'PULSE-IN': "pulse_in",
         'PULSE-OUT': "pulse_out",
         'PJ-IN-CON': 'system:capture_1',
-        'PJ-OUT-CON': 'system:playback_1',
+        'PJ-OUT-CON': 'monitor',
         'A2J': "True",
         'DEV': "PCH,0,0",
         'USBAUTO': "True",
@@ -257,13 +262,16 @@ def import_config():
                         def_config['USBDEV'] = lsplit[1]
 
     if def_config['DEV'] == "default":
-        def_config['DEV'] = "0,0,0"
+        def_config['DEV'] = "PCH,0,0"
     zdev = def_config['XDEV'].strip('"').split()
     blacklist = def_config['BLACKLIST'].strip('"').split()
     pulse_in = def_config['PULSE-IN'].strip('"').split()
     pulse_out = def_config['PULSE-OUT'].strip('"').split()
     p_in_con = def_config['PJ-IN-CON'].strip('"').split()
     p_out_con = def_config['PJ-OUT-CON'].strip('"').split()
+    for i, this_con in enumerate(p_out_con):
+        if this_con == "monitor":
+            p_out_con[i] = def_config['MONITOR']
     if pulse_in == [] and pulse_out == []:
         def_config['PULSE'] = "False"
 
@@ -362,7 +370,7 @@ def reconfig():
             if not ozd in zdev:
                 kill_slave(ozd)
         for nzd in zdev:
-            if not nzd in blacklist:
+            if not nzd in blacklist and (def_config['DRIVER'] != "alsa" or nzd != last_master):
                 start_slave(nzd)
 
     if phones:
@@ -371,7 +379,7 @@ def reconfig():
             con_dirty = True
     elif def_config['Monitor'] != "system:playback_1":
         mon_dev = def_config['Monitor'].split('-')[0]
-        if not mon_dev in zdev:
+        if not mon_dev in zdev and (def_config['DRIVER'] != "alsa" or nzd != last_master):
             start_slave(mon_dev)
             con_dirty = True
 
@@ -381,12 +389,12 @@ def reconfig():
 
         import_device_array()
         for device in devices:
-            if device[1] and device[3]:
+            if device[1] and device[4]:
                 # USB Audio device
-                for sub in range(int(device[3])):
+                for sub in range(int(device[4])):
                     subname = f"{device[0]},{str(sub)},0"
                     dev_has_pid = False
-                    if device[4+sub][2] or device[4+sub][4]:
+                    if device[5 + sub][2] or device[5+ sub][4]:
                         dev_has_pid = True
                     if subname != def_config['USBDEV']:
                         if def_config['USBAUTO'] == "True" and not subname in blacklist:
@@ -420,6 +428,19 @@ def config_start():
     cp = subprocess.run(["/usr/bin/killall", "-q", "-9", "jackdbus", "jackd", "a2jmidid"],
                         universal_newlines=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=False)
     logging.debug(f"Kill old Procs: {cp.stdout.strip()}")
+    JD, ji = device_by_name(def_config['DEV'])
+    if (def_config['DRIVER'] == "firewire") or JD[3]:
+        time.sleep(3)
+        # this is a firewire device, A busreset makes for stability
+        cp = subprocess.run(["/usr/bin/ffado-test", "BusReset"],
+                        universal_newlines=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=False)
+        logging.debug(f"reset firewire bus: {cp.stdout.strip()}")
+        time.sleep(3)
+        cp = subprocess.run(["/usr/bin/killall", "-q", "ffado-dbus-server", "ffado-mixer"],
+                        universal_newlines=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=False)
+        logging.debug(f"Kill ffado mixer because busreset needed: {cp.stdout.strip()}")
+        
+
     if def_config['JACK'] == "False":
         # restart Pulse
         cp = subprocess.run(["/usr/bin/pulseaudio", "-k"],
@@ -461,14 +482,25 @@ def config_start():
         logging.debug(f"Jackdbus: {cp.stdout.strip()}")
 
     elif def_config['DRIVER'] == "firewire":
-        cp = subprocess.run(["/usr/bin/jack_control", "ds", "firewire"],
+        cp = subprocess.run(["/usr/bin/ffado-test", "BusReset"],
+                        universal_newlines=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=False)
+        logging.debug(f"reset firewire bus: {cp.stdout.strip()}")
+        cp = subprocess.run(["/usr/bin/killall", "-q", "ffado-dbus-server", "ffado-mixer"],
+                        universal_newlines=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=False)
+        logging.debug(f"Kill ffado mixer because busreset needed: {cp.stdout.strip()}")
+        time.sleep(3)
+        cp = subprocess.run(["/usr/bin/jack_control", "ds", "firewire", "dps", "period", def_config['FRAME']],
                         universal_newlines=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=False)
         logging.debug(f"Jackdbus: {cp.stdout.strip()}")
-        cp = subprocess.run(["/usr/bin/jack_control", "dps", "device", f"hw:{mdev}", "dps", "rate", def_config['RATE']],
+        #cp = subprocess.run(["/usr/bin/jack_control", "dps", "device", "hw:0", "dps", "rate", def_config['RATE']],
+        cp = subprocess.run(["/usr/bin/jack_control", "dps", "rate", def_config['RATE']],
                         universal_newlines=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=False)
         logging.debug(f"Jackdbus: {cp.stdout.strip()}")
-        cp = subprocess.run(["/usr/bin/jack_control", "dps", "period", def_config['FRAME'], "dps", "nperiods",
-                        def_config['PERIOD'], "start"],
+        #cp = subprocess.run(["/usr/bin/jack_control", "dps", "nperiods", def_config['PERIOD'], "start"],
+        cp = subprocess.run(["/usr/bin/jack_control", "dps", "nperiods", "3"],
+                        universal_newlines=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=False)
+        logging.debug(f"Jackdbus: {cp.stdout.strip()}")
+        cp = subprocess.run(["/usr/bin/jack_control", "start"],
                         universal_newlines=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=False)
         logging.debug(f"Jackdbus: {cp.stdout.strip()}")
 
@@ -507,7 +539,7 @@ def config_start():
         logging.debug(f"Pulseaudio: {cp.stdout.strip()}")
 
     for cname in zdev:
-        if cname != "":
+        if not cname in blacklist and (def_config['DRIVER'] != "alsa" or cname != last_master):
             logging.debug(f"Extra Dev: {cname}")
             start_slave(cname)
 
@@ -517,7 +549,7 @@ def config_start():
             con_dirty = True
     elif def_config['Monitor'] != "system:playback_1":
         mon_dev = def_config['Monitor'].split('-')[0]
-        if not mon_dev in zdev:
+        if not mon_dev in zdev and (def_config['DRIVER'] != "alsa" or cname != last_master):
             start_slave(mon_dev)
             con_dirty = True
 
@@ -528,12 +560,12 @@ def config_start():
     if def_config['USBAUTO'] == "True":
         import_device_array()
         for device in devices:
-            if device[1] and device[3]:
+            if device[1] and device[4]:
                 # USB Audio device
-                for sub in range(int(device[3])):
+                for sub in range(int(device[4])):
                     subname = f"{device[0]},{str(sub)},0"
                     dev_has_pid = False
-                    if device[4+sub][2] or device[4+sub][4]:
+                    if device[5 + sub][2] or device[5 + sub][4]:
                         dev_has_pid = True
                     if subname != def_config['USBDEV']:
                         if not subname in blacklist:
@@ -557,8 +589,8 @@ def start_jack_client():
     try:
         jack_client = jack.Client('AutoJack', False, True)
     except jack.JackError:
-        logging.warn("Unable to create jack client")
-        jack_died = true
+        logging.warning("Unable to create jack client")
+        jack_died = True
         return
     jack_client.set_shutdown_callback(jackdied)
     jack_client.set_port_connect_callback(jack_con_det)
@@ -570,7 +602,7 @@ def start_jack_client():
     logging.debug("jack client created")
 
 
-def jackdied(state, why, extra):
+def jackdied(state, why):
     '''gets called by jack if it is exiting, we can't clean up
     here... so tell the world jack died with a flag instead'''
     global jack_died
@@ -657,7 +689,7 @@ def switch_outputs(left_old, left_new):
         jack_client.disconnect(s_port, right_old)
 
 
-def get_right_port(left_port):
+def get_right_port(left_port_ask):
     ''' given a port, this returns the jack port of the next port
     or for a mono device the same port so that it is connected to both
     left and write'''
@@ -667,23 +699,24 @@ def get_right_port(left_port):
         return ""
 
     right = False
-    right_port = left_port
-    for is_input in [True, False]:
-        if is_input:
-            ports = jack_client.get_ports(f"{left_port.split(':')[0]}*", is_audio=True, is_input=True)
-        elif not right:
-            ports = jack_client.get_ports(f"{left_port.split(':')[0]}*", is_audio=True, is_output=True)
-        else:
+    ''' For firewire backend, the ports are labeled firewire_pcm:something<num>_in or _out
+        but have an alias of system:<direction>_<num>. We have to find the real port name
+        for left_port '''
+    left_port = jack_client.get_port_by_name(left_port_ask)
+    logging.debug(f"Real left port name: {str(left_port.name)}")
+    right_port = left_port.name
+    if left_port.is_input:
+        ports = jack_client.get_ports(f"{left_port.name.split(':')[0]}*", is_audio=True, is_input=True)
+    else:
+        ports = jack_client.get_ports(f"{left_port.name.split(':')[0]}*", is_audio=True, is_output=True)
+    for next_port in ports:
+        if next_port.name == left_port.name:
+            logging.log(8, f"{str(next_port.name)} == {str(left_port)}")
+            right = True
+        elif right:
+            right_port = next_port.name
+            logging.log(8, f"Right port: {str(right_port)}")
             break
-        for raw_p in ports:
-            portname = str(raw_p).split("'")[1]
-            if portname == left_port:
-                logging.log(8, f"{str(portname)} == {str(left_port)}")
-                right = True
-            elif right:
-                right_port = portname
-                logging.log(8, f"Right port: {str(right_port)}")
-                break
     return right_port
 
 
@@ -695,6 +728,11 @@ def connect_pa():
     global pulse_out
     global p_in_con
     global p_out_con
+    global jack_client
+    global jack_alive
+    if not jack_alive:
+        logging.debug("Can't connect, jack not running")
+        return
 
     if (p_in_con == []) and (p_out_con == []):
         return
@@ -726,6 +764,9 @@ def disconnect_pa(our_config):
     The pa-jack bridge is left running.'''
     global jack_client
     global jack_alive
+    if not jack_alive:
+        logging.debug("Jack not running")
+        return
     p_in_con = our_config['PJ-IN-CON'].strip('"').split()
     p_out_con = our_config['PJ-OUT-CON'].strip('"').split()
     for i, name in enumerate(our_config['PULSE-IN'].strip('"').split()):
@@ -776,18 +817,18 @@ def msg_cb_new(*args, **kwargs):
         audio_if = a_if[1].split(".", 1)[0]
         device = devices[int(audio_if)]
         # make sure device is USB and is not midi only
-        if device[1] and device[3]:
+        if device[1] and device[4]:
             # tell gui devicelist has changed so it can up date device dropdowns
             subprocess.run(["/usr/bin/dbus-send", "--type=signal", "/", "org.studio.control.event.usb_signal"],
                            shell=False)
 
-            for subn in range(int(device[3])):
+            for subn in range(int(device[4])):
                 subname = f"{device[0]},{str(subn)},0"
                 if subname == last_master:
                     # spurious indication, ignore
                     logging.debug(f" We already have that device - spurious signal, ignoring")
                     return
-                logging.debug(f" device = {subname} play:{str(device[4][1])} capture:{str(device[4][3])}")
+                logging.debug(f" device = {subname} play:{str(device[5][1])} capture:{str(device[5][3])}")
 
                 if (def_config['DRIVER'] == "alsa") and (def_config['USBDEV'] == subname):
                     # change_jack_master(cid, "sm")
@@ -836,7 +877,7 @@ def msg_cb_removed(*args, **kwargs):
         if not device[1]:
             # not a usb device
             return
-        for sn in range(int(device[3])):
+        for sn in range(int(device[4])):
             subd = f"{device[0]},{str(sn)},0"
             logging.debug(f"Subdevice {subd} unplugged")
             if def_config['USBDEV'] == subd:
@@ -921,11 +962,11 @@ def start_slave(ldev):
     if (dname == "PCH") and (int(buff_size) < 128):
         logging.info("PCH device, minimum buffer 128, using 128")
         buff_size = "128"
-    device = device_by_name(ldev)
-    if device[3] > int(l_dev):
+    device, idx = device_by_name(ldev)
+    if device[4] > int(l_dev):
         # we found it and it seems to have this sub
-        if device[4 + int(l_dev)][1]:
-            if not device[4 + int(l_dev)][2]:
+        if device[5 + int(l_dev)][1]:
+            if not device[5 + int(l_dev)][2]:
                 if device[1] and (def_config['USB-SINGLE'] == "True"):
                     logging.info("USB device set input only, no playback bridge")
                 else:
@@ -935,18 +976,18 @@ def start_slave(ldev):
                     pidout = procout.pid
                     logging.debug(f" Device {ldev} out has pid: {pidout}")
                     procs.append(procout)
-                    device[4 + int(l_dev)][2] = pidout
+                    device[5 + int(l_dev)][2] = pidout
             else:
                 logging.debug(f" Device {ldev} playback already bridged")
-        if device[4 + int(l_dev)][3]:
-            if not device[4 + int(l_dev)][4]:
+        if device[5 + int(l_dev)][3]:
+            if not device[5 + int(l_dev)][4]:
                 cmd = f"/usr/bin/zita-a2j -j {ldev}-in -d hw:{ldev} -r {dsr} -p {buff_size} -n {def_config['PERIOD']} -c 100"
                 logging.debug(f"Device input comand line: {cmd}")
                 procin = subprocess.Popen(shlex.split(cmd), shell=False)
                 pidin = procin.pid
                 logging.debug(f" Device {ldev} in has pid: {pidin}")
                 procs.append(procin)
-                device[4 + int(l_dev)][4] = pidin
+                device[5 + int(l_dev)][4] = pidin
             else:
                 logging.debug(f" Device {ldev} capture already bridged")
     time.sleep(1)
@@ -960,36 +1001,36 @@ def kill_slave(ldev):
     global procs
     dname, l_dev, sub = ldev.split(",", 2)
     logging.debug(f"{ldev} kill in progress")
-    device = device_by_name(ldev)
+    device, idx = device_by_name(ldev)
     logging.debug(f"Device is {device[0]}")
-    if device[3]:
-        logging.debug(f"{device[0]} has {device[3]} sub devices, want sub device {l_dev}")
-        logging.debug(f"{device[0]} sub device {l_dev} has pid: {device[4 + int(l_dev)][2]}")
-        if device[4 + int(l_dev)][2]:
+    if device[4]:
+        logging.debug(f"{device[0]} has {device[4]} sub devices, want sub device {l_dev}")
+        logging.debug(f"{device[0]} sub device {l_dev} has pid: {device[5 + int(l_dev)][2]}")
+        if device[5 + int(l_dev)][2]:
             logging.debug(f"{ldev} found Playback bridge to kill")
             for i, pr in enumerate(procs):
-                if pr.pid == device[4 + int(l_dev)][2]:
-                    logging.debug(f"kill {str(dname)} sub: {str(l_dev)} PID: {str(device[4 + int(l_dev)][2])}")
+                if pr.pid == device[5 + int(l_dev)][2]:
+                    logging.debug(f"kill {str(dname)} sub: {str(l_dev)} PID: {str(device[5 + int(l_dev)][2])}")
                     pr.send_signal(signal.SIGINT)
                     try:
                         rt = pr.wait(timeout=15)
                     except TimeoutExpired:
-                        logging.debug(f"kill PID: {str(device[4 + int(l_dev)][2])} failed")
+                        logging.debug(f"kill PID: {str(device[5 + int(l_dev)][2])} failed")
                         pr.terminate()
                         outs, errs = pr.communicate()
                     del procs[i]
         else:
             logging.debug(f"{ldev} no Playback bridge found")
-        if device[4 + int(l_dev)][4]:
+        if device[5 + int(l_dev)][4]:
             logging.debug(f"{ldev} found Capture bridge to kill")
             for i, pr in enumerate(procs):
-                if pr.pid == device[4 + int(l_dev)][4]:
-                    logging.info(f"kill {str(dname)} sub: {str(l_dev)} PID: {str(device[4 + int(l_dev)][4])}")
+                if pr.pid == device[5 + int(l_dev)][4]:
+                    logging.info(f"kill {str(dname)} sub: {str(l_dev)} PID: {str(device[5 + int(l_dev)][4])}")
                     pr.send_signal(signal.SIGINT)
                     try:
                         rt = pr.wait(timeout=15)
                     except TimeoutExpired:
-                        logging.debug(f"kill PID: {str(device[4 + int(l_dev)][4])} failed")
+                        logging.debug(f"kill PID: {str(device[5 + int(l_dev)][4])} failed")
                         pr.terminate()
                         outs, errs = pr.communicate()
                     del procs[i]
@@ -1078,7 +1119,7 @@ def phones_switch(plugged):
     out_L = "system:playback_1"
     out_R = "system:playback_2"
     logging.debug(f"Headphone PHONE-ACTION = {str(def_config['PHONE-ACTION'])}")
-    device = device_by_name(def_config['PHONE-DEVICE'])
+    device, idx = device_by_name(def_config['PHONE-DEVICE'])
     if def_config['PHONE-ACTION'] == "switch":
         logging.debug("Switching outputs")
         if device[2]:
@@ -1149,12 +1190,12 @@ def phones_check():
     import_config()
     import_device_array()
     
-    device = device_by_name(def_config['PHONE-DEVICE'])
+    device, idx = device_by_name(def_config['PHONE-DEVICE'])
     logging.debug(f"Checking phones device: {str(device[0])}")
     if device[1]:
         # phones device is USB
-        if device[4][1]:
-            # If USB make sure it has audio
+        if device[5][1]:
+            # If USB make sure it has audio playback
             phones_switch(True)
             return
         else:
@@ -1217,21 +1258,22 @@ def main():
     global jack_died
     global jack_count
     global phones
+    global con_dirty
     phones = False
     jack_count = 0
     procs = []
     last_master = ""
     jack_alive = False
     jack_died = False
-
+    con_dirty = False
     # set up logging
     logpath = expanduser("~/.log")
     # make sure the logfile directory exists
     if not os.path.exists(logpath):
         os.makedirs(logpath)
     logfile = expanduser("~/.log/autojack.log")
-    if os.path.isfile(logfile):
-        os.replace(logfile, f"{logfile}.old")
+    '''if os.path.isfile(logfile):
+        os.replace(logfile, f"{logfile}.old")'''
 
     logging.basicConfig(filename=logfile, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s', level=logging.DEBUG)
     logging.info('logging online')

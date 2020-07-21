@@ -6,7 +6,9 @@
 
 Fixes:
 
+
 Features:
+	- Add mutiple devices for firewire
 	- bluetooth via pulse. use: pacmd load-module module-loopback latency_msec=5
 		and: pacmd unload-module module-loopback
 		need to figue out how to auto route jack->pulse bridge to loop

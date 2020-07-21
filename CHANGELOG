@@ -19,6 +19,9 @@ studio-controls version 1.99.2
  - Add manual headphone switching
  - Add ability use outputs other than system:playback_1/2
  - general code clean up
+ - Readded Firewire backend
+ - Added fixes for alsa firewire devices
+ - make sure extra devices work correctly with all backends
 
 studio-controls version 1.99.1
 

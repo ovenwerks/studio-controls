@@ -134,6 +134,7 @@ class StudioControls:
         self.combo_governor = builder.get_object('combo_governor')
         self.combo_boost = builder.get_object('combo_boost')
         self.logging_comb = builder.get_object('logging_comb')
+        self.combo_fw = builder.get_object('combo_fw')
         '''audio tab stuff'''
         '''master tab'''
         self.jack_device_combo = builder.get_object('jack_device_combo')
@@ -214,6 +215,12 @@ class StudioControls:
                 self.combo_boost.set_active(0)
         else:
             self.combo_boost.set_sensitive(False)
+
+        if os.path.exists("/etc/modprobe.d/blacklist-studio.conf"):
+            self.combo_fw.set_active_id("ffado")
+            self.combo_backend.append("firewire", "firewire")
+
+        ''' combo_fw and combo_backend '''
 
         # Audio stuff
 
@@ -369,6 +376,7 @@ class StudioControls:
             "combo_governor_changed_cb": self.combo_governor_changed_cb,
             "combo_boost_changed_cb": self.combo_boost_changed_cb,
             "logging_change": self.logging_changed,
+            "firewire_cb": self.firewire_cb,
             "rt_button_hit": self.rt_button_hit,
             "on_button_msg_ok_clicked": self.on_button_msg_ok_clicked,
             "on_button_rt_info_ok_clicked": self.on_button_rt_info_ok_clicked,
@@ -564,8 +572,18 @@ class StudioControls:
             last_dev = ""
             last_port = ""
             for jport in jack_cap:
-                port = str(jport).split('\'', 2)[1]
+                if left_ch:
+                    extra = ""
+                port = jport.name
                 dev = port.split(':', 1)[0]
+                paliases = jport.aliases
+                for palias in paliases:
+                    adev = palias.split(':', 1)[0]
+                    if adev == "system":
+                        if left_ch:
+                            extra = f" <{dev}>"
+                        dev = adev
+                        port = palias
                 if left_ch:
                     last_dev = dev
                     last_port = port
@@ -574,18 +592,17 @@ class StudioControls:
                     this_port = last_port
                     if dev == last_dev:
                         right_ch = port.rsplit('_', 1)[1]
-                        self.pj_in_con.append(last_port, f"{last_port} and {str(right_ch)}")
+                        self.pj_in_con.append(last_port, f"{last_port} and {str(right_ch)}{extra}")
                         left_ch = True
                     else:
-                        self.pj_in_con.append(port, f"{last_port} (mono)")
+                        self.pj_in_con.append(port, f"{last_port} (mono){extra}")
                         last_dev = dev
                         last_port = port
-
                     if this_port == active_in:
                         self.pj_in_con.remove(self.pj_in_con.get_active())
                         self.pj_in_con.set_active_id(active_in)
             if not left_ch:
-                self.pj_in_con.append(port, f"{last_port} (mono)")
+                self.pj_in_con.append(port, f"{last_port} (mono){extra}")
                 if last_port == active_in:
                     self.pj_in_con.remove(self.pj_in_con.get_active())
                     self.pj_in_con.set_active_id(active_in)
@@ -594,8 +611,18 @@ class StudioControls:
             last_dev = ""
             last_port = ""
             for jport in jack_play:
-                port = str(jport).split('\'', 2)[1]
+                if left_ch:
+                    extra = ""
+                port = jport.name
                 dev = port.split(':', 1)[0]
+                paliases = jport.aliases
+                for palias in paliases:
+                    adev = palias.split(':', 1)[0]
+                    if adev == "system":
+                        if left_ch:
+                            extra = f" <{dev}>"
+                        dev = adev
+                        port = palias
                 if left_ch:
                     last_dev = dev
                     last_port = port
@@ -604,12 +631,12 @@ class StudioControls:
                     this_port = last_port
                     if dev == last_dev:
                         right_ch = port.rsplit('_', 1)[1]
-                        self.pj_out_con.append(last_port, f"{last_port} and {str(right_ch)}")
-                        self.monitor_combo.append(last_port, f"{last_port} and {str(right_ch)}")
+                        self.pj_out_con.append(last_port, f"{last_port} and {str(right_ch)}{extra}")
+                        self.monitor_combo.append(last_port, f"{last_port} and {str(right_ch)}{extra}")
                         left_ch = True
                     else:
-                        self.pj_out_con.append(port, f"{last_port} (mono)")
-                        self.monitor_combo.append(port, f"{last_port} (mono)")
+                        self.pj_out_con.append(port, f"{last_port} (mono){extra}")
+                        self.monitor_combo.append(port, f"{last_port} (mono){extra}")
                         last_dev = dev
                         last_port = port
 
@@ -621,8 +648,8 @@ class StudioControls:
                         self.monitor_combo.set_active_id(self.def_config["MONITOR"])
                     left_ch = True
             if not left_ch:
-                self.pj_out_con.append(last_port, f"{last_port} (mono)")
-                self.monitor_combo.append(last_port, f"{last_port} (mono)")
+                self.pj_out_con.append(last_port, f"{last_port} (mono){extra}")
+                self.monitor_combo.append(last_port, f"{last_port} (mono){extra}")
                 if last_port == active_out:
                     self.pj_out_con.remove(self.pj_out_con.get_active())
                     self.pj_out_con.set_active_id(active_out)
@@ -764,10 +791,10 @@ class StudioControls:
                                         if self.def_config['USBDEV'] == "" and self.def_config['DEV'] == "none" and next_id == "PCH,0,0":
                                             self.jack_device_combo.set_active_id(next_id)
                                             self.dev_desc = next_d
-                                    if self.def_config['DEV'] != next_id and self.zdev.count(next_id) > 0:
+                                    if (self.def_config['DEV'] != next_id or self.def_config['DRIVER'] != "alsa") and self.zdev.count(next_id) > 0:
                                         self.combo_zita_remove.append(next_id, next_d)
                                     else:
-                                        if self.def_config['DEV'] != next_id:
+                                        if self.def_config['DEV'] != next_id or self.def_config['DRIVER'] != "alsa":
                                             self.combo_zita_add.append(next_id, next_d)
 
         if pci_save == "" and self.def_config['USBDEV'] == "":
@@ -826,6 +853,10 @@ class StudioControls:
             self.def_config['LOG-LEVEL'] = newval
             self.cb_audio_apply(widget)
 
+    def firewire_cb(self, widget):
+        newval = widget.get_active_id()
+        if newval == "alsa" or newval == "ffado":
+            subprocess.run(["/usr/bin/pkexec", "/usr/sbin/studio-system", newval], shell=False)
 
     # Audio setup call backs
     def cb_zita_add(self, button):

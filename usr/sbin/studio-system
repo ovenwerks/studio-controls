@@ -108,6 +108,18 @@ case "$1" in
 		/etc/init.d/cron start
 		;;
 
+	ffado)
+		if ! [ -f /etc/modprobe.d/blacklist-studio.conf ]; then
+			cp /usr/share/studio-controls/blacklist-studio.conf /etc/modprobe.d/blacklist-studio.conf
+		fi
+		;;
+
+	alsa)
+		if [ -f /etc/modprobe.d/blacklist-studio.conf ]; then
+			rm /etc/modprobe.d/blacklist-studio.conf
+		fi
+		;;
+
 	*)
 		exit 0
 		;;
