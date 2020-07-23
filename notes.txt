@@ -1,8 +1,0 @@
-studio-controls version 1.99 (2.0?)
-
-New for this version
-- add Blacklist to keep things like webcams adding a mic
-- Update to new icon
-- finish rebrand
-
-See CHANGELOG for history

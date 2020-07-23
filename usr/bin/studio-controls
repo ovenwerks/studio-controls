@@ -223,6 +223,15 @@ class StudioControls:
         ''' combo_fw and combo_backend '''
 
         # Audio stuff
+        default_device = "0,0,0"
+        for adir in glob.glob("/proc/asound/card*/codec*"):
+            idfile = adir.rsplit('/', 1)[0]
+            with open(f"{idfile}/id", "r") as card_file:
+                for line in card_file:
+                    # only need one line
+                    cname = line.rstrip()
+            if cname != "HDMI":
+                default_device = f"{cname},0,0"
 
         # first set defaults
         self.config['DEFAULT'] = {
@@ -240,14 +249,14 @@ class StudioControls:
             'PJ-IN-CON': 'system:capture_1',
             'PJ-OUT-CON': 'system:playback_1',
             'A2J': "True",
-            'DEV': "none",
+            'DEV': default_device,
             'USBAUTO': "True",
             'USB-SINGLE': "False",
             'USBDEV': "",
             'LOG-LEVEL': "19",
             'BLACKLIST': "",
             'PHONE-ACTION': "switch",
-            'PHONE-DEVICE': "PCH,0,0",
+            'PHONE-DEVICE': default_device,
             'MONITOR': 'system:playback_1'
         }
 

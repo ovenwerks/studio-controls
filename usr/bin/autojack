@@ -73,7 +73,7 @@ def get_dev_info(x):
     device.append(l_fw)
     device.append(sub)
 
-    for y in range(0, 10):
+    for y in range(0, 20):
         subdevice = []
         cap = False
         cap_pid = 0
@@ -167,6 +167,17 @@ def import_config():
     config_file = "{path}/autojackrc".format(path=config_path)
     old_config_file = "~/.config/autojackrc"
 
+    default_device = "0,0,0"
+    for adir in glob.glob("/proc/asound/card*/codec*"):
+        idfile = adir.rsplit('/', 1)[0]
+        with open(f"{idfile}/id", "r") as card_file:
+            for line in card_file:
+                # only need one line
+                tmpname = line.rstrip()
+            if tmpname != "HDMI":
+                default_device = f"{tmpname},0,0"
+
+
     # first set defaults
     config['DEFAULT'] = {
         'JACK': "False",
@@ -183,7 +194,7 @@ def import_config():
         'PJ-IN-CON': 'system:capture_1',
         'PJ-OUT-CON': 'monitor',
         'A2J': "True",
-        'DEV': "PCH,0,0",
+        'DEV': default_device,
         'USBAUTO': "True",
         'USB-SINGLE': "False",
         'USBDEV': "",
@@ -191,7 +202,7 @@ def import_config():
         "LOG-LEVEL": "15",
         "BLACKLIST": "",
         "PHONE-ACTION": "switch",
-        "PHONE-DEVICE": "PCH,0,0",
+        "PHONE-DEVICE": default_device,
         "MONITOR": 'system:playback_1'
     }
 
@@ -347,9 +358,6 @@ def reconfig():
             pulse_dirty = True
             disconnect_pa(old_def_config)
 
-    if pulse_dirty:
-        connect_pa()
-
     if old_def_config['A2J'] != def_config['A2J']:
         cp = subprocess.run(["/usr/bin/killall", "-9", "a2jmidid"],
                             universal_newlines=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=False)
@@ -391,10 +399,10 @@ def reconfig():
         for device in devices:
             if device[1] and device[4]:
                 # USB Audio device
-                for sub in range(int(device[4])):
-                    subname = f"{device[0]},{str(sub)},0"
+                for sub in range(5, 5 + int(device[4])):
+                    subname = f"{device[0]},{str(device[sub][0])},0"
                     dev_has_pid = False
-                    if device[5 + sub][2] or device[5+ sub][4]:
+                    if device[sub][2] or device[sub][4]:
                         dev_has_pid = True
                     if subname != def_config['USBDEV']:
                         if def_config['USBAUTO'] == "True" and not subname in blacklist:
@@ -403,6 +411,10 @@ def reconfig():
                             start_slave(subname)
                         else:
                             kill_slave(subname)
+
+    if pulse_dirty:
+        #do this last after all bridges are created
+        connect_pa()
 
 
 def config_start():
@@ -553,19 +565,15 @@ def config_start():
             start_slave(mon_dev)
             con_dirty = True
 
-    # not sure all these delays need to be here. Was checking with old pulse.
-    time.sleep(2)
-    connect_pa()
-
     if def_config['USBAUTO'] == "True":
         import_device_array()
         for device in devices:
             if device[1] and device[4]:
                 # USB Audio device
-                for sub in range(int(device[4])):
-                    subname = f"{device[0]},{str(sub)},0"
+                for sub in range(5, 5 + int(device[4])):
+                    subname = f"{device[0]},{str(device[sub][0])},0"
                     dev_has_pid = False
-                    if device[5 + sub][2] or device[5 + sub][4]:
+                    if device[sub][2] or device[sub][4]:
                         dev_has_pid = True
                     if subname != def_config['USBDEV']:
                         if not subname in blacklist:
@@ -574,6 +582,11 @@ def config_start():
                             start_slave(subname)
                         else:
                             kill_slave(subname)
+
+    # not sure all these delays need to be here. Was checking with old pulse.
+    # this has to be last after all audio bridges are created
+    time.sleep(2)
+    connect_pa()
 
     if def_config['A2J'] == "True":
         # Can't set up logging
@@ -632,6 +645,20 @@ def check_jack_status(user_data):
     if jack_count == 200:
         logging.log(7, f"Jack_status: {str(jack_alive)}")
         jack_count = 0
+
+        logfile = expanduser("~/.log/autojack.log")
+        if os.path.isfile(logfile) and os.path.getsize(logfile) > 100000:
+            logging.debug("Log File getting large: rotate")
+            for old_idx in range(5, -1, -1):
+                if old_idx:
+                    if os.path.isfile(f"{logfile}.{str(old_idx)}"):
+                        os.replace(f"{logfile}.{str(old_idx)}", f"{logfile}.{str(old_idx + 1)}")
+                else:
+                    logging.shutdown()
+                    os.replace(logfile, f"{logfile}.1")
+                    logging.basicConfig(filename=logfile, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
+                                        level=int(def_config['LOG-LEVEL']))
+            logging.debug("Log File rotated")
 
     if con_dirty and jack_alive:
         logging.debug("Connection changed")
@@ -822,13 +849,13 @@ def msg_cb_new(*args, **kwargs):
             subprocess.run(["/usr/bin/dbus-send", "--type=signal", "/", "org.studio.control.event.usb_signal"],
                            shell=False)
 
-            for subn in range(int(device[4])):
-                subname = f"{device[0]},{str(subn)},0"
+            for subn in range(5, int(device[4]) + 5):
+                subname = f"{device[0]},{str(device[subn][0])},0"
                 if subname == last_master:
                     # spurious indication, ignore
                     logging.debug(f" We already have that device - spurious signal, ignoring")
                     return
-                logging.debug(f" device = {subname} play:{str(device[5][1])} capture:{str(device[5][3])}")
+                logging.debug(f" device = {subname} play:{str(device[subn][1])} capture:{str(device[subn][3])}")
 
                 if (def_config['DRIVER'] == "alsa") and (def_config['USBDEV'] == subname):
                     # change_jack_master(cid, "sm")
@@ -877,8 +904,8 @@ def msg_cb_removed(*args, **kwargs):
         if not device[1]:
             # not a usb device
             return
-        for sn in range(int(device[4])):
-            subd = f"{device[0]},{str(sn)},0"
+        for sn in range(5, 5 + int(device[4])):
+            subd = f"{device[0]},{str(device[sn][0])},0"
             logging.debug(f"Subdevice {subd} unplugged")
             if def_config['USBDEV'] == subd:
                 if last_master == def_config['USBDEV']:
@@ -963,10 +990,12 @@ def start_slave(ldev):
         logging.info("PCH device, minimum buffer 128, using 128")
         buff_size = "128"
     device, idx = device_by_name(ldev)
-    if device[4] > int(l_dev):
+    for index in range(5, 5 + int(device[4])):
+        if device[index][0] == int(ldev):
+            break
         # we found it and it seems to have this sub
-        if device[5 + int(l_dev)][1]:
-            if not device[5 + int(l_dev)][2]:
+        if device[index][1]:
+            if not device[index][2]:
                 if device[1] and (def_config['USB-SINGLE'] == "True"):
                     logging.info("USB device set input only, no playback bridge")
                 else:
@@ -976,18 +1005,18 @@ def start_slave(ldev):
                     pidout = procout.pid
                     logging.debug(f" Device {ldev} out has pid: {pidout}")
                     procs.append(procout)
-                    device[5 + int(l_dev)][2] = pidout
+                    device[index][2] = pidout
             else:
                 logging.debug(f" Device {ldev} playback already bridged")
-        if device[5 + int(l_dev)][3]:
-            if not device[5 + int(l_dev)][4]:
+        if device[index][3]:
+            if not device[sdev][4]:
                 cmd = f"/usr/bin/zita-a2j -j {ldev}-in -d hw:{ldev} -r {dsr} -p {buff_size} -n {def_config['PERIOD']} -c 100"
                 logging.debug(f"Device input comand line: {cmd}")
                 procin = subprocess.Popen(shlex.split(cmd), shell=False)
                 pidin = procin.pid
                 logging.debug(f" Device {ldev} in has pid: {pidin}")
                 procs.append(procin)
-                device[5 + int(l_dev)][4] = pidin
+                device[index][4] = pidin
             else:
                 logging.debug(f" Device {ldev} capture already bridged")
     time.sleep(1)
@@ -1002,35 +1031,38 @@ def kill_slave(ldev):
     dname, l_dev, sub = ldev.split(",", 2)
     logging.debug(f"{ldev} kill in progress")
     device, idx = device_by_name(ldev)
+    for index in range(5, 5 + int(device[4])):
+        if device[index][0] == int(l_dev):
+            break
     logging.debug(f"Device is {device[0]}")
     if device[4]:
         logging.debug(f"{device[0]} has {device[4]} sub devices, want sub device {l_dev}")
-        logging.debug(f"{device[0]} sub device {l_dev} has pid: {device[5 + int(l_dev)][2]}")
-        if device[5 + int(l_dev)][2]:
+        logging.debug(f"{device[0]} sub device {l_dev} has pid: {device[index][2]}")
+        if device[index][2]:
             logging.debug(f"{ldev} found Playback bridge to kill")
             for i, pr in enumerate(procs):
-                if pr.pid == device[5 + int(l_dev)][2]:
-                    logging.debug(f"kill {str(dname)} sub: {str(l_dev)} PID: {str(device[5 + int(l_dev)][2])}")
+                if pr.pid == device[index][2]:
+                    logging.debug(f"kill {str(dname)} sub: {str(l_dev)} PID: {str(device[index][2])}")
                     pr.send_signal(signal.SIGINT)
                     try:
                         rt = pr.wait(timeout=15)
                     except TimeoutExpired:
-                        logging.debug(f"kill PID: {str(device[5 + int(l_dev)][2])} failed")
+                        logging.debug(f"kill PID: {str(device[index][2])} failed")
                         pr.terminate()
                         outs, errs = pr.communicate()
                     del procs[i]
         else:
             logging.debug(f"{ldev} no Playback bridge found")
-        if device[5 + int(l_dev)][4]:
+        if device[index][4]:
             logging.debug(f"{ldev} found Capture bridge to kill")
             for i, pr in enumerate(procs):
-                if pr.pid == device[5 + int(l_dev)][4]:
-                    logging.info(f"kill {str(dname)} sub: {str(l_dev)} PID: {str(device[5 + int(l_dev)][4])}")
+                if pr.pid == device[index][4]:
+                    logging.info(f"kill {str(dname)} sub: {str(l_dev)} PID: {str(device[index][4])}")
                     pr.send_signal(signal.SIGINT)
                     try:
                         rt = pr.wait(timeout=15)
                     except TimeoutExpired:
-                        logging.debug(f"kill PID: {str(device[5 + int(l_dev)][4])} failed")
+                        logging.debug(f"kill PID: {str(device[index][4])} failed")
                         pr.terminate()
                         outs, errs = pr.communicate()
                     del procs[i]
@@ -1189,12 +1221,19 @@ def phones_check():
 
     import_config()
     import_device_array()
-    
+
+    dname, ddev, dsub = def_config['PHONE-DEVICE'].split(',')
     device, idx = device_by_name(def_config['PHONE-DEVICE'])
+    if device == []:
+        logging.warniing(f"Phones device: {def_config['PHONE-DEVICE']} not found")
+        return
+    for index in range(5, 5 + int(device[4])):
+        if device[index][0] == int(ddev):
+            break
     logging.debug(f"Checking phones device: {str(device[0])}")
     if device[1]:
         # phones device is USB
-        if device[5][1]:
+        if device[index][1]:
             # If USB make sure it has audio playback
             phones_switch(True)
             return
@@ -1272,9 +1311,6 @@ def main():
     if not os.path.exists(logpath):
         os.makedirs(logpath)
     logfile = expanduser("~/.log/autojack.log")
-    '''if os.path.isfile(logfile):
-        os.replace(logfile, f"{logfile}.old")'''
-
     logging.basicConfig(filename=logfile, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s', level=logging.DEBUG)
     logging.info('logging online')
     phones_check()

@@ -1,3 +1,12 @@
+studio-controls version 2.0.1
+
+ [ Len Ovens ]
+ - Use saved value for device instead index - bug fix
+ - Log file too long re-enable log rotate - bugfix
+ - dynamicly set default audio device - bugfix
+ - Make sure bridges are created before connecting
+ - Check if headphone device exists before checking (lp: #1888588)
+
 studio-controls version 2.0.0
 
  [ Erich Eickmeyer ]
