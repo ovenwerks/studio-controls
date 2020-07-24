@@ -22,6 +22,7 @@ from gi.repository import GLib
 import dbus
 import dbus.mainloop.glib
 import subprocess
+import glob
 import shlex
 import signal
 import configparser
@@ -285,6 +286,9 @@ def import_config():
             p_out_con[i] = def_config['MONITOR']
     if pulse_in == [] and pulse_out == []:
         def_config['PULSE'] = "False"
+    logger = logging.getLogger()
+    logger.setLevel(int(def_config['LOG-LEVEL']))
+    logging.debug(f"log level: {def_config['LOG-LEVEL']}")
 
 
 def reconfig():
@@ -306,10 +310,6 @@ def reconfig():
     oldpulse_in = pulse_in
     oldpulse_out = pulse_out
     import_config()
-    if def_config['LOG-LEVEL'] != old_def_config['LOG-LEVEL']:
-        logger = logging.getLogger()
-        logger.setLevel(int(def_config['LOG-LEVEL']))
-        logging.debug(f"log level: {def_config['LOG-LEVEL']}")
 
     newlist = [def_config['JACK'], def_config['DRIVER'], def_config['CHAN-IN'], def_config['CHAN-OUT'],
                def_config['RATE'], def_config['FRAME'], def_config['PERIOD'], def_config['DEV'], def_config['USBDEV']]
