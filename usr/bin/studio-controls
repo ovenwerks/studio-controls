@@ -277,65 +277,7 @@ class StudioControls:
         # read in autojack config file
         c_file = expanduser(self.config_file)
         if os.path.isfile(c_file):
-            # New config file exists, read it in
             self.config.read(c_file)
-        else:
-            # New file did not exist, let's check for a legacy file
-            c_file = expanduser(self.old_config_file)
-            if os.path.isfile(c_file):
-                # Found the legacy config, let's load it
-                with open(c_file, "r") as rc_file:
-                    for line in rc_file:
-                        if re.match("^#", line):
-                            continue
-                        lsplit = line.rstrip().split("=", 1)
-                        if lsplit[0] == "JACK":
-                            self.def_config['JACK'] = lsplit[1]
-                        elif lsplit[0] == "DRIVER":
-                            self.def_config['DRIVER'] = lsplit[1]
-                        elif lsplit[0] == "DEV":
-                            self.def_config['DEV'] = self.dev_desc = lsplit[1]
-                        elif lsplit[0] == "CHAN-IN":
-                            self.def_config['CHAN-IN'] = lsplit[1]
-                        elif lsplit[0] == "CHAN-OUT":
-                            self.def_config['CHAN-OUT'] = lsplit[1]
-                        elif lsplit[0] == "RATE":
-                            self.def_config['RATE'] = lsplit[1]
-                        elif lsplit[0] == "FRAME":
-                            self.def_config['FRAME'] = lsplit[1]
-                        elif lsplit[0] == "ZFRAME":
-                            self.def_config['ZFRAME'] = lsplit[1]
-                        elif lsplit[0] == "PERIOD":
-                            self.def_config['PERIOD'] = lsplit[1]
-                        elif lsplit[0] == "PULSE":
-                            pulse = lsplit[1]
-                            if pulse == 'True':
-                                self.def_config['PULSE-IN'] = 'pulse_in'
-                                self.def_config['PULSE-OUT'] = 'pulse_out'
-                        elif lsplit[0] == "PULSE-IN":
-                            pin = lsplit[1]
-                            if pin:
-                                self.def_config['PULSE-IN'] = 'pulse_in'
-                        elif lsplit[0] == "PULSE-OUT":
-                            pout = lsplit[1]
-                            if pout:
-                                self.def_config['PULSE-OUT'] = 'pulse_out'
-                        elif lsplit[0] == "A2J":
-                            self.def_config['A2J'] = lsplit[1]
-                        elif lsplit[0] == "OUTPUT":
-                            self.def_config['PJ-IN-CON'] = "1"
-                            self.def_config['PJ-OUT-CON'] = "1"
-                        elif lsplit[0] == "PORTS":
-                            self.def_config['PJ-OUT-CON'] = lsplit[1]
-                        elif lsplit[0] == "XDEV":
-                            self.def_config['XDEV'] = lsplit[1].strip('"')
-                            self.zdev = self.def_config['XDEV'].strip('"').split()
-                        elif lsplit[0] == "USBAUTO":
-                            self.def_config['USBAUTO'] = lsplit[1]
-                        elif lsplit[0] == "USB-SINGLE":
-                            self.def_config['USB-SINGLE'] = lsplit[1]
-                        elif lsplit[0] == "USBDEV":
-                            self.def_config['USBDEV'] = lsplit[1]
         self.zdev = self.def_config['XDEV'].strip('"').split()
         self.pulse_in = self.def_config['PULSE-IN'].strip('"').split()
         self.pulse_out = self.def_config['PULSE-OUT'].strip('"').split()
@@ -742,6 +684,7 @@ class StudioControls:
             next_id = ""
             next_d = ""
             is_usb = False
+            is_internal = False
             if os.path.exists(f"/proc/asound/card{str(x)}"):
                 if os.path.isfile(f"/proc/asound/card{str(x)}/id"):
                     with open(f"/proc/asound/card{str(x)}/id", "r") as card_file:
@@ -752,6 +695,8 @@ class StudioControls:
                     cname = str(x)
             if os.path.exists(f"/proc/asound/card{str(x)}/usbbus"):
                 is_usb = True
+            if os.path.exists(f"/proc/asound/card{str(x)}/codec#0"):
+                is_internal = True
             for y in range(0, 10):
                 d_type = ""
                 d_desc = ""
@@ -797,7 +742,7 @@ class StudioControls:
                                         if self.def_config['USBDEV'] == "" and self.def_config['DEV'] == next_id:
                                             self.jack_device_combo.set_active_id(next_id)
                                             self.dev_desc = next_d
-                                        if self.def_config['USBDEV'] == "" and self.def_config['DEV'] == "none" and next_id == "PCH,0,0":
+                                        if self.def_config['USBDEV'] == "" and self.def_config['DEV'] == "none" and is_internal:
                                             self.jack_device_combo.set_active_id(next_id)
                                             self.dev_desc = next_d
                                     if (self.def_config['DEV'] != next_id or self.def_config['DRIVER'] != "alsa") and self.zdev.count(next_id) > 0:

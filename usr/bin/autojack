@@ -166,7 +166,6 @@ def import_config():
     def_config = config['DEFAULT']
     config_path = "~/.config/autojack"
     config_file = "{path}/autojackrc".format(path=config_path)
-    old_config_file = "~/.config/autojackrc"
 
     default_device = "0,0,0"
     for adir in glob.glob("/proc/asound/card*/codec*"):
@@ -212,69 +211,9 @@ def import_config():
     if os.path.isfile(c_file):
         # New config file exists, read it in
         config.read(c_file)
-    else:
-        # New file did not exist, let's check for a legacy file
-        c_file = expanduser(old_config_file)
-        if os.path.isfile(c_file):
-            # Found the legacy config, let's load it
-            with open(c_file, "r") as rc_file:
-                for line in rc_file:
-                    if re.match("^#", line):
-                        continue
-                    lsplit = line.rstrip().split("=", 1)
-                    if lsplit[0] == "JACK":
-                        def_config['JACK'] = lsplit[1]
-                    elif lsplit[0] == "DRIVER":
-                        def_config['DRIVER'] = lsplit[1]
-                    elif lsplit[0] == "DEV":
-                        def_config['DEV'] = lsplit[1]
-                    elif lsplit[0] == "CHAN-IN":
-                        def_config['CHAN-IN'] = lsplit[1]
-                    elif lsplit[0] == "CHAN-OUT":
-                        def_config['CHAN-OUT'] = lsplit[1]
-                    elif lsplit[0] == "RATE":
-                        def_config['RATE'] = lsplit[1]
-                    elif lsplit[0] == "FRAME":
-                        def_config['FRAME'] = lsplit[1]
-                    elif lsplit[0] == "ZFRAME":
-                        def_config['ZFRAME'] = lsplit[1]
-                    elif lsplit[0] == "PERIOD":
-                        def_config['PERIOD'] = lsplit[1]
-                    elif lsplit[0] == "PULSE":
-                        pulse = lsplit[1]
-                        if pulse == 'True':
-                            def_config['PULSE-IN'] = 'pulse_in'
-                            def_config['PULSE-OUT'] = 'pulse_out'
-                        else:
-                            def_config['PULSE-IN'] = ''
-                            def_config['PULSE-OUT'] = ''
-                    elif lsplit[0] == "PULSE-IN":
-                        pin = lsplit[1]
-                        if pin:
-                            def_config['PULSE-IN'] = 'pulse_in'
-                    elif lsplit[0] == "PULSE-OUT":
-                        pout = lsplit[1]
-                        if pout:
-                            def_config['PULSE-OUT'] = 'pulse_out'
-                    elif lsplit[0] == "A2J":
-                        def_config['A2J'] = lsplit[1]
-                    elif lsplit[0] == "OUTPUT":
-                        def_config['PJ-IN-CON'] = "1"
-                        def_config['PJ-OUT-CON'] = "1"
-                    elif lsplit[0] == "PORTS":
-                        def_config['PJ-OUT-CON'] = f"{lsplit[1]}"
-                    elif lsplit[0] == "XDEV":
-                        def_config['XDEV'] = lsplit[1].strip('"')
-                        zdev = def_config['XDEV'].strip('"').split()
-                    elif lsplit[0] == "USBAUTO":
-                        def_config['USBAUTO'] = lsplit[1]
-                    elif lsplit[0] == "USB-SINGLE":
-                        def_config['USB-SINGLE'] = lsplit[1]
-                    elif lsplit[0] == "USBDEV":
-                        def_config['USBDEV'] = lsplit[1]
 
     if def_config['DEV'] == "default":
-        def_config['DEV'] = "PCH,0,0"
+        def_config['DEV'] = default_device
     zdev = def_config['XDEV'].strip('"').split()
     blacklist = def_config['BLACKLIST'].strip('"').split()
     pulse_in = def_config['PULSE-IN'].strip('"').split()
@@ -282,8 +221,13 @@ def import_config():
     p_in_con = def_config['PJ-IN-CON'].strip('"').split()
     p_out_con = def_config['PJ-OUT-CON'].strip('"').split()
     for i, this_con in enumerate(p_out_con):
+        if len( this_con ) < 3:
+            p_out_con[i] = f"system:playback_{int(this_con)}"
         if this_con == "monitor":
             p_out_con[i] = def_config['MONITOR']
+    for i, this_con in enumerate(p_in_con):
+        if len( this_con ) < 3:
+            p_in_con[i] = f"system:capture_{int(this_con)}"
     if pulse_in == [] and pulse_out == []:
         def_config['PULSE'] = "False"
     logger = logging.getLogger()
@@ -983,13 +927,13 @@ def start_slave(ldev):
 
     dname, l_dev, sub = ldev.split(",", 2)
     dsr = get_card_rate(ldev)
+    device, idx = device_by_name(ldev)
     if dname == "HDMI":
         logging.info("HDMI device, setting buffer to 4096")
         buff_size = "4096"
-    if (dname == "PCH") and (int(buff_size) < 128):
-        logging.info("PCH device, minimum buffer 128, using 128")
+    elif (device[2]) and (int(buff_size) < 128):
+        logging.info("Internal device, minimum buffer 128, using 128")
         buff_size = "128"
-    device, idx = device_by_name(ldev)
     for index in range(5, 5 + int(device[4])):
         if device[index][0] == int(ldev):
             break
@@ -1246,7 +1190,7 @@ def phones_check():
         hp_sw = ""
         if "Front" in my_mixers:
             hp_sw = "Front "
-        cmd = f"/usr/bin/amixer -D hw:PCH cget iface=CARD,name='{hp_sw}Headphone Jack'"
+        cmd = f"/usr/bin/amixer -D hw:{device[0]} cget iface=CARD,name='{hp_sw}Headphone Jack'"
         logging.debug(f"amixer command: {cmd}")
         cp = subprocess.run(shlex.split(cmd), universal_newlines=True, 
                 stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=False)

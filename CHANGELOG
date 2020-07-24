@@ -1,3 +1,10 @@
+studio-controls version 2.0.3
+
+ [ Len Ovens ]
+ - Make sure to use default-device and not PCH everywhere
+ - Catch pulse connection port is integer
+ - no more support for older config file
+
 studio-controls version 2.0.2
 
  [ Len Ovens ]
