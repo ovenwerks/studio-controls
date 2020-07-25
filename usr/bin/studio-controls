@@ -230,7 +230,7 @@ class StudioControls:
                 for line in card_file:
                     # only need one line
                     cname = line.rstrip()
-            if cname != "HDMI":
+            if cname != "HDMI" and cname != "NVidia":
                 default_device = f"{cname},0,0"
 
         # first set defaults

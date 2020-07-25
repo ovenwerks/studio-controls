@@ -1,3 +1,11 @@
+studio-controls version 2.0.4
+
+ [ Len Ovens ]
+ - Fix spelling mistake
+ - Fix wrong indent
+ - Add "NVidia" to HDMI names
+ - Add a readout of the configuration to logging
+
 studio-controls version 2.0.3
 
  [ Len Ovens ]

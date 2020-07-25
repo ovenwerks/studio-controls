@@ -46,6 +46,8 @@ def get_dev_info(x):
             device[n][4] = PID of capture user
     This structure is returned. If the device does not
     exist, a minimal structure is still returned ["", False, 0]'''
+    global fw_exists
+    fw_exists = False
     device = []
     cname = ""
     l_usb = False
@@ -67,6 +69,7 @@ def get_dev_info(x):
         l_internal = True
     if os.path.exists(f"/proc/asound/card{str(x)}/firewire"):
         l_fw = True
+        fw_exists = True
 
     device.append(cname)
     device.append(l_usb)
@@ -174,7 +177,7 @@ def import_config():
             for line in card_file:
                 # only need one line
                 tmpname = line.rstrip()
-            if tmpname != "HDMI":
+            if tmpname != "HDMI" and tmpname != "NVidia":
                 default_device = f"{tmpname},0,0"
 
 
@@ -212,6 +215,32 @@ def import_config():
         # New config file exists, read it in
         config.read(c_file)
 
+    log_string = f"JACK: {def_config['JACK']}\n"
+    log_string = f"{log_string}A2J: {def_config['A2J']}\n"
+    log_string = f"{log_string}DRIVER: {def_config['DRIVER']}\n"
+    log_string = f"{log_string}DEV: {def_config['DEV']}\n"
+    log_string = f"{log_string}USBDEV: {def_config['USBDEV']}\n"
+    log_string = f"{log_string}CHAN-IN: {def_config['CHAN-IN']}\n"
+    log_string = f"{log_string}CHAN-OUT: {def_config['CHAN-OUT']}\n"
+    log_string = f"{log_string}RATE: {def_config['RATE']}\n"
+    log_string = f"{log_string}FRAME: {def_config['FRAME']}\n"
+    log_string = f"{log_string}PERIOD: {def_config['PERIOD']}\n"
+    log_string = f"{log_string}ZFRAME: {def_config['ZFRAME']}\n"
+    log_string = f"{log_string}XDEV: {def_config['XDEV']}\n"
+    log_string = f"{log_string}PULSE: {def_config['PULSE']}\n"
+    log_string = f"{log_string}PULSE-IN: {def_config['PULSE-IN']}\n"
+    log_string = f"{log_string}PULSE-OUT: {def_config['PULSE-OUT']}\n"
+    log_string = f"{log_string}PJ-IN-CON: {def_config['PJ-IN-CON']}\n"
+    log_string = f"{log_string}PJ-OUT-CON: {def_config['PJ-OUT-CON']}\n"
+    log_string = f"{log_string}USBAUTO: {def_config['USBAUTO']}\n"
+    log_string = f"{log_string}USB-SINGLE: {def_config['USB-SINGLE']}\n"
+    log_string = f"{log_string}BLACKLIST: {def_config['BLACKLIST']}\n"
+    log_string = f"{log_string}PHONE-ACTION: {def_config['PHONE-ACTION']}\n"
+    log_string = f"{log_string}PHONE-DEVICE: {def_config['PHONE-DEVICE']}\n"
+    log_string = f"{log_string}MONITOR: {def_config['MONITOR']}\n"
+    log_string = f"{log_string}LOG-LEVEL: {def_config['LOG-LEVEL']}\n"
+    logging.log(7, f"User Config readout:\n{log_string}")
+
     if def_config['DEV'] == "default":
         def_config['DEV'] = default_device
     zdev = def_config['XDEV'].strip('"').split()
@@ -232,7 +261,7 @@ def import_config():
         def_config['PULSE'] = "False"
     logger = logging.getLogger()
     logger.setLevel(int(def_config['LOG-LEVEL']))
-    logging.debug(f"log level: {def_config['LOG-LEVEL']}")
+    logging.log(7, f"log level: {def_config['LOG-LEVEL']}")
 
 
 def reconfig():
@@ -369,6 +398,7 @@ def config_start():
     global pulse_out
     global def_config
     global phones
+    global fw_exists
 
     logging.info("Running: config_start()")
 
@@ -384,8 +414,7 @@ def config_start():
     cp = subprocess.run(["/usr/bin/killall", "-q", "-9", "jackdbus", "jackd", "a2jmidid"],
                         universal_newlines=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=False)
     logging.debug(f"Kill old Procs: {cp.stdout.strip()}")
-    JD, ji = device_by_name(def_config['DEV'])
-    if (def_config['DRIVER'] == "firewire") or JD[3]:
+    if (def_config['DRIVER'] == "firewire") or fw_exists:
         time.sleep(3)
         # this is a firewire device, A busreset makes for stability
         cp = subprocess.run(["/usr/bin/ffado-test", "BusReset"],
@@ -419,6 +448,10 @@ def config_start():
         mdev = def_config['USBDEV']
     else:
         mdev = def_config['DEV']
+        if mdev.split(',')[0] == "HDMI" or mdev.split(',')[0] == "NVidia":
+            logging.info("HDMI device, setting buffer to 4096")
+            def_config['FRAME'] = "4096"
+
     if os.path.isfile(expanduser('~/.config/jack/conf.xml')):
         logging.debug("Found previous jack config removing")
         os.remove(expanduser('~/.config/jack/conf.xml'))
@@ -792,6 +825,7 @@ def msg_cb_new(*args, **kwargs):
             # tell gui devicelist has changed so it can up date device dropdowns
             subprocess.run(["/usr/bin/dbus-send", "--type=signal", "/", "org.studio.control.event.usb_signal"],
                            shell=False)
+            logging.debug(f"USB device {device[0]} has been plugged in")
 
             for subn in range(5, int(device[4]) + 5):
                 subname = f"{device[0]},{str(device[subn][0])},0"
@@ -805,11 +839,7 @@ def msg_cb_new(*args, **kwargs):
                     # change_jack_master(cid, "sm")
                     logging.debug(f"Changing jack master to: {subname}")
                     config_start()
-                    last_master = subname
-                    time.sleep(1)
-                    start_slave(def_config['DEV'])
-                    time.sleep(1)
-                    # connect_pa()
+                    return
                 elif def_config['USBAUTO'] == "True":
                     start_slave(subname)
                     if subname == def_config['PHONE-DEVICE']:
@@ -874,7 +904,7 @@ def get_card_rate(rtdev):
         p_file = f"/proc/asound/{dname}/pcm{l_dev}c/sub{sub}/hw_params"
         dtype = 1
     else:
-        logging.warn(f"missing info file for: {ldev} adding client may fail.")
+        logging.warn(f"missing info file for: {rtdev} adding client may fail.")
         return def_config['RATE']
 
     adev_h = alsaaudio.PCM(type=dtype, device=f"hw:{rtdev}")
@@ -928,41 +958,42 @@ def start_slave(ldev):
     dname, l_dev, sub = ldev.split(",", 2)
     dsr = get_card_rate(ldev)
     device, idx = device_by_name(ldev)
-    if dname == "HDMI":
+    if dname == "HDMI" or dname == "NVidia":
         logging.info("HDMI device, setting buffer to 4096")
         buff_size = "4096"
     elif (device[2]) and (int(buff_size) < 128):
         logging.info("Internal device, minimum buffer 128, using 128")
         buff_size = "128"
     for index in range(5, 5 + int(device[4])):
-        if device[index][0] == int(ldev):
+        logging.log(7, f"Sub Device: {device[0]},{str(device[index][0])} has index{str(index - 5)}")
+        if device[index][0] == int(l_dev):
             break
-        # we found it and it seems to have this sub
-        if device[index][1]:
-            if not device[index][2]:
-                if device[1] and (def_config['USB-SINGLE'] == "True"):
-                    logging.info("USB device set input only, no playback bridge")
-                else:
-                    cmd = f"/usr/bin/zita-j2a -j {ldev}-out -d hw:{ldev} -r {dsr} -p {buff_size} -n {def_config['PERIOD']} -c 100"
-                    logging.debug(f"device bridging comand line: {cmd}")
-                    procout = subprocess.Popen(shlex.split(cmd), shell=False)
-                    pidout = procout.pid
-                    logging.debug(f" Device {ldev} out has pid: {pidout}")
-                    procs.append(procout)
-                    device[index][2] = pidout
+    # we found it and it seems to have this sub
+    if device[index][1]:
+        if not device[index][2]:
+            if device[1] and (def_config['USB-SINGLE'] == "True"):
+                logging.info("USB device set input only, no playback bridge")
             else:
-                logging.debug(f" Device {ldev} playback already bridged")
-        if device[index][3]:
-            if not device[sdev][4]:
-                cmd = f"/usr/bin/zita-a2j -j {ldev}-in -d hw:{ldev} -r {dsr} -p {buff_size} -n {def_config['PERIOD']} -c 100"
-                logging.debug(f"Device input comand line: {cmd}")
-                procin = subprocess.Popen(shlex.split(cmd), shell=False)
-                pidin = procin.pid
-                logging.debug(f" Device {ldev} in has pid: {pidin}")
-                procs.append(procin)
-                device[index][4] = pidin
-            else:
-                logging.debug(f" Device {ldev} capture already bridged")
+                cmd = f"/usr/bin/zita-j2a -j {ldev}-out -d hw:{ldev} -r {dsr} -p {buff_size} -n {def_config['PERIOD']} -c 100"
+                logging.debug(f"device bridging comand line: {cmd}")
+                procout = subprocess.Popen(shlex.split(cmd), shell=False)
+                pidout = procout.pid
+                logging.debug(f" Device {ldev} out has pid: {pidout}")
+                procs.append(procout)
+                device[index][2] = pidout
+        else:
+            logging.debug(f" Device {ldev} playback already bridged or in use by other application")
+    if device[index][3]:
+        if not device[index][4]:
+            cmd = f"/usr/bin/zita-a2j -j {ldev}-in -d hw:{ldev} -r {dsr} -p {buff_size} -n {def_config['PERIOD']} -c 100"
+            logging.debug(f"Device input comand line: {cmd}")
+            procin = subprocess.Popen(shlex.split(cmd), shell=False)
+            pidin = procin.pid
+            logging.debug(f" Device {ldev} in has pid: {pidin}")
+            procs.append(procin)
+            device[index][4] = pidin
+        else:
+            logging.debug(f" Device {ldev} capture already bridged or in use by other application")
     time.sleep(1)
     import_device_array()
 
