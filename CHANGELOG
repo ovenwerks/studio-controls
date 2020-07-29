@@ -1,3 +1,14 @@
+studio-controls version 2.0.5
+
+ [ Len Ovens ]
+ - Add lockfile to autojack to prevent two instances running
+ - Add lockfile to studio-controls to prevent two instances running
+ - Depend on zita-ajbridge version 0.8.4 fixes (lp: #1889146)
+ - Fix phones detection for USB phones when not plugged in
+ - Catch jack error messages so they don't alarm user
+ - studio-controls: Catch system signals to exit
+ - up autojack signal version
+
 studio-controls version 2.0.4
 
  [ Len Ovens ]

@@ -12,6 +12,7 @@ import re
 import resource
 import shutil
 import shlex
+import signal
 import subprocess
 import glob
 import dbus
@@ -105,18 +106,58 @@ class RTSetup:
 
 
 class StudioControls:
+    global lock_file
     config = configparser.ConfigParser()
     def_config = config['DEFAULT']
     #tab_conf = config['TABLET']
     config_path = "~/.config/autojack"
-    config_file = "{path}/autojackrc".format(path=config_path)
     old_config_file = "~/.config/autojackrc"
+
 
     def __init__(self):
         '''Activate the SysInfo class'''
         # this is a long chunk of code that initializes every thing
         # it should probably be split into tabs at least
+        global lock_file
         self.sysinfo = SysInfo()
+        c_dir = expanduser(self.config_path)
+        if not os.path.isdir(c_dir):
+            os.makedirs(c_dir)
+        self.config_file = expanduser(f"{self.config_path}/autojackrc")
+        lock_file = expanduser(f"{self.config_path}/studio-controls.lock")
+        new_pid = str(os.getpid())
+        if os.path.isfile(lock_file):
+            with open(lock_file, "r") as lk_file:
+                for line in lk_file:
+                    # only need one line
+                    old_pid = line.rstrip()
+            if new_pid != old_pid:
+                try:
+                    os.kill(int(old_pid), 9)
+                except:
+                    print("")
+                time.sleep(1)
+        with open(lock_file, "w") as lk_file:
+            lk_file.write(new_pid)
+
+        signal.signal(signal.SIGHUP, self.sig_handler)
+        signal.signal(signal.SIGINT, self.sig_handler)
+        signal.signal(signal.SIGQUIT, self.sig_handler)
+        signal.signal(signal.SIGILL, self.sig_handler)
+        signal.signal(signal.SIGTRAP, self.sig_handler)
+        signal.signal(signal.SIGABRT, self.sig_handler)
+        signal.signal(signal.SIGBUS, self.sig_handler)
+        signal.signal(signal.SIGFPE, self.sig_handler)
+        #signal.signal(signal.SIGKILL, self.sig_handler)
+        signal.signal(signal.SIGUSR1, self.sig_handler)
+        signal.signal(signal.SIGSEGV, self.sig_handler)
+        signal.signal(signal.SIGUSR2, self.sig_handler)
+        signal.signal(signal.SIGPIPE, self.sig_handler)
+        signal.signal(signal.SIGALRM, self.sig_handler)
+        signal.signal(signal.SIGTERM, self.sig_handler)
+        
+
+
         '''Create the GUI'''
         builder = Gtk.Builder()
         builder.add_from_file("/usr/share/studio-controls/studio-controls.glade")
@@ -174,7 +215,7 @@ class StudioControls:
         '''Dbus monitoring'''
         user_bus = dbus.SessionBus()
         user_bus.add_signal_receiver(self.db_ses_cb, dbus_interface='org.studio.control.event',
-                                     signal_name='V3_2_signal')
+                                     signal_name='V3_4_signal')
         user_bus.add_signal_receiver(self.db_new_usb, dbus_interface='org.studio.control.event',
                                      signal_name='usb_signal')
 
@@ -266,13 +307,19 @@ class StudioControls:
         global jack_died
         global xrun_count
         global jack_ports_changed
+        global jack_time
+        jack_time = 3
         xrun_count = 0
         autojack = True
         newusb = False
         jack_alive = False
         jack_died = False
         jack_ports_changed = True
+        self.jack_error_mesg = ""
+        self.jack_info_mesg = ""
         self.dirty = False
+        jack.set_error_function(callback=self.jack_error)
+        jack.set_info_function(callback=self.jack_info)
 
         # read in autojack config file
         c_file = expanduser(self.config_file)
@@ -369,17 +416,13 @@ class StudioControls:
         self.signal_autojack("ping")
         autojack = False
 
-    def signal_autojack(self, signal):
-        global autojack
-        cmd = f"/usr/bin/dbus-send --type=signal / org.studio.control.event.{signal}_signal"
-        if autojack:
-            subprocess.run(shlex.split(cmd), shell=False)
-        else:
-            time.sleep(5)
-            if autojack:
-                subprocess.run(shlex.split(cmd), shell=False)
-            else:
-                self.start_autojack()
+    def jack_error(self, mesg):
+        if self.def_config['JACK'] == "True":
+            if "not running" in mesg:
+                print(f"jack message received: {mesg}")
+
+    def jack_info(self, mesg):
+        print(f"jack_info received: {mesg}")
 
     def db_ses_cb(*args, **kwargs):
         ''' this means we got a responce from autojack, Good'''
@@ -408,6 +451,7 @@ class StudioControls:
         global jack_died
         global xrun_count
         global jack_ports_changed
+        global jack_time
 
         # sent by jackdied() callback
         if jack_died:
@@ -433,6 +477,11 @@ class StudioControls:
             self.dsp_label.set_text(f"DSP: {str(load)[0:4]}%")
             self.xrun_lab.set_text(f" {str(xrun_count)}")
         else:
+            if jack_time > 0:
+                jack_time = jack_time - 1
+                return True
+            else:
+                jack_time = 4
             self.dsp_label.set_text("DSP: 0%")
             self.xrun_lab.set_text(" 0")
             xrun_count = 0
@@ -499,10 +548,10 @@ class StudioControls:
         self.monitor_combo.get_model().clear()
         self.monitor_combo.append(self.def_config["MONITOR"], self.def_config["MONITOR"])
         self.monitor_combo.set_active(0)
-        self.pj_in_con.append("0", "no connection")
+        self.pj_in_con.append("none", "no connection")
         self.pj_in_con.set_active(0)
         self.pj_out_con.get_model().clear()
-        self.pj_out_con.append("0", "no connection")
+        self.pj_out_con.append("none", "no connection")
         self.pj_out_con.append("monitor", "Main Output Ports")
         self.pj_out_con.set_active(0)
         active_in = self.p_in_con[self.i_in]
@@ -759,19 +808,9 @@ class StudioControls:
 
     '''Functions for all the gui controls'''
 
-    def on_window_main_delete_event(self, *args):
-        Gtk.main_quit(*args)
-
     def on_window_help_delete_event(self, window, event):
         self.window_help.hide_on_delete()
         return True
-
-    def on_main_button_cancel_clicked(self, button):
-        global jack_alive
-        global jack_client
-        if jack_alive:
-            jack_client.close()
-        Gtk.main_quit()
 
     def on_main_button_help_clicked(self, button):
         self.window_help.show()
@@ -971,7 +1010,7 @@ class StudioControls:
         if len(self.pulse_out):
             self.i_out = int(self.pj_out_combo.get_active_id())
         self.pulse_in.append(f"pulse_in-{str(self.i_in + 1)}")
-        self.p_in_con.append("0")
+        self.p_in_con.append("none")
         self.refresh_pulse_tab(self.i_in, self.i_out)
 
 
@@ -985,7 +1024,7 @@ class StudioControls:
         if len(self.pulse_in):
             self.i_in = int(self.pj_in_combo.get_active_id())
         self.pulse_out.append(f"pulse_out-{str(self.i_out + 1)}")
-        self.p_out_con.append("0")
+        self.p_out_con.append("none")
         self.refresh_pulse_tab(self.i_in, self.i_out)
 
 
@@ -1091,27 +1130,63 @@ class StudioControls:
             self.def_config['MONITOR'] = str(self.monitor_combo.get_active_id())
             self.config.write(rc_file)
 
-    def start_autojack(self):
-        '''start autojack as it has been detected as not running.
-        This should only happen directly after a fresh install of
-        -controls'''
-        print("Starting Autojack...")
-        # first tell any old autojack to die
-        subprocess.run(["/usr/bin/dbus-send", "--type=signal", "/", "org.studio.control.event.quit_signal"],
-                       shell=False)
-        # do it
-        subprocess.Popen(["/usr/bin/autojack"], stdin=subprocess.DEVNULL, stdout=subprocess.DEVNULL,
-                         stderr=subprocess.STDOUT, shell=False).pid
+    def signal_autojack(self, signal):
+        global autojack
+        cmd = f"/usr/bin/dbus-send --type=signal / org.studio.control.event.{signal}_signal"
+        if autojack:
+            subprocess.run(shlex.split(cmd), shell=False)
+        else:
+            time.sleep(5)
+            if autojack:
+                subprocess.run(shlex.split(cmd), shell=False)
+            else:
+                print("Starting Autojack...")
+                # first tell any old autojack to die
+                subprocess.run(["/usr/bin/dbus-send", "--type=signal", "/", "org.studio.control.event.quit_signal"],
+                               shell=False)
+                # do it
+                subprocess.Popen(["/usr/bin/autojack"], stdin=subprocess.DEVNULL, stdout=subprocess.DEVNULL,
+                                 stderr=subprocess.STDOUT, shell=False).pid
 
 
     def on_button_help_ok_clicked(self, button):
         self.window_help.hide()
 
-    def on_button_msg_ok_clicked(self, button):
-        Gtk.main_quit()
-
     def on_button_rt_info_ok_clicked(self, button):
         self.message_dialog_rt_info.hide()
+
+    ''' All the ways we can die '''
+    def on_button_msg_ok_clicked(self, button):
+        self.we_die()
+
+    def on_main_button_cancel_clicked(self, button):
+        self.we_die()
+
+    def on_window_main_delete_event(self, *args):
+        self.we_die()
+
+    def sig_handler(self, signum, frame):
+        ''' a handler for system signals that may be sent by the system.
+        we want to trap sigint, sigkill and sigterm and do the same as
+        above. '''
+        self.we_die()
+
+    def we_die(self):
+        global jack_alive
+        global jack_client
+        global lock_file
+        if jack_alive:
+            jack_client.close()
+        if os.path.isfile(lock_file):
+            new_pid = str(os.getpid())
+            if os.path.isfile(lock_file):
+                with open(lock_file, "r") as lk_file:
+                    for line in lk_file:
+                        # only need one line
+                        old_pid = line.rstrip()
+                if new_pid == old_pid:
+                    os.remove(lock_file)
+        Gtk.main_quit()
 
 us = StudioControls()
 us.window_main.show_all()

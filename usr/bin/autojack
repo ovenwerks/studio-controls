@@ -212,7 +212,7 @@ def import_config():
     # read in autojack config file
     c_file = expanduser(config_file)
     if os.path.isfile(c_file):
-        # New config file exists, read it in
+        # config file exists, read it in
         config.read(c_file)
 
     log_string = f"JACK: {def_config['JACK']}\n"
@@ -274,6 +274,7 @@ def reconfig():
     global pulse_out
     global config
     global def_config
+    global phones
 
     old_config = configparser.ConfigParser()
     old_def_config = old_config['DEFAULT']
@@ -354,11 +355,10 @@ def reconfig():
             if not nzd in blacklist and (def_config['DRIVER'] != "alsa" or nzd != last_master):
                 start_slave(nzd)
 
-    if phones:
-        if def_config['PHONE-DEVICE'] != last_master:
-            start_slave(def_config['PHONE-DEVICE'])
-            con_dirty = True
-    elif def_config['Monitor'] != "system:playback_1":
+    if def_config['PHONE-DEVICE'] != old_def_config['PHONE-DEVICE']:
+        phones = False
+        phones_check()
+    if def_config['Monitor'] != "system:playback_1" and not phones:
         mon_dev = def_config['Monitor'].split('-')[0]
         if not mon_dev in zdev and (def_config['DRIVER'] != "alsa" or nzd != last_master):
             start_slave(mon_dev)
@@ -567,8 +567,8 @@ def config_start():
 
     if def_config['A2J'] == "True":
         # Can't set up logging
-        subprocess.Popen(["/usr/bin/a2jmidid", "-e"], shell=False).pid
-
+        cmd = "/usr/bin/a2jmidid -e"
+        subprocess.Popen(shlex.split(cmd), shell=False).pid
 
 def start_jack_client():
     ''' Create a jack client for monitoring and changing port connections'''
@@ -669,7 +669,7 @@ def switch_outputs(left_old, left_new):
         logging.debug("Jack not running")
         return
     if left_old == left_new:
-        logging.debug("oops, both ports are the same, no move done")
+        logging.debug("both ports are the same, no move done")
         return
     right_old = get_right_port(left_old)
     right_new = get_right_port(left_new)
@@ -859,7 +859,7 @@ def msg_cb_removed(*args, **kwargs):
 
     saved_devices = devices
     # let things settle
-    time.sleep(1)
+    time.sleep(.5)
 
     if args[0].find("sound-card") >= 0:
         # tell gui devicelist has changed
@@ -956,18 +956,21 @@ def start_slave(ldev):
         return
 
     dname, l_dev, sub = ldev.split(",", 2)
-    dsr = get_card_rate(ldev)
     device, idx = device_by_name(ldev)
+    for index in range(5, 5 + int(device[4])):
+        logging.log(7, f"Sub Device: {device[0]},{str(device[index][0])} has index{str(index - 5)}")
+        if device[index][0] == int(l_dev):
+            break
+    if device[index][2] or device[index][4]:
+        logging.debug(f" Device {ldev} already bridged or in use by other application")
+        return
     if dname == "HDMI" or dname == "NVidia":
         logging.info("HDMI device, setting buffer to 4096")
         buff_size = "4096"
     elif (device[2]) and (int(buff_size) < 128):
         logging.info("Internal device, minimum buffer 128, using 128")
         buff_size = "128"
-    for index in range(5, 5 + int(device[4])):
-        logging.log(7, f"Sub Device: {device[0]},{str(device[index][0])} has index{str(index - 5)}")
-        if device[index][0] == int(l_dev):
-            break
+    dsr = get_card_rate(ldev)
     # we found it and it seems to have this sub
     if device[index][1]:
         if not device[index][2]:
@@ -1012,16 +1015,15 @@ def kill_slave(ldev):
     logging.debug(f"Device is {device[0]}")
     if device[4]:
         logging.debug(f"{device[0]} has {device[4]} sub devices, want sub device {l_dev}")
-        logging.debug(f"{device[0]} sub device {l_dev} has pid: {device[index][2]}")
         if device[index][2]:
-            logging.debug(f"{ldev} found Playback bridge to kill")
+            logging.debug(f"{ldev} found Playback bridge to kill. PID: {str(device[index][2])}")
             for i, pr in enumerate(procs):
                 if pr.pid == device[index][2]:
                     logging.debug(f"kill {str(dname)} sub: {str(l_dev)} PID: {str(device[index][2])}")
                     pr.send_signal(signal.SIGINT)
                     try:
-                        rt = pr.wait(timeout=15)
-                    except TimeoutExpired:
+                        rt = pr.wait(timeout=5)
+                    except subprocess.TimeoutExpired:
                         logging.debug(f"kill PID: {str(device[index][2])} failed")
                         pr.terminate()
                         outs, errs = pr.communicate()
@@ -1029,15 +1031,20 @@ def kill_slave(ldev):
         else:
             logging.debug(f"{ldev} no Playback bridge found")
         if device[index][4]:
-            logging.debug(f"{ldev} found Capture bridge to kill")
+            logging.debug(f"{ldev} found Capture bridge to kill. PID: {str(device[index][4])}")
             for i, pr in enumerate(procs):
                 if pr.pid == device[index][4]:
                     logging.info(f"kill {str(dname)} sub: {str(l_dev)} PID: {str(device[index][4])}")
                     pr.send_signal(signal.SIGINT)
                     try:
-                        rt = pr.wait(timeout=15)
-                    except TimeoutExpired:
+                        rt = pr.wait(timeout=5)
+                    except subprocess.TimeoutExpired:
                         logging.debug(f"kill PID: {str(device[index][4])} failed")
+                        try:
+                            os.kill(int(device[index][4]), 9)
+                        except:
+                            print("")
+                        time.sleep(1)
                         pr.terminate()
                         outs, errs = pr.communicate()
                     del procs[i]
@@ -1049,28 +1056,14 @@ def ses_cb_quit(*args, **kwargs):
     ''' dbus call back when quit signal caught. This is for use in
     testing and the GUI never sends this. '''
     logging.warning("Got quit signal.")
-    cp = subprocess.run(["/usr/bin/killall", "-9", "jackdbus", "jackd", "a2jmidid"],
-                        universal_newlines=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=False)
-    logging.debug(f"Kill jack and friends: {cp.stdout.strip()}")
-    cp = subprocess.run(["/usr/bin/pulseaudio", "-k"],
-                        universal_newlines=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=False)
-    logging.debug(f"Restart PA: {cp.stdout.strip()}")
-    os._exit(0)
-
+    we_die()
 
 def handler(signum, frame):
     ''' a handler for system signals that may be sent by the system.
         we want to trap sigint, sigkill and sigterm and do the same as
         above. '''
     logging.warning(f"Got signal number: {str(signum)} - Dying.")
-    cp = subprocess.run(["/usr/bin/killall", "-9", "jackdbus", "jackd", "a2jmidid"],
-                        universal_newlines=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=False)
-    logging.debug(f"Kill jack and friends: {cp.stdout.strip()}")
-    cp = subprocess.run(["/usr/bin/pulseaudio", "-k"],
-                        universal_newlines=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=False)
-    logging.debug(f"Restart PA: {cp.stdout.strip()}")
-    os._exit(0)
-
+    we_die()
 
 def ses_cb_stop(*args, **kwargs):
     ''' dbus call back when stop signal caught. This stops jack. '''
@@ -1081,6 +1074,26 @@ def ses_cb_stop(*args, **kwargs):
     cp = subprocess.run(["/usr/bin/pulseaudio", "-k"],
                         universal_newlines=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=False)
     logging.debug(f"Restart PA: {cp.stdout.strip()}")
+
+
+def we_die():
+    global lock_file
+    cp = subprocess.run(["/usr/bin/killall", "-9", "jackdbus", "jackd", "a2jmidid"],
+                        universal_newlines=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=False)
+    logging.debug(f"Kill jack and friends: {cp.stdout.strip()}")
+    cp = subprocess.run(["/usr/bin/pulseaudio", "-k"],
+                        universal_newlines=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=False)
+    logging.debug(f"Restart PA: {cp.stdout.strip()}")
+    if os.path.isfile(lock_file):
+        new_pid = str(os.getpid())
+        if os.path.isfile(lock_file):
+            with open(lock_file, "r") as lk_file:
+                for line in lk_file:
+                    # only need one line
+                    old_pid = line.rstrip()
+            if new_pid == old_pid:
+                os.remove(lock_file)
+    os._exit(0)
 
 
 def ses_cb_start(*args, **kwargs):
@@ -1108,7 +1121,7 @@ def ses_cb_ping(*args, **kwargs):
     ''' dbus call back when config signal caught '''
     logging.info("Got ping signal.")
     time.sleep(3)
-    subprocess.run(["/usr/bin/dbus-send", "--type=signal", "/", "org.studio.control.event.V3_2_signal"],
+    subprocess.run(["/usr/bin/dbus-send", "--type=signal", "/", "org.studio.control.event.V3_4_signal"],
                    shell=False)
 
 
@@ -1118,9 +1131,11 @@ def phones_switch(plugged):
     global zdev
     global phones
     global phone_port
+    global jack_client
+    global jack_alive
     phones = plugged
     logging.debug(f"Changing Headphone to plugged in = {str(plugged)}")
-    if def_config['JACK'] == "False":
+    if def_config['JACK'] == "False" or not jack_alive:
         # we can't do anything up to pulse (I think)
         return
     out_L = "system:playback_1"
@@ -1129,7 +1144,7 @@ def phones_switch(plugged):
     device, idx = device_by_name(def_config['PHONE-DEVICE'])
     if def_config['PHONE-ACTION'] == "switch":
         logging.debug("Switching outputs")
-        if device[2]:
+        if device != [] and device[2]:
             spkr = ""
             logging.debug("Headphone device is internal change it's mixer settings")
             my_mixers = alsaaudio.mixers(device=f"hw:{device[0]}")
@@ -1149,7 +1164,7 @@ def phones_switch(plugged):
                 spkr_mix.setmute(0)
                 hp_mix.setvolume(0)
                 hp_mix.setmute(1)
-        if def_config['PHONE-DEVICE'] != def_config['DEV']:
+        if def_config['PHONE-DEVICE'] != def_config['DEV'] and device != []:
             logging.debug("Headphone device is not system")
             # set jack port names
             phone_port = f"{def_config['PHONE-DEVICE']}-out:playback_1"
@@ -1159,7 +1174,10 @@ def phones_switch(plugged):
                 hp_is_usb = True
             # USB device?
             if not plugged:
-                switch_outputs(phone_port, "system:playback_1")
+                port_list = jack_client.get_ports(name_pattern=f'{device[0]}*', is_audio=True, is_input=True, is_physical=True)
+                for this_port in port_list:
+                    if this_port.name == phone_port:
+                        switch_outputs(phone_port, "system:playback_1")
                 # find out if this is already an zdev
                 if (not def_config['PHONE-DEVICE'] in zdev) and (not hp_is_usb):
                     logging.debug("Headphone device had no jack port ... kill unneeded bridge")
@@ -1170,7 +1188,10 @@ def phones_switch(plugged):
                     # we have to start a zita proc
                     start_slave(def_config['PHONE-DEVICE'])
                     time.sleep(1)
-                switch_outputs("system:playback_1", phone_port)
+                port_list = jack_client.get_ports(name_pattern=f'{device[0]}*', is_audio=True, is_input=True, is_physical=True)
+                for this_port in port_list:
+                    if this_port.name == phone_port:
+                        switch_outputs("system:playback_1", phone_port)
 
     elif def_config['PHONE-ACTION'] == "script":
         # run a script to perform this instead
@@ -1191,7 +1212,6 @@ def phones_check():
     global phones
     global devices
     global def_config
-    global internal
     phones = False
 
     import_config()
@@ -1199,9 +1219,11 @@ def phones_check():
 
     dname, ddev, dsub = def_config['PHONE-DEVICE'].split(',')
     device, idx = device_by_name(def_config['PHONE-DEVICE'])
-    if device == []:
-        logging.warniing(f"Phones device: {def_config['PHONE-DEVICE']} not found")
+    logging.log(7, f"phonecheck: got device")
+    if idx < 0:
+        logging.warning(f"Phones device: {def_config['PHONE-DEVICE']} not found")
         return
+    logging.log(7, f"phonecheck: device idx > -1 idx: {str(idx)}")
     for index in range(5, 5 + int(device[4])):
         if device[index][0] == int(ddev):
             break
@@ -1251,16 +1273,39 @@ def phones_plug(*args, **kwargs):
     ''' callback means headphones have been plugged in lets make sure
         phones are unmuted and have a level higher than -inf.
         We also may want to mute speakers '''
+    global def_config
     logging.info("Got phones plugged in signal.")
-    phones_switch(True)
+    device, indx = device_by_name(def_config['PHONE-DEVICE'])
+    if indx > -1 and device[2]:
+            phones_switch(True)
+    else:
+        logging.info("Ignored phone plug: not correct device")
 
 
 def phones_unplug(*args, **kwargs):
     ''' callback means headphones have been unplugged in lets make sure
         phones are muted and the speakers  are unmuted and have a
         level higher than -inf.'''
+    global def_config
     logging.info("Got phones unplugged signal.")
-    phones_switch(False)
+    device, indx = device_by_name(def_config['PHONE-DEVICE'])
+    if indx > -1 and device[2]:
+        phones_switch(False)
+    else:
+        logging.info("Ignored phone unplug: not correct device")
+
+
+def jack_error(mesg):
+    ''' jack call back to deal with jack errors '''
+    global jack_alive
+    if jack_alive:
+        if "not running" in mesg:
+            logging.warning(f"Jack Message: {mesg}")
+
+
+def jack_info(mesg):
+    ''' jack call back to deal with jack info '''
+    logging.info(f"Jack Message: {mesg}")
 
 
 def main():
@@ -1273,6 +1318,7 @@ def main():
     global jack_count
     global phones
     global con_dirty
+    global lock_file
     phones = False
     jack_count = 0
     procs = []
@@ -1280,6 +1326,35 @@ def main():
     jack_alive = False
     jack_died = False
     con_dirty = False
+    # set up jack error/info logging
+    jack.set_error_function(callback=jack_error)
+    jack.set_info_function(callback=jack_info)
+
+    # Try and kill any other running instance
+    config_path = expanduser("~/.config/autojack")
+    if not os.path.isdir(config_path):
+        os.makedirs(config_path)
+    lock_file = f"{config_path}/autojack.lock"
+    # if os.path.isfile(lock_file): # this can be added in when 20.04 is EOL
+    subprocess.run(["/usr/bin/dbus-send", "--type=signal", "/",
+                "org.studio.control.event.quit_signal"], shell=False)
+    time.sleep(3)
+    new_pid = str(os.getpid())
+    if os.path.isfile(lock_file):
+        # other instance still hasn't gone maybe hung
+        with open(lock_file, "r") as lk_file:
+            for line in lk_file:
+                # only need one line
+                old_pid = line.rstrip()
+        if new_pid != old_pid:
+            try:
+                os.kill(int(old_pid), 9)
+            except:
+                print("")
+            time.sleep(1)
+    with open(lock_file, "w") as lk_file:
+        lk_file.write(new_pid)
+
     # set up logging
     logpath = expanduser("~/.log")
     # make sure the logfile directory exists
@@ -1287,7 +1362,8 @@ def main():
         os.makedirs(logpath)
     logfile = expanduser("~/.log/autojack.log")
     logging.basicConfig(filename=logfile, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s', level=logging.DEBUG)
-    logging.info('logging online')
+    logging.info('Autojack started: logging started')
+
     phones_check()
     dbus.mainloop.glib.DBusGMainLoop(set_as_default=True)
     signal.signal(signal.SIGHUP, handler)
@@ -1305,10 +1381,6 @@ def main():
     signal.signal(signal.SIGPIPE, handler)
     signal.signal(signal.SIGALRM, handler)
     signal.signal(signal.SIGTERM, handler)
-    subprocess.run(["/usr/bin/dbus-send", "--type=signal", "/",
-                    "org.studio.control.event.quit_signal"], shell=False)
-    logging.info('kill other autojack intances')
-    time.sleep(3)
 
     config_start()
     import_device_array()
@@ -1338,7 +1410,7 @@ def main():
                                  signal_name='phones_signal')
 
     subprocess.run(["/usr/bin/dbus-send", "--type=signal", "/",
-                    "org.studio.control.event.V3_2_signal"], shell=False)
+                    "org.studio.control.event.V3_4_signal"], shell=False)
 
     timeout_id = GLib.timeout_add(500, check_jack_status, None)
 
