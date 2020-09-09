@@ -1,3 +1,8 @@
+studio-controls version 2.0.6
+
+ [ Len Ovens ]
+ - bugfix for variable used before initialized
+
 studio-controls version 2.0.5
 
  [ Len Ovens ]

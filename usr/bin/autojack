@@ -360,7 +360,7 @@ def reconfig():
         phones_check()
     if def_config['Monitor'] != "system:playback_1" and not phones:
         mon_dev = def_config['Monitor'].split('-')[0]
-        if not mon_dev in zdev and (def_config['DRIVER'] != "alsa" or nzd != last_master):
+        if not mon_dev in zdev and (def_config['DRIVER'] != "alsa" or mon_dev != last_master):
             start_slave(mon_dev)
             con_dirty = True
 
@@ -538,7 +538,7 @@ def config_start():
             con_dirty = True
     elif def_config['Monitor'] != "system:playback_1":
         mon_dev = def_config['Monitor'].split('-')[0]
-        if not mon_dev in zdev and (def_config['DRIVER'] != "alsa" or cname != last_master):
+        if not mon_dev in zdev and (def_config['DRIVER'] != "alsa" or mon_dev != last_master):
             start_slave(mon_dev)
             con_dirty = True
 
@@ -1022,7 +1022,7 @@ def kill_slave(ldev):
                     logging.debug(f"kill {str(dname)} sub: {str(l_dev)} PID: {str(device[index][2])}")
                     pr.send_signal(signal.SIGINT)
                     try:
-                        rt = pr.wait(timeout=5)
+                        rt = pr.wait(timeout=15)
                     except subprocess.TimeoutExpired:
                         logging.debug(f"kill PID: {str(device[index][2])} failed")
                         pr.terminate()
@@ -1037,16 +1037,13 @@ def kill_slave(ldev):
                     logging.info(f"kill {str(dname)} sub: {str(l_dev)} PID: {str(device[index][4])}")
                     pr.send_signal(signal.SIGINT)
                     try:
-                        rt = pr.wait(timeout=5)
+                        rt = pr.wait(timeout=15)
                     except subprocess.TimeoutExpired:
                         logging.debug(f"kill PID: {str(device[index][4])} failed")
                         try:
                             os.kill(int(device[index][4]), 9)
                         except:
                             print("")
-                        time.sleep(1)
-                        pr.terminate()
-                        outs, errs = pr.communicate()
                     del procs[i]
         else:
             logging.debug(f"{ldev} no Capture bridge found")
