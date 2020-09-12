@@ -214,6 +214,8 @@ def import_config():
     if os.path.isfile(c_file):
         # config file exists, read it in
         config.read(c_file)
+    if def_config['MONITOR'] == "none":
+        def_config['MONITOR'] = 'system:playback_1'
 
     log_string = f"JACK: {def_config['JACK']}\n"
     log_string = f"{log_string}A2J: {def_config['A2J']}\n"

@@ -325,6 +325,8 @@ class StudioControls:
         c_file = expanduser(self.config_file)
         if os.path.isfile(c_file):
             self.config.read(c_file)
+        if self.def_config['MONITOR'] == "none":
+            self.def_config['MONITOR'] = 'system:playback_1'
         self.zdev = self.def_config['XDEV'].strip('"').split()
         self.pulse_in = self.def_config['PULSE-IN'].strip('"').split()
         self.pulse_out = self.def_config['PULSE-OUT'].strip('"').split()
