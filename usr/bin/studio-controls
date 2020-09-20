@@ -327,6 +327,10 @@ class StudioControls:
             self.config.read(c_file)
         if self.def_config['MONITOR'] == "none":
             self.def_config['MONITOR'] = 'system:playback_1'
+        if self.def_config['PJ-IN-CON'] == "0":
+            self.def_config['PJ-IN-CON'] = "none"
+        if self.def_config['PJ-OUT-CON'] == "0":
+            self.def_config['PJ-OUT-CON'] = "none"
         self.zdev = self.def_config['XDEV'].strip('"').split()
         self.pulse_in = self.def_config['PULSE-IN'].strip('"').split()
         self.pulse_out = self.def_config['PULSE-OUT'].strip('"').split()

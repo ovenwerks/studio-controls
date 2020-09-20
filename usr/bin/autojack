@@ -216,6 +216,10 @@ def import_config():
         config.read(c_file)
     if def_config['MONITOR'] == "none":
         def_config['MONITOR'] = 'system:playback_1'
+    if def_config['PJ-IN-CON'] == "0":
+        def_config['PJ-IN-CON'] = "none"
+    if def_config['PJ-OUT-CON'] == "0":
+        def_config['PJ-OUT-CON'] = "none"
 
     log_string = f"JACK: {def_config['JACK']}\n"
     log_string = f"{log_string}A2J: {def_config['A2J']}\n"
