@@ -1,7 +1,7 @@
 studio-controls version 2.0.8
 
  [ Len Ovens ]
- - Catch value 0 from old config file
+ - Catch value 0 from old config file (bug fix)
 
 studio-controls version 2.0.7
 
