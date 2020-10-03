@@ -211,6 +211,8 @@ class StudioControls:
         self.pj_out_name = builder.get_object('pj_out_name')
         self.pj_in_con = builder.get_object('pj_in_con')
         self.pj_out_con = builder.get_object('pj_out_con')
+        self.pj_in_count = builder.get_object('pj_in_count')
+        self.pj_out_count = builder.get_object('pj_out_count')
 
         '''Dbus monitoring'''
         user_bus = dbus.SessionBus()
@@ -289,6 +291,8 @@ class StudioControls:
             'PULSE-OUT': 'pulse_out',
             'PJ-IN-CON': 'system:capture_1',
             'PJ-OUT-CON': 'system:playback_1',
+            'PJ-IN-COUNT': '2',
+            'PJ-OUT-COUNT': '2',
             'A2J': "True",
             'DEV': default_device,
             'USBAUTO': "True",
@@ -336,6 +340,8 @@ class StudioControls:
         self.pulse_out = self.def_config['PULSE-OUT'].strip('"').split()
         self.p_in_con = self.def_config['PJ-IN-CON'].strip('"').split()
         self.p_out_con = self.def_config['PJ-OUT-CON'].strip('"').split()
+        self.p_in_cnt = self.def_config['PJ-IN-COUNT'].strip('"').split()
+        self.p_out_cnt = self.def_config['PJ-OUT-COUNT'].strip('"').split()
         self.blacklist = self.def_config['BLACKLIST'].strip('"').split()
 
         # Find out if jack is running
@@ -413,6 +419,8 @@ class StudioControls:
             "pj_out_rem_cb": self.pj_out_rem_cb,
             "pj_in_name_cb": self.pj_in_name_cb,
             "pj_out_name_cb": self.pj_out_name_cb,
+            "pj_in_cnt_cb": self.pj_in_cnt_cb,
+            "pj_out_cnt_cb": self.pj_out_cnt_cb,
 
         }
         builder.connect_signals(handlers)
@@ -979,6 +987,30 @@ class StudioControls:
             self.pulse_out[self.i_out] = "".join(str(self.pj_out_name.get_text()).split())
             self.pj_out_name.set_text(self.pulse_out[self.i_out])
             self.p_out_con[self.i_out] = str(self.pj_out_con.get_active_id())
+            self.refresh_pulse_tab(self.i_in, self.i_out)
+
+
+    def pj_in_cnt_cb(self, widget):
+        ''' Call back for the current pulse in bridge that the channel
+        count has changed '''
+        if not widget.get_sensitive():
+            return
+        if len(self.p_in_cnt):
+            self.p_in_cnt[self.i_in] = "".join(str(self.pj_in_count.get_value()))
+            self.pj_in_count.set_value(self.p_in_cnt[self.i_in])
+            #self.p_out_con[self.i_out] = str(self.pj_out_con.get_active_id())
+            self.refresh_pulse_tab(self.i_in, self.i_out)
+
+
+    def pj_out_cnt_cb(self, widget):
+        ''' Call back for the current pulse in bridge that the channel
+        count has changed '''
+        if not widget.get_sensitive():
+            return
+        if len(self.p_out_cnt):
+            self.p_out_cnt[self.i_out] = "".join(str(self.pj_out_count.get_value()))
+            self.pj_out_count.set_value(self.p_out_cnt[self.i_out])
+            #self.p_out_con[self.i_out] = str(self.pj_out_con.get_active_id())
             self.refresh_pulse_tab(self.i_in, self.i_out)
 
 

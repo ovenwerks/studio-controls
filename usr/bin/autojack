@@ -158,6 +158,8 @@ def import_config():
     global pulse_out
     global p_in_con
     global p_out_con
+    global p_in_cnt
+    global p_out_cnt
     global blacklist
     zdev = []
     pulse_in = []
@@ -196,6 +198,8 @@ def import_config():
         'PULSE-OUT': "pulse_out",
         'PJ-IN-CON': 'system:capture_1',
         'PJ-OUT-CON': 'monitor',
+        'PJ-IN-COUNT': '2',
+        'PJ-OUT-COUNT': '2',
         'A2J': "True",
         'DEV': default_device,
         'USBAUTO': "True",
@@ -238,6 +242,8 @@ def import_config():
     log_string = f"{log_string}PULSE-OUT: {def_config['PULSE-OUT']}\n"
     log_string = f"{log_string}PJ-IN-CON: {def_config['PJ-IN-CON']}\n"
     log_string = f"{log_string}PJ-OUT-CON: {def_config['PJ-OUT-CON']}\n"
+    log_string = f"{log_string}PJ-IN-COUNT: {def_config['PJ-IN-COUNT']}\n"
+    log_string = f"{log_string}PJ-OUT-COUNT: {def_config['PJ-OUT-COUNT']}\n"
     log_string = f"{log_string}USBAUTO: {def_config['USBAUTO']}\n"
     log_string = f"{log_string}USB-SINGLE: {def_config['USB-SINGLE']}\n"
     log_string = f"{log_string}BLACKLIST: {def_config['BLACKLIST']}\n"
@@ -255,6 +261,8 @@ def import_config():
     pulse_out = def_config['PULSE-OUT'].strip('"').split()
     p_in_con = def_config['PJ-IN-CON'].strip('"').split()
     p_out_con = def_config['PJ-OUT-CON'].strip('"').split()
+    p_in_cnt = def_config['PJ-IN-COUNT'].strip('"').split()
+    p_out_cnt = def_config['PJ-OUT-COUNT'].strip('"').split()
     for i, this_con in enumerate(p_out_con):
         if len( this_con ) < 3:
             p_out_con[i] = f"system:playback_{int(this_con)}"
