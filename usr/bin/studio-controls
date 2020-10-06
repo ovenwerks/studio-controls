@@ -549,135 +549,6 @@ class StudioControls:
         xrun_count = 0
 
 
-    def refresh_pulse_io(self):
-        ''' the ports that can be connected to pulse ports varies
-        with what jack offers. This refreshes the two drop downs '''
-        global jack_client
-        global jack_alive
-
-        self.pj_in_con.set_sensitive(False)
-        self.pj_out_con.set_sensitive(False)
-        self.pj_in_con.get_model().clear()
-        self.monitor_combo.set_sensitive(False)
-        self.monitor_combo.get_model().clear()
-        self.monitor_combo.append(self.def_config["MONITOR"], self.def_config["MONITOR"])
-        self.monitor_combo.set_active(0)
-        self.pj_in_con.append("none", "no connection")
-        self.pj_in_con.set_active(0)
-        self.pj_out_con.get_model().clear()
-        self.pj_out_con.append("none", "no connection")
-        self.pj_out_con.append("monitor", "Main Output Ports")
-        self.pj_out_con.set_active(0)
-        active_in = self.p_in_con[self.i_in]
-        if (self.p_in_con != []) and (active_in != "0"):
-            self.pj_in_con.append(active_in, active_in)
-            self.pj_in_con.set_active_id(active_in)
-        active_out = self.p_out_con[self.i_out]
-        if (self.p_out_con != []) and (active_out != "0"):
-            if active_out != "monitor":
-                self.pj_out_con.append(active_out, active_out)
-            self.pj_out_con.set_active_id(active_out)
-
-        if jack_alive:
-            # get capture ports with audio and hardware
-            jack_cap = jack_client.get_ports("", is_audio=True, is_output=True, is_physical=True)
-            jack_play = jack_client.get_ports("", is_audio=True, is_input=True, is_physical=True)
-            left_ch = True
-            last_dev = ""
-            last_port = ""
-            for jport in jack_cap:
-                if left_ch:
-                    extra = ""
-                port = jport.name
-                dev = port.split(':', 1)[0]
-                paliases = jport.aliases
-                for palias in paliases:
-                    adev = palias.split(':', 1)[0]
-                    if adev == "system":
-                        if left_ch:
-                            extra = f" <{dev}>"
-                        dev = adev
-                        port = palias
-                if left_ch:
-                    last_dev = dev
-                    last_port = port
-                    left_ch = False
-                else:
-                    this_port = last_port
-                    if dev == last_dev:
-                        right_ch = port.rsplit('_', 1)[1]
-                        self.pj_in_con.append(last_port, f"{last_port} and {str(right_ch)}{extra}")
-                        left_ch = True
-                    else:
-                        self.pj_in_con.append(last_port, f"{last_port} (mono){extra}")
-                        last_dev = dev
-                        last_port = port
-                    if this_port == active_in:
-                        self.pj_in_con.remove(self.pj_in_con.get_active())
-                        self.pj_in_con.set_active_id(active_in)
-            if not left_ch:
-                self.pj_in_con.append(last_port, f"{last_port} (mono){extra}")
-                if last_port == active_in:
-                    self.pj_in_con.remove(self.pj_in_con.get_active())
-                    self.pj_in_con.set_active_id(active_in)
-
-            left_ch = True
-            last_dev = ""
-            last_port = ""
-            for jport in jack_play:
-                if left_ch:
-                    extra = ""
-                port = jport.name
-                dev = port.split(':', 1)[0]
-                paliases = jport.aliases
-                for palias in paliases:
-                    adev = palias.split(':', 1)[0]
-                    if adev == "system":
-                        if left_ch:
-                            extra = f" <{dev}>"
-                        dev = adev
-                        port = palias
-                if left_ch:
-                    last_dev = dev
-                    last_port = port
-                    left_ch = False
-                else:
-                    this_port = last_port
-                    if dev == last_dev:
-                        right_ch = port.rsplit('_', 1)[1]
-                        self.pj_out_con.append(last_port, f"{last_port} and {str(right_ch)}{extra}")
-                        self.monitor_combo.append(last_port, f"{last_port} and {str(right_ch)}{extra}")
-                        left_ch = True
-                    else:
-                        self.pj_out_con.append(last_port, f"{last_port} (mono){extra}")
-                        self.monitor_combo.append(last_port, f"{last_port} (mono){extra}")
-                        last_dev = dev
-                        last_port = port
-
-                    if this_port == active_out:
-                        self.pj_out_con.remove(self.pj_out_con.get_active())
-                        self.pj_out_con.set_active_id(active_out)
-                    if this_port == self.def_config["MONITOR"]:
-                        self.monitor_combo.remove(self.monitor_combo.get_active())
-                        self.monitor_combo.set_active_id(self.def_config["MONITOR"])
-                    left_ch = True
-            if not left_ch:
-                self.pj_out_con.append(last_port, f"{last_port} (mono){extra}")
-                self.monitor_combo.append(last_port, f"{last_port} (mono){extra}")
-                if last_port == active_out:
-                    self.pj_out_con.remove(self.pj_out_con.get_active())
-                    self.pj_out_con.set_active_id(active_out)
-
-        else:
-            self.pj_in_con.append("none", "Ports can not be displayed unless Jack is running.")
-            self.pj_out_con.append("none", "Ports can not be displayed unless Jack is running.")
-            self.monitor_combo.append("none", "Ports can not be displayed unless Jack is running.")
-
-        self.pj_in_con.set_sensitive(True)
-        self.pj_out_con.set_sensitive(True)
-        self.monitor_combo.set_sensitive(True)
-
-
     def refresh_dropdowns(self):
         '''this call refreshes the device lists for all drop downs
         that use devices. If backend is not "alsa" then the jack master
@@ -932,6 +803,139 @@ class StudioControls:
         self.usb_single_ck.set_sensitive(a_id)
 
 
+    ''' Pulse bridge calls '''
+
+    def refresh_pulse_io(self):
+        ''' the ports that can be connected to pulse ports varies
+        with what jack offers. This refreshes the two drop downs '''
+        global jack_client
+        global jack_alive
+
+        self.pj_in_con.set_sensitive(False)
+        self.pj_in_con.get_model().clear()
+        self.pj_in_con.append("none", "no connection")
+        self.pj_in_con.set_active(0)
+        active_in = self.p_in_con[self.i_in]
+        if (self.p_in_con != []) and (active_in != "0"):
+            self.pj_in_con.append(active_in, active_in)
+            self.pj_in_con.set_active_id(active_in)
+
+        self.pj_out_con.set_sensitive(False)
+        self.pj_out_con.get_model().clear()
+        self.pj_out_con.append("none", "no connection")
+        self.pj_out_con.append("monitor", "Main Output Ports")
+        self.pj_out_con.set_active(0)
+        active_out = self.p_out_con[self.i_out]
+        if (self.p_out_con != []) and (active_out != "0"):
+            if active_out != "monitor":
+                self.pj_out_con.append(active_out, active_out)
+            self.pj_out_con.set_active_id(active_out)
+
+        self.monitor_combo.set_sensitive(False)
+        self.monitor_combo.get_model().clear()
+        self.monitor_combo.append(self.def_config["MONITOR"], self.def_config["MONITOR"])
+        self.monitor_combo.set_active(0)
+
+        if jack_alive:
+            # get capture ports with audio and hardware
+            jack_cap = jack_client.get_ports("", is_audio=True, is_output=True, is_physical=True)
+            left_ch = True
+            last_dev = ""
+            last_port = ""
+            for jport in jack_cap:
+                if left_ch:
+                    extra = ""
+                port = jport.name
+                dev = port.split(':', 1)[0]
+                paliases = jport.aliases
+                for palias in paliases:
+                    adev = palias.split(':', 1)[0]
+                    if adev == "system":
+                        if left_ch:
+                            extra = f" <{dev}>"
+                        dev = adev
+                        port = palias
+                if left_ch:
+                    last_dev = dev
+                    last_port = port
+                    left_ch = False
+                else:
+                    this_port = last_port
+                    if dev == last_dev:
+                        right_ch = port.rsplit('_', 1)[1]
+                        self.pj_in_con.append(last_port, f"{last_port} and {str(right_ch)}{extra}")
+                        left_ch = True
+                    else:
+                        self.pj_in_con.append(last_port, f"{last_port} (mono){extra}")
+                        last_dev = dev
+                        last_port = port
+                    if this_port == active_in:
+                        self.pj_in_con.remove(self.pj_in_con.get_active())
+                        self.pj_in_con.set_active_id(active_in)
+            if not left_ch:
+                self.pj_in_con.append(last_port, f"{last_port} (mono){extra}")
+                if last_port == active_in:
+                    self.pj_in_con.remove(self.pj_in_con.get_active())
+                    self.pj_in_con.set_active_id(active_in)
+
+            jack_play = jack_client.get_ports("", is_audio=True, is_input=True, is_physical=True)
+            left_ch = True
+            last_dev = ""
+            last_port = ""
+            for jport in jack_play:
+                if left_ch:
+                    extra = ""
+                port = jport.name
+                dev = port.split(':', 1)[0]
+                paliases = jport.aliases
+                for palias in paliases:
+                    adev = palias.split(':', 1)[0]
+                    if adev == "system":
+                        if left_ch:
+                            extra = f" <{dev}>"
+                        dev = adev
+                        port = palias
+                if left_ch:
+                    last_dev = dev
+                    last_port = port
+                    left_ch = False
+                else:
+                    this_port = last_port
+                    if dev == last_dev:
+                        right_ch = port.rsplit('_', 1)[1]
+                        self.pj_out_con.append(last_port, f"{last_port} and {str(right_ch)}{extra}")
+                        self.monitor_combo.append(last_port, f"{last_port} and {str(right_ch)}{extra}")
+                        left_ch = True
+                    else:
+                        self.pj_out_con.append(last_port, f"{last_port} (mono){extra}")
+                        self.monitor_combo.append(last_port, f"{last_port} (mono){extra}")
+                        last_dev = dev
+                        last_port = port
+
+                    if this_port == active_out:
+                        self.pj_out_con.remove(self.pj_out_con.get_active())
+                        self.pj_out_con.set_active_id(active_out)
+                    if this_port == self.def_config["MONITOR"]:
+                        self.monitor_combo.remove(self.monitor_combo.get_active())
+                        self.monitor_combo.set_active_id(self.def_config["MONITOR"])
+                    left_ch = True
+            if not left_ch:
+                self.pj_out_con.append(last_port, f"{last_port} (mono){extra}")
+                self.monitor_combo.append(last_port, f"{last_port} (mono){extra}")
+                if last_port == active_out:
+                    self.pj_out_con.remove(self.pj_out_con.get_active())
+                    self.pj_out_con.set_active_id(active_out)
+
+        else:
+            self.pj_in_con.append("none", "Ports can not be displayed unless Jack is running.")
+            self.pj_out_con.append("none", "Ports can not be displayed unless Jack is running.")
+            self.monitor_combo.append("none", "Ports can not be displayed unless Jack is running.")
+
+        self.pj_in_con.set_sensitive(True)
+        self.pj_out_con.set_sensitive(True)
+        self.monitor_combo.set_sensitive(True)
+
+
     def refresh_pulse_tab(self, i_in, i_out):
         ''' Fill in all pulse related widgets '''
         '''self.combo_out_ports.set_active_id(self.def_config['PORTS'])'''
@@ -1094,6 +1098,8 @@ class StudioControls:
         self.refresh_pulse_tab(self.i_in, self.i_out)
 
 
+    ''' External applications calls '''
+
     def mixer_cb(self, button):
         '''callback for mixer button. This starts QASMixer
         with the device set to whatever is jack master'''
@@ -1114,6 +1120,8 @@ class StudioControls:
             subprocess.Popen(["/usr/bin/carla"], shell=False).pid
         else:
             button.set_label("Please Install Carla First")
+
+    ''' Autojack signalling calls '''
 
     def cb_jack_start(self, button):
         ''' call back for Jack (re)start button'''
