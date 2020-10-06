@@ -1,3 +1,8 @@
+studio-controls version 2.0.9
+
+ [ Len Ovens ]
+ - Wrong variable used causing incorrect port to be chosen (lp: #1898369)
+
 studio-controls version 2.0.8
 
  [ Len Ovens ]

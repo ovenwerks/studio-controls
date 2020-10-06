@@ -601,14 +601,14 @@ class StudioControls:
                         self.pj_in_con.append(last_port, f"{last_port} and {str(right_ch)}{extra}")
                         left_ch = True
                     else:
-                        self.pj_in_con.append(port, f"{last_port} (mono){extra}")
+                        self.pj_in_con.append(last_port, f"{last_port} (mono){extra}")
                         last_dev = dev
                         last_port = port
                     if this_port == active_in:
                         self.pj_in_con.remove(self.pj_in_con.get_active())
                         self.pj_in_con.set_active_id(active_in)
             if not left_ch:
-                self.pj_in_con.append(port, f"{last_port} (mono){extra}")
+                self.pj_in_con.append(last_port, f"{last_port} (mono){extra}")
                 if last_port == active_in:
                     self.pj_in_con.remove(self.pj_in_con.get_active())
                     self.pj_in_con.set_active_id(active_in)
@@ -641,8 +641,8 @@ class StudioControls:
                         self.monitor_combo.append(last_port, f"{last_port} and {str(right_ch)}{extra}")
                         left_ch = True
                     else:
-                        self.pj_out_con.append(port, f"{last_port} (mono){extra}")
-                        self.monitor_combo.append(port, f"{last_port} (mono){extra}")
+                        self.pj_out_con.append(last_port, f"{last_port} (mono){extra}")
+                        self.monitor_combo.append(last_port, f"{last_port} (mono){extra}")
                         last_dev = dev
                         last_port = port
 
