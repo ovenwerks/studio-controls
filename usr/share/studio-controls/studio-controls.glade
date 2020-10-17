@@ -27,6 +27,11 @@
     <property name="step_increment">1</property>
     <property name="page_increment">10</property>
   </object>
+  <object class="GtkAdjustment" id="adjustment6">
+    <property name="upper">100</property>
+    <property name="step_increment">1</property>
+    <property name="page_increment">10</property>
+  </object>
   <object class="GtkWindow" id="window_main">
     <property name="width_request">400</property>
     <property name="can_focus">False</property>
@@ -869,7 +874,7 @@
                                 <property name="climb_rate">1</property>
                                 <property name="numeric">True</property>
                                 <property name="value">1</property>
-                                <signal name="change-value" handler="pj_out_cnt_cb" swapped="no"/>
+                                <signal name="change-value" handler="pj_out_name_cb" swapped="no"/>
                               </object>
                               <packing>
                                 <property name="left_attach">1</property>
@@ -877,13 +882,29 @@
                               </packing>
                             </child>
                             <child>
-                              <placeholder/>
+                              <object class="GtkLabel">
+                                <property name="visible">True</property>
+                                <property name="can_focus">False</property>
+                                <property name="label" translatable="yes">Must be unique. In and out must be different</property>
+                              </object>
+                              <packing>
+                                <property name="left_attach">2</property>
+                                <property name="top_attach">1</property>
+                              </packing>
                             </child>
                             <child>
-                              <placeholder/>
-                            </child>
-                            <child>
-                              <placeholder/>
+                              <object class="GtkLabel">
+                                <property name="visible">True</property>
+                                <property name="can_focus">False</property>
+                                <property name="label" translatable="yes">The auto connections are made starting
+at the port listed and continue to port count
+or the last device port, whichever is less.</property>
+                              </object>
+                              <packing>
+                                <property name="left_attach">2</property>
+                                <property name="top_attach">2</property>
+                                <property name="height">2</property>
+                              </packing>
                             </child>
                             <child>
                               <placeholder/>
@@ -1023,11 +1044,13 @@
                                 <property name="can_focus">True</property>
                                 <property name="max_width_chars">3</property>
                                 <property name="text" translatable="yes">1</property>
-                                <property name="adjustment">adjustment5</property>
+                                <property name="progress_pulse_step">1</property>
+                                <property name="input_purpose">number</property>
+                                <property name="adjustment">adjustment6</property>
                                 <property name="climb_rate">1</property>
                                 <property name="numeric">True</property>
                                 <property name="value">1</property>
-                                <signal name="change-value" handler="pj_in_cnt_cb" swapped="no"/>
+                                <signal name="value-changed" handler="pj_in_name_cb" swapped="no"/>
                               </object>
                               <packing>
                                 <property name="left_attach">1</property>
@@ -1035,13 +1058,29 @@
                               </packing>
                             </child>
                             <child>
-                              <placeholder/>
+                              <object class="GtkLabel">
+                                <property name="visible">True</property>
+                                <property name="can_focus">False</property>
+                                <property name="label" translatable="yes">Must be unique. In and out must be different</property>
+                              </object>
+                              <packing>
+                                <property name="left_attach">2</property>
+                                <property name="top_attach">1</property>
+                              </packing>
                             </child>
                             <child>
-                              <placeholder/>
-                            </child>
-                            <child>
-                              <placeholder/>
+                              <object class="GtkLabel">
+                                <property name="visible">True</property>
+                                <property name="can_focus">False</property>
+                                <property name="label" translatable="yes">The auto connections are made starting
+at the port listed and continue to port count
+or the last device port, whichever is less.</property>
+                              </object>
+                              <packing>
+                                <property name="left_attach">2</property>
+                                <property name="top_attach">2</property>
+                                <property name="height">2</property>
+                              </packing>
                             </child>
                             <child>
                               <placeholder/>
@@ -1088,10 +1127,133 @@
                       </packing>
                     </child>
                     <child>
-                      <placeholder/>
+                      <object class="GtkBox">
+                        <property name="visible">True</property>
+                        <property name="can_focus">False</property>
+                        <property name="orientation">vertical</property>
+                        <child>
+                          <object class="GtkLabel">
+                            <property name="visible">True</property>
+                            <property name="can_focus">False</property>
+                            <property name="label" translatable="yes">Most people will not want to change this.
+Use the default value unless you are using a session manager to make connections.
+Otherwise your applications may loose it's connections on reopening.
+In general prefer "Ignore" over "Fail" modes.
+</property>
+                            <property name="justify">center</property>
+                          </object>
+                          <packing>
+                            <property name="expand">False</property>
+                            <property name="fill">True</property>
+                            <property name="position">0</property>
+                          </packing>
+                        </child>
+                        <child>
+                          <object class="GtkBox">
+                            <property name="visible">True</property>
+                            <property name="can_focus">False</property>
+                            <property name="homogeneous">True</property>
+                            <child>
+                              <object class="GtkLabel">
+                                <property name="visible">True</property>
+                                <property name="can_focus">False</property>
+                                <property name="label" translatable="yes">JACK Self Connect Mode</property>
+                              </object>
+                              <packing>
+                                <property name="expand">False</property>
+                                <property name="fill">True</property>
+                                <property name="position">0</property>
+                              </packing>
+                            </child>
+                            <child>
+                              <object class="GtkComboBoxText" id="jk_connect_mode">
+                                <property name="visible">True</property>
+                                <property name="can_focus">False</property>
+                                <property name="active">0</property>
+                                <items>
+                                  <item id="n" translatable="yes">Don't restrict self connect requests (default)</item>
+                                  <item id="E" translatable="yes">Fail self connect requests to external ports only</item>
+                                  <item id="e" translatable="yes">Ignore self connect requests to external ports only</item>
+                                  <item id="A" translatable="yes">Fail all self connect requests</item>
+                                  <item id="a" translatable="yes">Ignore all self connect requests</item>
+                                </items>
+                              </object>
+                              <packing>
+                                <property name="expand">False</property>
+                                <property name="fill">True</property>
+                                <property name="position">1</property>
+                              </packing>
+                            </child>
+                            <child>
+                              <placeholder/>
+                            </child>
+                          </object>
+                          <packing>
+                            <property name="expand">False</property>
+                            <property name="fill">True</property>
+                            <property name="position">1</property>
+                          </packing>
+                        </child>
+                        <child>
+                          <placeholder/>
+                        </child>
+                        <child>
+                          <object class="GtkBox">
+                            <property name="visible">True</property>
+                            <property name="can_focus">False</property>
+                            <property name="homogeneous">True</property>
+                            <child>
+                              <object class="GtkButton" id="raysession">
+                                <property name="label" translatable="yes">Start RaySession</property>
+                                <property name="visible">True</property>
+                                <property name="can_focus">True</property>
+                                <property name="receives_default">True</property>
+                                <signal name="clicked" handler="button_cb" swapped="no"/>
+                              </object>
+                              <packing>
+                                <property name="expand">False</property>
+                                <property name="fill">True</property>
+                                <property name="position">0</property>
+                              </packing>
+                            </child>
+                            <child>
+                              <placeholder/>
+                            </child>
+                            <child>
+                              <object class="GtkButton">
+                                <property name="label" translatable="yes">Start NSM</property>
+                                <property name="visible">True</property>
+                                <property name="can_focus">True</property>
+                                <property name="receives_default">True</property>
+                              </object>
+                              <packing>
+                                <property name="expand">False</property>
+                                <property name="fill">True</property>
+                                <property name="position">2</property>
+                              </packing>
+                            </child>
+                          </object>
+                          <packing>
+                            <property name="expand">False</property>
+                            <property name="fill">True</property>
+                            <property name="position">3</property>
+                          </packing>
+                        </child>
+                      </object>
+                      <packing>
+                        <property name="position">3</property>
+                      </packing>
                     </child>
                     <child type="tab">
-                      <placeholder/>
+                      <object class="GtkLabel">
+                        <property name="visible">True</property>
+                        <property name="can_focus">False</property>
+                        <property name="label" translatable="yes">JACK Session Managment</property>
+                      </object>
+                      <packing>
+                        <property name="position">3</property>
+                        <property name="tab_fill">False</property>
+                      </packing>
                     </child>
                     <child>
                       <placeholder/>

@@ -214,6 +214,9 @@ class StudioControls:
         self.pj_in_count = builder.get_object('pj_in_count')
         self.pj_out_count = builder.get_object('pj_out_count')
 
+        '''Session Manager'''
+        self.jk_connect_mode = builder.get_object('jk_connect_mode')
+
         '''Dbus monitoring'''
         user_bus = dbus.SessionBus()
         user_bus.add_signal_receiver(self.db_ses_cb, dbus_interface='org.studio.control.event',
@@ -285,6 +288,7 @@ class StudioControls:
             'RATE': "48000",
             'FRAME': "1024",
             'PERIOD': "2",
+            'CONNECT-MODE': "n",
             'ZFRAME': "512",
             'XDEV': "",
             'PULSE-IN': 'pulse_in',
@@ -343,6 +347,13 @@ class StudioControls:
         self.p_in_cnt = self.def_config['PJ-IN-COUNT'].strip('"').split()
         self.p_out_cnt = self.def_config['PJ-OUT-COUNT'].strip('"').split()
         self.blacklist = self.def_config['BLACKLIST'].strip('"').split()
+        # old config files may not have this, set to default
+        for i, pj_name in enumerate(self.pulse_in):
+            if len(self.p_in_cnt) < i:
+                self.p_in_cnt.append("2")
+        for i, pj_name in enumerate(self.pulse_out):
+            if len(self.p_out_cnt) < i:
+                self.p_out_cnt.append("2")
 
         # Find out if jack is running
         try:
@@ -358,8 +369,8 @@ class StudioControls:
         self.combobox_late.set_active_id(self.def_config['FRAME'])
         self.combo_periods.set_active_id(self.def_config['PERIOD'])
         self.combo_backend.set_active_id(self.def_config['DRIVER'])
-        self.chan_in_spin.set_range(0, 128)
-        self.chan_out_spin.set_range(0, 128)
+        self.chan_in_spin.set_range(1, 128)
+        self.chan_out_spin.set_range(1, 128)
         self.chan_in_spin.set_value(self.def_config.getint('CHAN-IN'))
         self.chan_out_spin.set_value(self.def_config.getint('CHAN-OUT'))
         self.jack_midi_check.set_active(self.def_config['A2J'] == "True")
@@ -371,7 +382,11 @@ class StudioControls:
         else:
             self.usb_single_ck.set_sensitive(False)
             self.usb_single_ck.set_active(self.def_config['USB-SINGLE'] == "True")
-
+        # pulse bridge defaults
+        self.pj_in_count.set_range(1, 10)
+        self.pj_out_count.set_range(1, 10)
+        # Session Manger settings
+        self.jk_connect_mode.set_active_id(self.def_config['CONNECT-MODE'])
 
         self.refresh_dropdowns()
         self.i_in = 0
@@ -419,8 +434,6 @@ class StudioControls:
             "pj_out_rem_cb": self.pj_out_rem_cb,
             "pj_in_name_cb": self.pj_in_name_cb,
             "pj_out_name_cb": self.pj_out_name_cb,
-            "pj_in_cnt_cb": self.pj_in_cnt_cb,
-            "pj_out_cnt_cb": self.pj_out_cnt_cb,
 
         }
         builder.connect_signals(handlers)
@@ -927,9 +940,9 @@ class StudioControls:
                     self.pj_out_con.set_active_id(active_out)
 
         else:
-            self.pj_in_con.append("none", "Ports can not be displayed unless Jack is running.")
-            self.pj_out_con.append("none", "Ports can not be displayed unless Jack is running.")
-            self.monitor_combo.append("none", "Ports can not be displayed unless Jack is running.")
+            self.pj_in_con.append("none", "Ports cannot be displayed unless Jack is running.")
+            self.pj_out_con.append("none", "Ports cannot be displayed unless Jack is running.")
+            self.monitor_combo.append("none", "Ports cannot be displayed unless Jack is running.")
 
         self.pj_in_con.set_sensitive(True)
         self.pj_out_con.set_sensitive(True)
@@ -942,8 +955,10 @@ class StudioControls:
         global jack_ports_changed
         self.pj_in_combo.set_sensitive(False)
         self.pj_in_name.set_sensitive(False)
+        self.pj_in_count.set_sensitive(False)
         self.pj_out_combo.set_sensitive(False)
         self.pj_out_name.set_sensitive(False)
+        self.pj_out_count.set_sensitive(False)
 
         self.pj_in_combo.get_model().clear()
         for i, pj_name in enumerate(self.pulse_in):
@@ -953,6 +968,7 @@ class StudioControls:
             self.pj_in_name.set_text(self.pulse_in[i_in])
         else:
             self.pj_in_name.set_text("")
+        self.pj_in_count.set_value(int(self.p_in_cnt[i_in]))
 
         self.pj_out_combo.get_model().clear()
         for i, pj_name in enumerate(self.pulse_out):
@@ -962,11 +978,14 @@ class StudioControls:
             self.pj_out_name.set_text(self.pulse_out[i_out])
         else:
             self.pj_out_name.set_text("")
+        self.pj_out_count.set_value(int(self.p_out_cnt[i_out]))
 
         self.pj_in_combo.set_sensitive(True)
         self.pj_in_name.set_sensitive(True)
+        self.pj_in_count.set_sensitive(True)
         self.pj_out_combo.set_sensitive(True)
         self.pj_out_name.set_sensitive(True)
+        self.pj_out_count.set_sensitive(True)
         jack_ports_changed = True
 
 
@@ -979,6 +998,7 @@ class StudioControls:
             self.pulse_in[self.i_in] = "".join(str(self.pj_in_name.get_text()).split())
             self.pj_in_name.set_text(self.pulse_in[self.i_in])
             self.p_in_con[self.i_in] = str(self.pj_in_con.get_active_id())
+            self.p_in_cnt[self.i_in] = str(int(self.pj_in_count.get_value()))
             self.refresh_pulse_tab(self.i_in, self.i_out)
 
 
@@ -991,30 +1011,7 @@ class StudioControls:
             self.pulse_out[self.i_out] = "".join(str(self.pj_out_name.get_text()).split())
             self.pj_out_name.set_text(self.pulse_out[self.i_out])
             self.p_out_con[self.i_out] = str(self.pj_out_con.get_active_id())
-            self.refresh_pulse_tab(self.i_in, self.i_out)
-
-
-    def pj_in_cnt_cb(self, widget):
-        ''' Call back for the current pulse in bridge that the channel
-        count has changed '''
-        if not widget.get_sensitive():
-            return
-        if len(self.p_in_cnt):
-            self.p_in_cnt[self.i_in] = "".join(str(self.pj_in_count.get_value()))
-            self.pj_in_count.set_value(self.p_in_cnt[self.i_in])
-            #self.p_out_con[self.i_out] = str(self.pj_out_con.get_active_id())
-            self.refresh_pulse_tab(self.i_in, self.i_out)
-
-
-    def pj_out_cnt_cb(self, widget):
-        ''' Call back for the current pulse in bridge that the channel
-        count has changed '''
-        if not widget.get_sensitive():
-            return
-        if len(self.p_out_cnt):
-            self.p_out_cnt[self.i_out] = "".join(str(self.pj_out_count.get_value()))
-            self.pj_out_count.set_value(self.p_out_cnt[self.i_out])
-            #self.p_out_con[self.i_out] = str(self.pj_out_con.get_active_id())
+            self.p_out_cnt[self.i_out] = str(self.pj_out_count.get_value())
             self.refresh_pulse_tab(self.i_in, self.i_out)
 
 
@@ -1163,11 +1160,14 @@ class StudioControls:
                 zframe = str(64)
             self.def_config['ZFRAME'] = zframe
             self.def_config['PERIOD'] = str(self.combo_periods.get_active_id())
+            self.def_config['CONNECT-MODE'] = str(self.jk_connect_mode.get_active_id())
             self.def_config['A2J'] = str(self.jack_midi_check.get_active())
             self.def_config['PULSE-IN'] = ' '.join(self.pulse_in)
             self.def_config['PULSE-OUT'] = ' '.join(self.pulse_out)
             self.def_config['PJ-IN-CON'] = ' '.join(self.p_in_con)
             self.def_config['PJ-OUT-CON'] = ' '.join(self.p_out_con)
+            self.def_config['PJ-IN-COUNT'] = ' '.join(self.p_in_cnt)
+            self.def_config['PJ-OUT-COUNT'] = ' '.join(self.p_out_cnt)
             self.def_config['USBAUTO'] = str(self.usb_plug_check.get_active())
             self.def_config['USB-SINGLE'] = str(self.usb_single_ck.get_active())
             self.def_config['XDEV'] = ' '.join(self.zdev)

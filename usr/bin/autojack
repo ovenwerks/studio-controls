@@ -107,7 +107,6 @@ def get_dev_info(x):
             subdevice.append(cap)
             subdevice.append(cap_pid)
             device.append(subdevice)
-    # change this to create a list, USB cards may have devices and subdevices
     logging.log(7, f"Device list: {str(device)}")
     return device
 
@@ -147,7 +146,7 @@ def device_by_name(name):
             return device, idx
     return "", -1
 
-def import_config():
+def import_config(caller):
     ''' sets default parmeters, then reads values from configuration file'''
     global config
     global def_config
@@ -161,6 +160,7 @@ def import_config():
     global p_in_cnt
     global p_out_cnt
     global blacklist
+    logging.log(7, f"import_config called by: {caller}")
     zdev = []
     pulse_in = []
     pulse_out = []
@@ -192,6 +192,7 @@ def import_config():
         'RATE': "48000",
         'FRAME': "1024",
         'PERIOD': "2",
+        'CONNECT-MODE': "n",
         'ZFRAME': "512",
         'XDEV': "",
         'PULSE-IN': "pulse_in",
@@ -235,6 +236,7 @@ def import_config():
     log_string = f"{log_string}RATE: {def_config['RATE']}\n"
     log_string = f"{log_string}FRAME: {def_config['FRAME']}\n"
     log_string = f"{log_string}PERIOD: {def_config['PERIOD']}\n"
+    log_string = f"{log_string}CONNECT-MODE: {def_config['CONNECT-MODE']}\n"
     log_string = f"{log_string}ZFRAME: {def_config['ZFRAME']}\n"
     log_string = f"{log_string}XDEV: {def_config['XDEV']}\n"
     log_string = f"{log_string}PULSE: {def_config['PULSE']}\n"
@@ -268,9 +270,13 @@ def import_config():
             p_out_con[i] = f"system:playback_{int(this_con)}"
         if this_con == "monitor":
             p_out_con[i] = def_config['MONITOR']
+        if len(p_out_cnt) < i:
+            p_out_cnt.append("2")
     for i, this_con in enumerate(p_in_con):
         if len( this_con ) < 3:
             p_in_con[i] = f"system:capture_{int(this_con)}"
+        if len(p_in_cnt) < i:
+            p_in_cnt.append("2")
     if pulse_in == [] and pulse_out == []:
         def_config['PULSE'] = "False"
     logger = logging.getLogger()
@@ -297,13 +303,14 @@ def reconfig():
     oldblacklist = blacklist
     oldpulse_in = pulse_in
     oldpulse_out = pulse_out
-    import_config()
+    import_config("reconfig")
 
     newlist = [def_config['JACK'], def_config['DRIVER'], def_config['CHAN-IN'], def_config['CHAN-OUT'],
-               def_config['RATE'], def_config['FRAME'], def_config['PERIOD'], def_config['DEV'], def_config['USBDEV']]
+               def_config['RATE'], def_config['FRAME'], def_config['PERIOD'], def_config['DEV'],
+               def_config['USBDEV'], def_config['CONNECT-MODE']]
     oldlist = [old_def_config['JACK'], old_def_config['DRIVER'], old_def_config['CHAN-IN'], old_def_config['CHAN-OUT'],
                old_def_config['RATE'], old_def_config['FRAME'], old_def_config['PERIOD'], old_def_config['DEV'],
-               old_def_config['USBDEV']]
+               old_def_config['USBDEV'], old_def_config['CONNECT-MODE']]
     if newlist != oldlist:
         config_start()
         return
@@ -313,30 +320,30 @@ def reconfig():
         # no use checking anything else
 
     pulse_dirty = False
-    if def_config['PULSE-IN'] != old_def_config['PULSE-IN']:
+    if [def_config['PULSE-IN'], def_config['PJ-IN-COUNT']] != [old_def_config['PULSE-IN'], old_def_config['PJ-IN-COUNT']]:
         pulse_dirty = True
         disconnect_pa(old_def_config)
         cp = subprocess.run(["/usr/bin/pactl", "unload-module", "module-jack-source"],
                             universal_newlines=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=False)
         logging.debug(f"remove jackd_source: {cp.stdout.strip()}")
-        for piname in pulse_in:
+        for i, piname in enumerate(pulse_in):
             def_config['PULSE'] = "True"
             cp = subprocess.run(["/usr/bin/pactl", "load-module", "module-jack-source", f"client_name={piname}",
-                                "channels=2", "connect=no"],
+                                f"channels={str(p_in_cnt[i])}", "connect=no"],
                                 universal_newlines=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=False)
             logging.debug(f"Load jackd_source: {cp.stdout.strip()}")
 
-    if def_config['PULSE-OUT'] != old_def_config['PULSE-OUT']:
+    if [def_config['PULSE-OUT'], def_config['PJ-OUT-COUNT']] != [old_def_config['PULSE-OUT'], old_def_config['PJ-OUT-COUNT']]:
         if not pulse_dirty:
             pulse_dirty = True
             disconnect_pa(old_def_config)
         cp = subprocess.run(["/usr/bin/pactl", "unload-module", "module-jack-sink"],
                             universal_newlines=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=False)
         logging.debug(f"PA unload jack-sink: {cp.stdout.strip()}")
-        for poname in pulse_out:
+        for i, poname in enumerate(pulse_out):
             def_config['PULSE'] = "True"
             cp = subprocess.run(["/usr/bin/pactl", "load-module", "module-jack-sink", f"client_name={poname}",
-                            "channels=2", "connect=no"], universal_newlines=True, stdout=subprocess.PIPE,
+                            f"channels={str(p_out_cnt[i])}", "connect=no"], universal_newlines=True, stdout=subprocess.PIPE,
                             stderr=subprocess.STDOUT, shell=False)
             logging.debug(f"PA load jack-sink: {cp.stdout.strip()}")
 
@@ -416,10 +423,7 @@ def config_start():
 
     logging.info("Running: config_start()")
 
-    import_config()
-    logger = logging.getLogger()
-    logger.setLevel(int(def_config['LOG-LEVEL']))
-    logging.debug(f"log level: {def_config['LOG-LEVEL']}")
+    import_config("config_start")
 
     # if at session start we should wait a few seconds for pulse
     # to be fully running
@@ -470,6 +474,10 @@ def config_start():
         logging.debug("Found previous jack config removing")
         os.remove(expanduser('~/.config/jack/conf.xml'))
     # Now start jackdbus with the configured device
+    if def_config['CONNECT-MODE'] != "n":
+        cp = subprocess.run(["/usr/bin/jack_control", "eps", "self-connect-mode", def_config['CONNECT-MODE']],
+                        universal_newlines=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=False)
+        logging.debug(f"Jackdbus: {cp.stdout.strip()}")
     # the commands are all different so...
 
     if def_config['DRIVER'] == "alsa":
@@ -529,16 +537,17 @@ def config_start():
 
     start_jack_client()
 
-    for piname in pulse_in:
+    for i, piname in enumerate(pulse_in):
         def_config['PULSE'] = "True"
         cp = subprocess.run(["/usr/bin/pactl", "load-module", "module-jack-source", f"client_name={piname}",
-                        "channels=2", "connect=no"],
+                        f"channels={str(p_in_cnt[i])}", "connect=no"],
                         universal_newlines=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=False)
         logging.debug(f"Pulseaudio: {cp.stdout.strip()}")
-    for poname in pulse_out:
+    for i, poname in enumerate(pulse_out):
         def_config['PULSE'] = "True"
-        cp = subprocess.run(["/usr/bin/pactl", "load-module", "module-jack-sink", f"client_name={poname}", "channels=2",
-                        "connect=no"], universal_newlines=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=False)
+        cp = subprocess.run(["/usr/bin/pactl", "load-module", "module-jack-sink", f"client_name={poname}",
+                        f"channels={str(p_out_cnt[i])}", "connect=no"],
+                        universal_newlines=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=False)
         logging.debug(f"Pulseaudio: {cp.stdout.strip()}")
 
     for cname in zdev:
@@ -826,7 +835,7 @@ def msg_cb_new(*args, **kwargs):
     # let things settle
     time.sleep(2)
 
-    import_config()
+    import_config("msg_cb_new")
 
     if args[0].find("sound-card") >= 0:
         # remake database
@@ -1225,7 +1234,7 @@ def phones_check():
     global def_config
     phones = False
 
-    import_config()
+    import_config("phones_check")
     import_device_array()
 
     dname, ddev, dsub = def_config['PHONE-DEVICE'].split(',')
