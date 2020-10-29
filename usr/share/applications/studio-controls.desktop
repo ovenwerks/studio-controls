@@ -6,5 +6,5 @@ Exec=studio-controls
 Icon=studio-controls
 Terminal=false
 Type=Application
-Categories=Settings;Audio
+Categories=AudioVideoEditing;Audio;
 Keywords=Audio;Utility;Settings

@@ -1,0 +1,26 @@
+Installing Studio Controls
+==========================
+
+in a terminal enter:
+
+sudo make install
+
+The standard install is into /usr/local/*
+Packagers can make use of the ‘PREFIX’ and ‘DESTDIR’ variable during install, like this: 
+$ make install PREFIX=/usr DESTDIR=./test-dir
+
+To remove:
+
+sudo make uninstall
+
+Note: if PREFIX= or DESTDIR= were used for install then they must be used
+		for uninstall as well
+
+
+Please Note: Studio Controls is not meant to run on the same machine as
+	other session based jack controllers like Cadence. In fact, if
+	Cadence has ever been run on the same partition it is possible that
+	studio-controls will not work properly even if Cadence has been
+	removed later because Cadence leaves extra config files around
+	that interfere with the operation of studio-controls. Packagers
+	should mark Cadence as something that conflicts with studio-controls.
