@@ -14,7 +14,7 @@ DESTDIR    :=
 
 
 all:
-	echo "Nothing to build"
+	echo "build finshed"
 
 install:
 

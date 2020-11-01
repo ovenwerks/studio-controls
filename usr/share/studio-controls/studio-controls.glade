@@ -874,7 +874,7 @@
                                 <property name="climb_rate">1</property>
                                 <property name="numeric">True</property>
                                 <property name="value">1</property>
-                                <signal name="change-value" handler="pj_out_name_cb" swapped="no"/>
+                                <signal name="value-changed" handler="pj_out_name_cb" swapped="no"/>
                               </object>
                               <packing>
                                 <property name="left_attach">1</property>
@@ -1208,7 +1208,7 @@ In general prefer "Ignore" over "Fail" modes.
                                 <property name="visible">True</property>
                                 <property name="can_focus">True</property>
                                 <property name="receives_default">True</property>
-                                <signal name="clicked" handler="button_cb" swapped="no"/>
+                                <signal name="clicked" handler="ray_cb" swapped="no"/>
                               </object>
                               <packing>
                                 <property name="expand">False</property>
@@ -1217,14 +1217,26 @@ In general prefer "Ignore" over "Fail" modes.
                               </packing>
                             </child>
                             <child>
-                              <placeholder/>
-                            </child>
-                            <child>
-                              <object class="GtkButton">
+                              <object class="GtkButton" id="nsm_but">
                                 <property name="label" translatable="yes">Start NSM</property>
                                 <property name="visible">True</property>
                                 <property name="can_focus">True</property>
                                 <property name="receives_default">True</property>
+                                <signal name="clicked" handler="nsm_cb" swapped="no"/>
+                              </object>
+                              <packing>
+                                <property name="expand">False</property>
+                                <property name="fill">True</property>
+                                <property name="position">1</property>
+                              </packing>
+                            </child>
+                            <child>
+                              <object class="GtkButton" id="Agordejo_but">
+                                <property name="label" translatable="yes">Agordejo</property>
+                                <property name="visible">True</property>
+                                <property name="can_focus">True</property>
+                                <property name="receives_default">True</property>
+                                <signal name="clicked" handler="agordejo_cb" swapped="no"/>
                               </object>
                               <packing>
                                 <property name="expand">False</property>

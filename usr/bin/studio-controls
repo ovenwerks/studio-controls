@@ -435,6 +435,9 @@ class StudioControls:
             "pj_in_name_cb": self.pj_in_name_cb,
             "pj_out_name_cb": self.pj_out_name_cb,
 
+            "ray_cb": self.ray_cb,
+            "nsm_cb": self.nsm_cb,
+            "agordejo_cb": self.agordejo_cb,
         }
         builder.connect_signals(handlers)
 
@@ -598,7 +601,7 @@ class StudioControls:
             else:
                 self.jack_usb_dev_combo.append(self.def_config['USBDEV'], self.def_config['USBDEV'])
                 self.jack_usb_dev_combo.set_active_id(self.def_config['USBDEV'])
-                self.jack_device_combo.append("200,0,0", "USB Jack Master")
+                self.jack_device_combo.append("200,0,0", "USB JACK Master")
                 self.jack_device_combo.set_active_id("200,0,0")
 
         self.combo_zita_remove.get_model().clear()
@@ -940,9 +943,9 @@ class StudioControls:
                     self.pj_out_con.set_active_id(active_out)
 
         else:
-            self.pj_in_con.append("none", "Ports cannot be displayed unless Jack is running.")
-            self.pj_out_con.append("none", "Ports cannot be displayed unless Jack is running.")
-            self.monitor_combo.append("none", "Ports cannot be displayed unless Jack is running.")
+            self.pj_in_con.append("none", "Ports cannot be displayed unless JACK is running.")
+            self.pj_out_con.append("none", "Ports cannot be displayed unless JACK is running.")
+            self.monitor_combo.append("none", "Ports cannot be displayed unless JACK is running.")
 
         self.pj_in_con.set_sensitive(True)
         self.pj_out_con.set_sensitive(True)
@@ -998,7 +1001,7 @@ class StudioControls:
             self.pulse_in[self.i_in] = "".join(str(self.pj_in_name.get_text()).split())
             self.pj_in_name.set_text(self.pulse_in[self.i_in])
             self.p_in_con[self.i_in] = str(self.pj_in_con.get_active_id())
-            self.p_in_cnt[self.i_in] = str(int(self.pj_in_count.get_value()))
+            self.p_in_cnt[self.i_in] = str(int(self.pj_in_count.get_value_as_int()))
             self.refresh_pulse_tab(self.i_in, self.i_out)
 
 
@@ -1011,7 +1014,7 @@ class StudioControls:
             self.pulse_out[self.i_out] = "".join(str(self.pj_out_name.get_text()).split())
             self.pj_out_name.set_text(self.pulse_out[self.i_out])
             self.p_out_con[self.i_out] = str(self.pj_out_con.get_active_id())
-            self.p_out_cnt[self.i_out] = str(self.pj_out_count.get_value())
+            self.p_out_cnt[self.i_out] = str(self.pj_out_count.get_value_as_int())
             self.refresh_pulse_tab(self.i_in, self.i_out)
 
 
@@ -1117,6 +1120,31 @@ class StudioControls:
             subprocess.Popen(["/usr/bin/carla"], shell=False).pid
         else:
             button.set_label("Please Install Carla First")
+            button.set_sensitive(False)
+
+    def ray_cb(self, button):
+        '''callback for carla button, opens carla'''
+        if os.path.isfile("/usr/bin/raysession") and os.access("/usr/bin/raysession", os.X_OK):
+            subprocess.Popen(["/usr/bin/raysession"], shell=False).pid
+        else:
+            button.set_label("Please Install RaySession First")
+            button.set_sensitive(False)
+
+    def nsm_cb(self, button):
+        '''callback for carla button, opens carla'''
+        if os.path.isfile("/usr/bin/nsm") and os.access("/usr/bin/nsm", os.X_OK):
+            subprocess.Popen(["/usr/bin/nsm"], shell=False).pid
+        else:
+            button.set_label("Please Install New Session Manager First")
+            button.set_sensitive(False)
+
+    def agordejo_cb(self, button):
+        '''callback for carla button, opens carla'''
+        if os.path.isfile("/usr/bin/agordejo") and os.access("/usr/bin/agordejo", os.X_OK):
+            subprocess.Popen(["/usr/bin/agordejo"], shell=False).pid
+        else:
+            button.set_label("Please Install Agordejo First")
+            button.set_sensitive(False)
 
     ''' Autojack signalling calls '''
 

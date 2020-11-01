@@ -6,6 +6,11 @@ studio-controls version 2.0.21
  - Clean up code in studio-controls file
  - Add Session Manager tab
  - Add jack connection mode setting
+ - Move systemd to usr/lib
+ - Add a makefile
+ - Make pulse connections use count as well
+ - JACK should be all caps in the GUI
+ - Bugfixes
 
 studio-controls version 2.0.9
 

@@ -8,7 +8,7 @@ Fixes:
 	- none known at this time
 
 Features:
-	- Add install script
+	- Add zita-mu1 auto start and connect
 	- Add packagers file describing depends/conflicts
 	- Add mutiple devices for firewire
 	- bluetooth via pulse. use: pacmd load-module module-loopback latency_msec=5

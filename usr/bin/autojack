@@ -694,8 +694,8 @@ def switch_outputs(left_old, left_new):
     if left_old == left_new:
         logging.debug("both ports are the same, no move done")
         return
-    right_old = get_right_port(left_old)
-    right_new = get_right_port(left_new)
+    right_old = get_next_port(left_old)
+    right_new = get_next_port(left_new)
     l_old_con = jack_client.get_all_connections(left_old)
     logging.log(8, f"old left connections {str(l_old_con)}")
     # first connect all output to new device
@@ -716,7 +716,7 @@ def switch_outputs(left_old, left_new):
         jack_client.disconnect(s_port, right_old)
 
 
-def get_right_port(left_port_ask):
+def get_next_port(left_port_ask):
     ''' given a port, this returns the jack port of the next port
     or for a mono device the same port so that it is connected to both
     left and write'''
@@ -738,7 +738,7 @@ def get_right_port(left_port_ask):
         ports = jack_client.get_ports(f"{left_port.name.split(':')[0]}*", is_audio=True, is_output=True)
     for next_port in ports:
         if next_port.name == left_port.name:
-            logging.log(8, f"{str(next_port.name)} == {str(left_port)}")
+            logging.log(8, f"{str(next_port.name)} == {str(left_port.name)}")
             right = True
         elif right:
             right_port = next_port.name
@@ -755,6 +755,8 @@ def connect_pa():
     global pulse_out
     global p_in_con
     global p_out_con
+    global p_in_cnt
+    global p_out_cnt
     global jack_client
     global jack_alive
     if not jack_alive:
@@ -766,29 +768,37 @@ def connect_pa():
 
     for i, name in enumerate(pulse_in):
         if p_in_con[i] != 'none':
-            logging.debug(f"jack connect {p_in_con[i]} from {name}:front-left")
-            jack_client.connect(p_in_con[i], f"{name}:front-left")
-            con_left = p_in_con[i]
-            con_right = get_right_port(con_left)
-            logging.debug(f"jack connect {con_right} from {name}:front-right")
-            jack_client.connect(con_right, f"{name}:front-right")
+            prevport = ""
+            nextport = p_in_con[i]
+            pulselist = jack_client.get_ports(f"{name.split(':')[0]}*", is_audio=True, is_input=True)
+            #for n in range(int(p_in_cnt[i]) - 1):
+            for pport in pulselist:
+                if nextport != prevport:
+                    logging.debug(f"jack connect {nextport} to {pport.name}")
+                    jack_client.connect(nextport, pport)
+                    prevport = nextport
+                    nextport = get_next_port(prevport)
 
     for i, name in enumerate(pulse_out):
         if p_out_con[i] != 'none':
+            prevport = ""
             if p_out_con[i] == "monitor":
-                con_left = def_config['MONITOR']
+                nextport = def_config['MONITOR']
             else:
-                con_left = p_out_con[i]
-            logging.debug(f"jack connect {name}:front-left from {con_left}")
-            jack_client.connect(f"{name}:front-left", con_left)
-            con_right = get_right_port(con_left)
-            logging.debug(f"jack connect {name}:front-right from {con_right}")
-            jack_client.connect(f"{name}:front-right", con_right)
+                nextport = p_out_con[i]
+            pulselist = jack_client.get_ports(f"{name.split(':')[0]}*", is_audio=True, is_output=True)
+            for pport in pulselist:
+                if nextport != prevport:
+                    logging.debug(f"jack connect {pport.name} to {nextport}")
+                    jack_client.connect(pport, nextport)
+                    prevport = nextport
+                    nextport = get_next_port(prevport)
 
 
 def disconnect_pa(our_config):
     '''disconnect Pulse ports we know we have connected.
-    The pa-jack bridge is left running.'''
+    The pa-jack bridge is left running. Leave other connections
+    alone.'''
     global jack_client
     global jack_alive
     if not jack_alive:
@@ -796,26 +806,35 @@ def disconnect_pa(our_config):
         return
     p_in_con = our_config['PJ-IN-CON'].strip('"').split()
     p_out_con = our_config['PJ-OUT-CON'].strip('"').split()
+    p_in_cnt = our_config['PJ-IN-COUNT'].strip('"').split()
+    p_out_cnt = our_config['PJ-OUT-COUNT'].strip('"').split()
+    #get_all_connections(port)[source]
     for i, name in enumerate(our_config['PULSE-IN'].strip('"').split()):
         if p_in_con[i] != 'none':
-            logging.debug(f"jack disconnect {p_in_con[i]} from {name}:front-left")
-            jack_client.disconnect(p_in_con[i], f"{name}:front-left")
-            con_left = p_in_con[i]
-            con_right = get_right_port(con_left)
-            logging.debug(f"jack disconnect {con_right} from {name}:front-right")
-            jack_client.disconnect(con_right, f"{name}:front-right")
+            prevport = ""
+            nextport = p_in_con[i]
+            pulselist = jack_client.get_ports(f"{name.split(':')[0]}*", is_audio=True, is_input=True)
+            for pport in pulselist:
+                if nextport != prevport:
+                    logging.debug(f"jack disconnect {nextport} from {pport.name}")
+                    jack_client.disconnect(nextport, pport)
+                    prevport = nextport
+                    nextport = get_next_port(prevport)
 
     for i, name in enumerate(our_config['PULSE-OUT'].strip('"').split()):
         if p_out_con[i] != 'none':
+            prevport = ""
             if p_out_con[i] == "monitor":
-                con_left = def_config['MONITOR']
+                nextport = def_config['MONITOR']
             else:
-                con_left = p_out_con[i]
-            logging.debug(f"jack disconnect {name}:front-left from {con_left}")
-            jack_client.disconnect(f"{name}:front-left", con_left)
-            con_right = get_right_port(con_left)
-            logging.debug(f"jack disconnect {name}:front-right from {con_right}")
-            jack_client.disconnect(f"{name}:front-right", con_right)
+                nextport = p_out_con[i]
+            pulselist = jack_client.get_ports(f"{name.split(':')[0]}*", is_audio=True, is_output=True)
+            for pport in pulselist:
+                if nextport != prevport:
+                    logging.debug(f"jack disconnect {pport.name} from {nextport}")
+                    jack_client.disconnect(pport, nextport)
+                    prevport = nextport
+                    nextport = get_next_port(prevport)
 
 
 def msg_cb_new(*args, **kwargs):
