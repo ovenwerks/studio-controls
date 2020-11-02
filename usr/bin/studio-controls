@@ -1123,7 +1123,7 @@ class StudioControls:
             button.set_sensitive(False)
 
     def ray_cb(self, button):
-        '''callback for carla button, opens carla'''
+        '''callback for raysession button, opens raysession'''
         if os.path.isfile("/usr/bin/raysession") and os.access("/usr/bin/raysession", os.X_OK):
             subprocess.Popen(["/usr/bin/raysession"], shell=False).pid
         else:
@@ -1131,7 +1131,7 @@ class StudioControls:
             button.set_sensitive(False)
 
     def nsm_cb(self, button):
-        '''callback for carla button, opens carla'''
+        '''callback for nsm button, opens New Session Manager'''
         if os.path.isfile("/usr/bin/nsm-legacy-gui") and os.access("/usr/bin/nsm-legacy-gui", os.X_OK):
             subprocess.Popen(["/usr/bin/nsm-legacy-gui"], shell=False).pid
         else:
@@ -1139,7 +1139,7 @@ class StudioControls:
             button.set_sensitive(False)
 
     def agordejo_cb(self, button):
-        '''callback for carla button, opens carla'''
+        '''callback for agordejo button, opens agordejo'''
         if os.path.isfile("/usr/bin/agordejo") and os.access("/usr/bin/agordejo", os.X_OK):
             subprocess.Popen(["/usr/bin/agordejo"], shell=False).pid
         else:
