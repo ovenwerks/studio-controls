@@ -1132,8 +1132,8 @@ class StudioControls:
 
     def nsm_cb(self, button):
         '''callback for carla button, opens carla'''
-        if os.path.isfile("/usr/bin/nsm") and os.access("/usr/bin/nsm", os.X_OK):
-            subprocess.Popen(["/usr/bin/nsm"], shell=False).pid
+        if os.path.isfile("/usr/bin/nsm-legacy-gui") and os.access("/usr/bin/nsm-legacy-gui", os.X_OK):
+            subprocess.Popen(["/usr/bin/nsm-legacy-gui"], shell=False).pid
         else:
             button.set_label("Please Install New Session Manager First")
             button.set_sensitive(False)

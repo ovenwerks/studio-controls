@@ -599,6 +599,9 @@ def start_jack_client():
     global jack_died
     global jack_alive
     global con_dirty
+    logging.debug("create jack client")
+    jack.set_error_function(callback=jack_error)
+    jack.set_info_function(callback=jack_info)
     try:
         jack_client = jack.Client('AutoJack', False, True)
     except jack.JackError:
@@ -854,8 +857,6 @@ def msg_cb_new(*args, **kwargs):
     # let things settle
     time.sleep(2)
 
-    import_config("msg_cb_new")
-
     if args[0].find("sound-card") >= 0:
         # remake database
         import_device_array()
@@ -868,6 +869,7 @@ def msg_cb_new(*args, **kwargs):
             subprocess.run(["/usr/bin/dbus-send", "--type=signal", "/", "org.studio.control.event.usb_signal"],
                            shell=False)
             logging.debug(f"USB device {device[0]} has been plugged in")
+            import_config("msg_cb_new")
 
             for subn in range(5, int(device[4]) + 5):
                 subname = f"{device[0]},{str(device[subn][0])},0"
@@ -1365,9 +1367,7 @@ def main():
     jack_alive = False
     jack_died = False
     con_dirty = False
-    # set up jack error/info logging
-    jack.set_error_function(callback=jack_error)
-    jack.set_info_function(callback=jack_info)
+    print("starting up")
 
     # Try and kill any other running instance
     config_path = expanduser("~/.config/autojack")
@@ -1375,6 +1375,7 @@ def main():
         os.makedirs(config_path)
     lock_file = f"{config_path}/autojack.lock"
     # if os.path.isfile(lock_file): # this can be added in when 20.04 is EOL
+    print("sending quit to any old autojack")
     subprocess.run(["/usr/bin/dbus-send", "--type=signal", "/",
                 "org.studio.control.event.quit_signal"], shell=False)
     time.sleep(3)
@@ -1386,6 +1387,7 @@ def main():
                 # only need one line
                 old_pid = line.rstrip()
         if new_pid != old_pid:
+            print("old lock file found, killing old pid")
             try:
                 os.kill(int(old_pid), 9)
             except:
@@ -1393,6 +1395,7 @@ def main():
             time.sleep(1)
     with open(lock_file, "w") as lk_file:
         lk_file.write(new_pid)
+        print("Lock file created")
 
     # set up logging
     logpath = expanduser("~/.log")
@@ -1402,6 +1405,7 @@ def main():
     logfile = expanduser("~/.log/autojack.log")
     logging.basicConfig(filename=logfile, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s', level=logging.DEBUG)
     logging.info('Autojack started: logging started')
+    print("logging started")
 
     phones_check()
     dbus.mainloop.glib.DBusGMainLoop(set_as_default=True)
@@ -1421,8 +1425,6 @@ def main():
     signal.signal(signal.SIGALRM, handler)
     signal.signal(signal.SIGTERM, handler)
 
-    config_start()
-    import_device_array()
     system_bus = dbus.SystemBus()
     system_bus.add_signal_receiver(msg_cb_new, dbus_interface='org.freedesktop.systemd1.Manager', signal_name='UnitNew')
     system_bus.add_signal_receiver(msg_cb_removed, dbus_interface='org.freedesktop.systemd1.Manager',
@@ -1433,10 +1435,10 @@ def main():
                                 signal_name='unplug_signal')
 
     user_bus = dbus.SessionBus()
-    user_bus.add_signal_receiver(ses_cb_stop, dbus_interface='org.studio.control.event',
-                                 signal_name='stop_signal')
     user_bus.add_signal_receiver(ses_cb_start, dbus_interface='org.studio.control.event',
                                  signal_name='start_signal')
+    user_bus.add_signal_receiver(ses_cb_stop, dbus_interface='org.studio.control.event',
+                                 signal_name='stop_signal')
     user_bus.add_signal_receiver(ses_cb_config, dbus_interface='org.studio.control.event',
                                  signal_name='config_signal')
     user_bus.add_signal_receiver(ses_cb_ping, dbus_interface='org.studio.control.event',
@@ -1448,6 +1450,8 @@ def main():
     user_bus.add_signal_receiver(ses_cb_phones, dbus_interface='org.studio.control.event',
                                  signal_name='phones_signal')
 
+    subprocess.run(["/usr/bin/dbus-send", "--type=signal", "/",
+                    "org.studio.control.event.start_signal"], shell=False)
     subprocess.run(["/usr/bin/dbus-send", "--type=signal", "/",
                     "org.studio.control.event.V3_4_signal"], shell=False)
 

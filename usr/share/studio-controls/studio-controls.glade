@@ -1218,7 +1218,7 @@ In general prefer "Ignore" over "Fail" modes.
                             </child>
                             <child>
                               <object class="GtkButton" id="nsm_but">
-                                <property name="label" translatable="yes">Start NSM</property>
+                                <property name="label" translatable="yes">Start New Session Manager</property>
                                 <property name="visible">True</property>
                                 <property name="can_focus">True</property>
                                 <property name="receives_default">True</property>
@@ -1232,7 +1232,7 @@ In general prefer "Ignore" over "Fail" modes.
                             </child>
                             <child>
                               <object class="GtkButton" id="Agordejo_but">
-                                <property name="label" translatable="yes">Agordejo</property>
+                                <property name="label" translatable="yes">Start Agordejo</property>
                                 <property name="visible">True</property>
                                 <property name="can_focus">True</property>
                                 <property name="receives_default">True</property>
