@@ -603,7 +603,7 @@ def start_jack_client():
     jack.set_error_function(callback=jack_error)
     jack.set_info_function(callback=jack_info)
     try:
-        jack_client = jack.Client('AutoJack', False, True)
+        jack_client = jack.Client('AutoJack', use_exact_name=False, no_start_server=True)
     except jack.JackError:
         logging.warning("Unable to create jack client")
         jack_died = True

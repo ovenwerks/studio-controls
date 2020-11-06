@@ -357,7 +357,7 @@ class StudioControls:
 
         # Find out if jack is running
         try:
-            client = jack.Client('controls', False, True)
+            client = jack.Client('controls', use_exact_name=False, no_start_server=True)
             self.def_config['JACK'] = "True"
             client.close()
         except jack.JackError:
@@ -516,7 +516,7 @@ class StudioControls:
             self.xrun_lab.set_text(" 0")
             xrun_count = 0
             try:
-                jack_client = jack.Client('controls', False, True)
+                jack_client = jack.Client('controls', use_exact_name=False, no_start_server=True)
             except jack.JackError:
                 self.jack_state.set_text(" Stopped")
                 self.jack_ind.set_from_icon_name("gtk-stop", 0)
