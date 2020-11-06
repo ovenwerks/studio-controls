@@ -484,11 +484,19 @@ def config_start():
         cp = subprocess.run(["/usr/bin/jack_control", "ds", "alsa"],
                         universal_newlines=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=False)
         logging.debug(f"Jackdbus: {cp.stdout.strip()}")
-        cp = subprocess.run(["/usr/bin/jack_control", "dps", "device", f"hw:{mdev}", "dps", "rate", def_config['RATE']],
+        cp = subprocess.run(["/usr/bin/jack_control", "dps", "device", f"hw:{mdev}"],
                         universal_newlines=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=False)
         logging.debug(f"Jackdbus: {cp.stdout.strip()}")
-        cp = subprocess.run(["/usr/bin/jack_control", "dps", "period", def_config['FRAME'], "dps", "nperiods",
-                        def_config['PERIOD'], "start"],
+        cp = subprocess.run(["/usr/bin/jack_control", "dps", "rate", def_config['RATE']],
+                        universal_newlines=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=False)
+        logging.debug(f"Jackdbus: {cp.stdout.strip()}")
+        cp = subprocess.run(["/usr/bin/jack_control", "dps", "period", def_config['FRAME']],
+                        universal_newlines=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=False)
+        logging.debug(f"Jackdbus: {cp.stdout.strip()}")
+        cp = subprocess.run(["/usr/bin/jack_control", "dps", "nperiods", def_config['PERIOD']],
+                        universal_newlines=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=False)
+        logging.debug(f"Jackdbus: {cp.stdout.strip()}")
+        cp = subprocess.run(["/usr/bin/jack_control", "start"],
                         universal_newlines=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=False)
         logging.debug(f"Jackdbus: {cp.stdout.strip()}")
 
@@ -500,9 +508,12 @@ def config_start():
                         universal_newlines=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=False)
         logging.debug(f"Kill ffado mixer because busreset needed: {cp.stdout.strip()}")
         time.sleep(3)
-        cp = subprocess.run(["/usr/bin/jack_control", "ds", "firewire", "dps", "period", def_config['FRAME']],
+        cp = subprocess.run(["/usr/bin/jack_control", "ds", "firewire"],
                         universal_newlines=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=False)
         logging.debug(f"Jackdbus: {cp.stdout.strip()}")
+        cp = subprocess.run(["/usr/bin/jack_control", "dps", "period", def_config['FRAME']],
+                        universal_newlines=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=False)
+        logging.debug(f"Jackdbus: {cp.stdout.strip()}") 
         #cp = subprocess.run(["/usr/bin/jack_control", "dps", "device", "hw:0", "dps", "rate", def_config['RATE']],
         cp = subprocess.run(["/usr/bin/jack_control", "dps", "rate", def_config['RATE']],
                         universal_newlines=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=False)
@@ -519,11 +530,19 @@ def config_start():
         cp = subprocess.run(["/usr/bin/jack_control", "ds", "dummy"],
                         universal_newlines=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=False)
         logging.debug(f"Jackdbus: {cp.stdout.strip()}")
-        cp = subprocess.run(["/usr/bin/jack_control", "dps", "rate", def_config['RATE'], "dps" "period", def_config['FRAME']],
+        cp = subprocess.run(["/usr/bin/jack_control", "dps", "rate", def_config['RATE']],
                         universal_newlines=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=False)
         logging.debug(f"Jackdbus: {cp.stdout.strip()}")
-        cp = subprocess.run(["/usr/bin/jack_control", "dps", "capture", def_config['CHAN-IN'], "dps", "playback",
-                        def_config['CHAN-OUT'], "start"],
+        cp = subprocess.run(["/usr/bin/jack_control", "dps" "period", def_config['FRAME']],
+                        universal_newlines=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=False)
+        logging.debug(f"Jackdbus: {cp.stdout.strip()}")
+        cp = subprocess.run(["/usr/bin/jack_control", "dps", "capture", def_config['CHAN-IN']],
+                        universal_newlines=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=False)
+        logging.debug(f"Jackdbus: {cp.stdout.strip()}")
+        cp = subprocess.run(["/usr/bin/jack_control", "dps", "playback", def_config['CHAN-OUT']],
+                        universal_newlines=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=False)
+        logging.debug(f"Jackdbus: {cp.stdout.strip()}")
+        cp = subprocess.run(["/usr/bin/jack_control", "start"],
                         universal_newlines=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=False)
         logging.debug(f"Jackdbus: {cp.stdout.strip()}")
 
