@@ -13,6 +13,7 @@ studio-controls version 2.0.21
  - Add session manager launch buttons
  - Moved first jack startup out of main for crash proofing
  - Moved jack callbacks out of main for crash proofing
+ - Use direct dbus calls instead of executing jack_control
  - Bugfixes
 
 studio-controls version 2.0.9

@@ -14,6 +14,15 @@
 # - remove a USB device as jack master to allow safe device removal
 # - reread ~/.config/autojackrc and apply any changes
 
+global name_base
+global control_interface_name
+global configure_interface_name
+global service_name
+name_base = 'org.jackaudio'
+control_interface_name = name_base + '.JackControl'
+configure_interface_name = name_base + '.Configure'
+service_name = name_base + '.service'
+
 import os
 from os.path import expanduser
 import re
@@ -420,6 +429,10 @@ def config_start():
     global def_config
     global phones
     global fw_exists
+    global name_base
+    global control_interface_name
+    global configure_interface_name
+    global service_name
 
     logging.info("Running: config_start()")
 
@@ -473,26 +486,18 @@ def config_start():
     if os.path.isfile(expanduser('~/.config/jack/conf.xml')):
         logging.debug("Found previous jack config removing")
         os.remove(expanduser('~/.config/jack/conf.xml'))
+
+    bus = dbus.SessionBus()
+
+    controller = bus.get_object(service_name, "/org/jackaudio/Controller")
+    control_iface = dbus.Interface(controller, control_interface_name)
+    configure_iface = dbus.Interface(controller, configure_interface_name)
+
     # Now start jackdbus with the configured device
     if def_config['CONNECT-MODE'] != "n":
-        cp = subprocess.run(["/usr/bin/jack_control", "eps", "self-connect-mode", def_config['CONNECT-MODE']],
-                        universal_newlines=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=False)
-        logging.debug(f"Jackdbus: {cp.stdout.strip()}")
-    # the commands are all different so...
+        configure_iface.SetParameterValue(['engine', 'self-connect-mode'], dbus.Byte(ord(def_config['CONNECT-MODE'])))
 
-    if def_config['DRIVER'] == "alsa":
-        cp = subprocess.run(["/usr/bin/jack_control", "ds", "alsa"],
-                        universal_newlines=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=False)
-        logging.debug(f"Jackdbus: {cp.stdout.strip()}")
-        cp = subprocess.run(["/usr/bin/jack_control", "dps", "device", f"hw:{mdev}", "dps", "rate", def_config['RATE']],
-                        universal_newlines=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=False)
-        logging.debug(f"Jackdbus: {cp.stdout.strip()}")
-        cp = subprocess.run(["/usr/bin/jack_control", "dps", "period", def_config['FRAME'], "dps", "nperiods",
-                        def_config['PERIOD'], "start"],
-                        universal_newlines=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=False)
-        logging.debug(f"Jackdbus: {cp.stdout.strip()}")
-
-    elif def_config['DRIVER'] == "firewire":
+    if def_config['DRIVER'] == "firewire":
         cp = subprocess.run(["/usr/bin/ffado-test", "BusReset"],
                         universal_newlines=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=False)
         logging.debug(f"reset firewire bus: {cp.stdout.strip()}")
@@ -500,37 +505,27 @@ def config_start():
                         universal_newlines=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=False)
         logging.debug(f"Kill ffado mixer because busreset needed: {cp.stdout.strip()}")
         time.sleep(3)
-        cp = subprocess.run(["/usr/bin/jack_control", "ds", "firewire", "dps", "period", def_config['FRAME']],
-                        universal_newlines=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=False)
-        logging.debug(f"Jackdbus: {cp.stdout.strip()}")
-        #cp = subprocess.run(["/usr/bin/jack_control", "dps", "device", "hw:0", "dps", "rate", def_config['RATE']],
-        cp = subprocess.run(["/usr/bin/jack_control", "dps", "rate", def_config['RATE']],
-                        universal_newlines=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=False)
-        logging.debug(f"Jackdbus: {cp.stdout.strip()}")
-        #cp = subprocess.run(["/usr/bin/jack_control", "dps", "nperiods", def_config['PERIOD'], "start"],
-        cp = subprocess.run(["/usr/bin/jack_control", "dps", "nperiods", "3"],
-                        universal_newlines=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=False)
-        logging.debug(f"Jackdbus: {cp.stdout.strip()}")
-        cp = subprocess.run(["/usr/bin/jack_control", "start"],
-                        universal_newlines=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=False)
-        logging.debug(f"Jackdbus: {cp.stdout.strip()}")
 
-    elif def_config['DRIVER'] == "dummy":
-        cp = subprocess.run(["/usr/bin/jack_control", "ds", "dummy"],
-                        universal_newlines=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=False)
-        logging.debug(f"Jackdbus: {cp.stdout.strip()}")
-        cp = subprocess.run(["/usr/bin/jack_control", "dps", "rate", def_config['RATE'], "dps" "period", def_config['FRAME']],
-                        universal_newlines=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=False)
-        logging.debug(f"Jackdbus: {cp.stdout.strip()}")
-        cp = subprocess.run(["/usr/bin/jack_control", "dps", "capture", def_config['CHAN-IN'], "dps", "playback",
-                        def_config['CHAN-OUT'], "start"],
-                        universal_newlines=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=False)
-        logging.debug(f"Jackdbus: {cp.stdout.strip()}")
+    configure_iface.SetParameterValue(['engine', 'driver'], def_config['DRIVER'])
+    time.sleep(.2)
+    if def_config['DRIVER'] == "alsa":
+        # we use default device for FW right now
+        configure_iface.SetParameterValue(['driver', 'device'], f"hw:{mdev}")
+    time.sleep(.2)
+    configure_iface.SetParameterValue(['driver', 'rate'], dbus.UInt32(def_config['RATE']))
+    time.sleep(.2)
+    configure_iface.SetParameterValue(['driver', 'period'], dbus.UInt32(def_config['FRAME']))
+    if def_config['DRIVER'] != "dummy":
+        configure_iface.SetParameterValue(['driver', 'nperiods'], dbus.UInt32(def_config['PERIOD']))
 
     else:
-        # we should never get here
-        logging.error("programming error! if you find this in your log file please file" +
-              "a bug report about: Driver not found")
+        configure_iface.SetParameterValue(['driver', 'capture'], dbus.UInt32(def_config['CHAN-IN']))
+        configure_iface.SetParameterValue(['driver', 'playback'], dbus.UInt32(def_config['CHAN-OUT']))
+        configure_iface.SetParameterValue(['driver', 'monitor'], True)
+    time.sleep(2)
+
+    control_iface.StartServer()
+
     last_master = mdev
     # maybe check for jack up (need function?)
     time.sleep(2)

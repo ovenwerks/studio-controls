@@ -8,8 +8,9 @@ Fixes:
 	- none known
 
 Features:
-	- Change jack_control to dbus calls
+	- make LOOPBACK devices last choices
 	- redo extra devices to see one device at a time.
+	- add pre/post jack start/stop scripting
 	- Add jackmixer  or jack-mix-box? auto start and connect
 	- Add packagers file describing depends/conflicts
 	- Add mutiple devices for firewire
@@ -24,10 +25,6 @@ Features:
 		have displays.
 		- Then see if we can match plasma utility for setting size and 
 		setting buttons etc.
-	- add pre/post jack start/stop scripting
-	- special case HDMI... needs large buffer if we can detect HDMI,
-		buffer should only allow 4096 to show. Zita should use 4096
-		as well. (zita is fixed)
 	- USB devices should not have a buffer size 16, PCH should be 64 and
 		above. USB devices at 32 should probably set periods to 3.
 
@@ -43,5 +40,3 @@ Features:
 		one start is needed to re-enable that.
 	- adding in stuff from https://github.com/jhernberg/udev-rtirq so that
 		hot plugged USB devices get higher priority.
-	- pulse profiles for multi-channels devices. (including jack)
-		This is really pulse related not -controls
