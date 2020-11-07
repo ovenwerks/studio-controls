@@ -14,6 +14,7 @@ studio-controls version 2.0.21
  - Moved first jack startup out of main for crash proofing
  - Moved jack callbacks out of main for crash proofing
  - Use direct dbus calls instead of executing jack_control
+ - Don't list loopback devices or put them last
  - Bugfixes
 
 studio-controls version 2.0.9

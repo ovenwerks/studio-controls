@@ -8,7 +8,6 @@ Fixes:
 	- none known
 
 Features:
-	- make LOOPBACK devices last choices
 	- redo extra devices to see one device at a time.
 	- add pre/post jack start/stop scripting
 	- Add jackmixer  or jack-mix-box? auto start and connect

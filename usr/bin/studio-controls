@@ -643,6 +643,9 @@ class StudioControls:
                             cname = line.rstrip()
                 else:
                     cname = str(x)
+            loopy = False
+            if cname == "Loopback":
+                loopy = True
             if os.path.exists(f"/proc/asound/card{str(x)}/usbbus"):
                 is_usb = True
             if os.path.exists(f"/proc/asound/card{str(x)}/codec#0"):
@@ -677,7 +680,8 @@ class StudioControls:
                             if not next_id in self.blacklist:
                                 self.blacklist_add.append(next_id, next_d)
                                 if next_id != self.def_config['PHONE-DEVICE']:
-                                    self.hp_device.append(next_id, next_d)
+                                    if not loopy:
+                                        self.hp_device.append(next_id, next_d)
                                 if is_usb:
                                     if usb_save == "":
                                         usb_save = next_id
@@ -688,7 +692,8 @@ class StudioControls:
                                     if pci_save == "":
                                         pci_save = next_id
                                     if self.def_config['DRIVER'] == "alsa":
-                                        self.jack_device_combo.append(next_id, next_d)
+                                        if not loopy:
+                                            self.jack_device_combo.append(next_id, next_d)
                                         if self.def_config['USBDEV'] == "" and self.def_config['DEV'] == next_id:
                                             self.jack_device_combo.set_active_id(next_id)
                                             self.dev_desc = next_d
@@ -696,10 +701,16 @@ class StudioControls:
                                             self.jack_device_combo.set_active_id(next_id)
                                             self.dev_desc = next_d
                                     if (self.def_config['DEV'] != next_id or self.def_config['DRIVER'] != "alsa") and self.zdev.count(next_id) > 0:
-                                        self.combo_zita_remove.append(next_id, next_d)
+                                        if loopy:
+                                            self.combo_zita_remove.append(next_id, next_d)
+                                        else:
+                                            self.combo_zita_remove.insert(1, next_id, next_d)
                                     else:
                                         if self.def_config['DEV'] != next_id or self.def_config['DRIVER'] != "alsa":
-                                            self.combo_zita_add.append(next_id, next_d)
+                                            if loopy:
+                                                self.combo_zita_add.append(next_id, next_d)
+                                            else:
+                                                self.combo_zita_add.insert(1, next_id, next_d)
 
         if pci_save == "" and self.def_config['USBDEV'] == "":
             self.def_config['USBDEV'] = usb_save
