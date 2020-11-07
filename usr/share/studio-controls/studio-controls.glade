@@ -1424,6 +1424,7 @@ In general prefer "Ignore" over "Fail" modes.
                         <property name="can_focus">True</property>
                         <property name="receives_default">True</property>
                         <property name="hexpand">True</property>
+                        <property name="tooltip_text" translatable="yes">Enable JACK auto-start</property>
                         <signal name="clicked" handler="cb_jack_start" swapped="no"/>
                       </object>
                       <packing>
@@ -1438,6 +1439,7 @@ In general prefer "Ignore" over "Fail" modes.
                         <property name="can_focus">True</property>
                         <property name="receives_default">True</property>
                         <property name="hexpand">True</property>
+                        <property name="tooltip_text" translatable="yes">Disable JACK auto-start and restart PulseAudio</property>
                         <signal name="clicked" handler="cb_jack_stop" swapped="no"/>
                       </object>
                       <packing>
@@ -1452,6 +1454,7 @@ In general prefer "Ignore" over "Fail" modes.
                         <property name="can_focus">True</property>
                         <property name="receives_default">True</property>
                         <property name="hexpand">True</property>
+                        <property name="tooltip_text" translatable="yes">Save to ~/.config/autojackrc and apply</property>
                         <signal name="clicked" handler="cb_audio_apply" swapped="no"/>
                       </object>
                       <packing>
