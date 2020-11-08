@@ -30,6 +30,7 @@ class SysInfo:
     # get info about if rtaccess is setup right
     def user_audio(self):
         """Checks if current user is in the audio group, or not"""
+        audio_users = ""
         # create a list of users who are members of audio group:
         with open("/etc/group", "r") as groups_file:
             for line in groups_file:
