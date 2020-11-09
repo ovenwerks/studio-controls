@@ -20,6 +20,7 @@ from dbus.mainloop.glib import DBusGMainLoop
 import time
 import jack
 import configparser
+import grp
 
 DBusGMainLoop(set_as_default=True)
 
@@ -30,12 +31,8 @@ class SysInfo:
     # get info about if rtaccess is setup right
     def user_audio(self):
         """Checks if current user is in the audio group, or not"""
-        # create a list of users who are members of audio group:
-        with open("/etc/group", "r") as groups_file:
-            for line in groups_file:
-                if re.match("^audio:", line):
-                    audio_users = line.split(':')[3].rstrip().split(',')
-
+        audio_users = []
+        audio_users = grp.getgrnam("audio")[3]
         user = getpass.getuser()
         audio_group = False
         if user in audio_users:
@@ -230,7 +227,7 @@ class StudioControls:
         if self.jack_file_exists and self.sysinfo.user_audio():
             rtprio, memlock = self.sysinfo.check_rlimits()
             if rtprio == 0:
-                self.rt_button.set_label("Logout required")
+                self.rt_button.set_label("Reboot required")
                 self.rt_button.set_sensitive(False)
                 self.message_dialog_rt_info.show()
                 self.rt_warning.set_text("Session restart required for Real Time Permissions")
