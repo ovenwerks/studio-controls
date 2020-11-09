@@ -24,3 +24,7 @@ Please Note: Studio Controls is not meant to run on the same machine as
 	removed later because Cadence leaves extra config files around
 	that interfere with the operation of studio-controls. Packagers
 	should mark Cadence as something that conflicts with studio-controls.
+
+This software should not be packaged as a flatpack, snap or other sandbox
+style package. These packaging schemes do not work well with jack aware
+applications or audio applications that use audio plugins.
