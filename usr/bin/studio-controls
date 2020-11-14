@@ -1087,6 +1087,7 @@ class StudioControls:
         index = self.pj_in_combo.get_active()
         del self.pulse_in[index]
         del self.p_in_con[index]
+        del self.p_in_cnt[index]
         self.i_in = 0
         self.i_out = 0
         if len(self.pulse_out):
@@ -1101,6 +1102,7 @@ class StudioControls:
         index = self.pj_out_combo.get_active()
         del self.pulse_out[index]
         del self.p_out_con[index]
+        del self.p_out_cnt[index]
         self.i_out = 0
         self.i_in = 0
         if len(self.pulse_in):
