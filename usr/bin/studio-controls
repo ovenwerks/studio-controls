@@ -222,7 +222,7 @@ class StudioControls:
                                      signal_name='usb_signal')
 
         '''Check if audio.conf and/or audio.conf.disabled exists, returns are true or false'''
-        self.rt_file = False
+        #self.rt_file = False
         self.jack_file_exists = self.sysinfo.check_pam_files()
         if self.jack_file_exists and self.sysinfo.user_audio():
             rtprio, memlock = self.sysinfo.check_rlimits()
@@ -275,35 +275,47 @@ class StudioControls:
                     cname = line.rstrip()
             if cname != "HDMI" and cname != "NVidia":
                 default_device = f"{cname},0,0"
+                break
 
         # first set defaults
         self.config['DEFAULT'] = {
+            'VERSION': '2.1-pre',
+            'LOG-LEVEL': "19",
+
             'JACK': 'False',
             'DRIVER': "alsa",
+            'DEV': default_device,
+            'USBDEV': "",
             'CHAN-IN': '0',
             'CHAN-OUT': '0',
             'RATE': "48000",
             'FRAME': "1024",
             'PERIOD': "2",
             'CONNECT-MODE': "n",
+            'A2J': "True",
+            'MONITOR': 'system:playback_1',
+
             'ZFRAME': "512",
+            'ALSA-LIST': default_device,
+            'ALSA-RATE': "48000",
+            'ALSA-FRAME': "512",
+            'ALSA-PERIOD': "2",
+            'ALSA-IN_CNT': "0",
+            'ALSA-OUT_CNT': "0",
             'XDEV': "",
+            'USBAUTO': "True",
+            'USB-SINGLE': "False",
+            'BLACKLIST': "",
+
             'PULSE-IN': 'pulse_in',
             'PULSE-OUT': 'pulse_out',
             'PJ-IN-CON': 'system:capture_1',
             'PJ-OUT-CON': 'system:playback_1',
             'PJ-IN-COUNT': '2',
             'PJ-OUT-COUNT': '2',
-            'A2J': "True",
-            'DEV': default_device,
-            'USBAUTO': "True",
-            'USB-SINGLE': "False",
-            'USBDEV': "",
-            'LOG-LEVEL': "19",
-            'BLACKLIST': "",
+
             'PHONE-ACTION': "switch",
             'PHONE-DEVICE': default_device,
-            'MONITOR': 'system:playback_1'
         }
 
         global autojack

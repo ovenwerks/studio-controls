@@ -294,20 +294,6 @@
                         <property name="can_focus">False</property>
                         <property name="column_homogeneous">True</property>
                         <child>
-                          <object class="GtkLabel" id="jack_device_label">
-                            <property name="visible">True</property>
-                            <property name="can_focus">False</property>
-                            <property name="halign">end</property>
-                            <property name="label" translatable="yes">JACK Master Device (no USB):</property>
-                            <property name="justify">right</property>
-                            <property name="ellipsize">end</property>
-                          </object>
-                          <packing>
-                            <property name="left_attach">0</property>
-                            <property name="top_attach">0</property>
-                          </packing>
-                        </child>
-                        <child>
                           <object class="GtkComboBoxText" id="jack_device_combo">
                             <property name="name">jack_device_combo</property>
                             <property name="visible">True</property>
@@ -317,22 +303,35 @@
                             <signal name="changed" handler="jack_device_changed" swapped="no"/>
                           </object>
                           <packing>
-                            <property name="left_attach">1</property>
+                            <property name="left_attach">3</property>
                             <property name="top_attach">0</property>
-                            <property name="width">2</property>
                           </packing>
                         </child>
                         <child>
-                          <object class="GtkLabel" id="jack_bmaster_label1">
+                          <object class="GtkLabel" id="jack_device_label">
                             <property name="visible">True</property>
                             <property name="can_focus">False</property>
                             <property name="halign">end</property>
-                            <property name="label" translatable="yes">USB device that should be Master:</property>
-                            <property name="ellipsize">start</property>
+                            <property name="label" translatable="yes">JACK Master Device (no USB):</property>
+                            <property name="justify">right</property>
+                            <property name="ellipsize">end</property>
+                          </object>
+                          <packing>
+                            <property name="left_attach">2</property>
+                            <property name="top_attach">0</property>
+                          </packing>
+                        </child>
+                        <child>
+                          <object class="GtkLabel" id="label_backend">
+                            <property name="visible">True</property>
+                            <property name="can_focus">False</property>
+                            <property name="halign">end</property>
+                            <property name="label" translatable="yes">JACK Backend:</property>
+                            <property name="justify">right</property>
                           </object>
                           <packing>
                             <property name="left_attach">0</property>
-                            <property name="top_attach">1</property>
+                            <property name="top_attach">0</property>
                           </packing>
                         </child>
                         <child>
@@ -345,9 +344,74 @@
                             <signal name="changed" handler="usb_master_changed" swapped="no"/>
                           </object>
                           <packing>
-                            <property name="left_attach">1</property>
+                            <property name="left_attach">3</property>
                             <property name="top_attach">1</property>
-                            <property name="width">2</property>
+                          </packing>
+                        </child>
+                        <child>
+                          <object class="GtkLabel" id="jack_bmaster_label1">
+                            <property name="visible">True</property>
+                            <property name="can_focus">False</property>
+                            <property name="halign">end</property>
+                            <property name="label" translatable="yes">USB device that should be Master:</property>
+                            <property name="ellipsize">start</property>
+                          </object>
+                          <packing>
+                            <property name="left_attach">2</property>
+                            <property name="top_attach">1</property>
+                          </packing>
+                        </child>
+                        <child>
+                          <object class="GtkLabel" id="jack_sr_label">
+                            <property name="visible">True</property>
+                            <property name="can_focus">False</property>
+                            <property name="halign">end</property>
+                            <property name="label" translatable="yes">JACK Sample Rate:</property>
+                            <property name="ellipsize">start</property>
+                          </object>
+                          <packing>
+                            <property name="left_attach">0</property>
+                            <property name="top_attach">1</property>
+                          </packing>
+                        </child>
+                        <child>
+                          <object class="GtkLabel" id="jack_late_label">
+                            <property name="visible">True</property>
+                            <property name="can_focus">False</property>
+                            <property name="halign">end</property>
+                            <property name="label" translatable="yes">JACK Buffer Size (Latency):</property>
+                          </object>
+                          <packing>
+                            <property name="left_attach">0</property>
+                            <property name="top_attach">3</property>
+                          </packing>
+                        </child>
+                        <child>
+                          <object class="GtkLabel" id="jack_period_label">
+                            <property name="visible">True</property>
+                            <property name="can_focus">False</property>
+                            <property name="halign">end</property>
+                            <property name="label" translatable="yes">JACK Periods:</property>
+                          </object>
+                          <packing>
+                            <property name="left_attach">2</property>
+                            <property name="top_attach">3</property>
+                          </packing>
+                        </child>
+                        <child>
+                          <object class="GtkComboBoxText" id="combo_periods">
+                            <property name="visible">True</property>
+                            <property name="can_focus">False</property>
+                            <property name="active">0</property>
+                            <items>
+                              <item id="2" translatable="yes">2</item>
+                              <item id="3" translatable="yes">3</item>
+                              <item id="15" translatable="yes">15</item>
+                            </items>
+                          </object>
+                          <packing>
+                            <property name="left_attach">3</property>
+                            <property name="top_attach">3</property>
                           </packing>
                         </child>
                         <child>
@@ -355,11 +419,27 @@
                             <property name="visible">True</property>
                             <property name="can_focus">False</property>
                             <property name="halign">end</property>
-                            <property name="label" translatable="yes">Channel Count (0 = default) input/output:</property>
+                            <property name="label" translatable="yes">Channel Count for Dummy backend(0 = default) input/output:</property>
                           </object>
                           <packing>
                             <property name="left_attach">0</property>
-                            <property name="top_attach">2</property>
+                            <property name="top_attach">4</property>
+                            <property name="width">2</property>
+                          </packing>
+                        </child>
+                        <child>
+                          <object class="GtkSpinButton" id="chan_in_spin">
+                            <property name="visible">True</property>
+                            <property name="can_focus">True</property>
+                            <property name="text" translatable="yes">1</property>
+                            <property name="input_purpose">number</property>
+                            <property name="adjustment">adjustment3</property>
+                            <property name="numeric">True</property>
+                            <property name="value">1</property>
+                          </object>
+                          <packing>
+                            <property name="left_attach">2</property>
+                            <property name="top_attach">4</property>
                           </packing>
                         </child>
                         <child>
@@ -374,36 +454,35 @@
                             <property name="value">1</property>
                           </object>
                           <packing>
-                            <property name="left_attach">2</property>
-                            <property name="top_attach">2</property>
+                            <property name="left_attach">3</property>
+                            <property name="top_attach">4</property>
                           </packing>
                         </child>
                         <child>
-                          <object class="GtkSpinButton" id="chan_in_spin">
-                            <property name="visible">True</property>
-                            <property name="can_focus">True</property>
-                            <property name="text" translatable="yes">1</property>
-                            <property name="input_purpose">number</property>
-                            <property name="adjustment">adjustment3</property>
-                            <property name="numeric">True</property>
-                            <property name="value">1</property>
-                          </object>
-                          <packing>
-                            <property name="left_attach">1</property>
-                            <property name="top_attach">2</property>
-                          </packing>
-                        </child>
-                        <child>
-                          <object class="GtkLabel" id="jack_sr_label">
+                          <object class="GtkLabel">
                             <property name="visible">True</property>
                             <property name="can_focus">False</property>
-                            <property name="halign">end</property>
-                            <property name="label" translatable="yes">JACK Sample Rate:</property>
-                            <property name="ellipsize">start</property>
+                            <property name="label" translatable="yes">Main Output Ports</property>
                           </object>
                           <packing>
                             <property name="left_attach">0</property>
-                            <property name="top_attach">3</property>
+                            <property name="top_attach">5</property>
+                          </packing>
+                        </child>
+                        <child>
+                          <object class="GtkComboBoxText" id="combo_backend">
+                            <property name="visible">True</property>
+                            <property name="can_focus">False</property>
+                            <property name="active">0</property>
+                            <items>
+                              <item id="alsa" translatable="yes">alsa</item>
+                              <item id="dummy" translatable="yes">dummy</item>
+                            </items>
+                            <signal name="changed" handler="jack_driver_changed" swapped="no"/>
+                          </object>
+                          <packing>
+                            <property name="left_attach">1</property>
+                            <property name="top_attach">0</property>
                           </packing>
                         </child>
                         <child>
@@ -423,20 +502,7 @@
                           </object>
                           <packing>
                             <property name="left_attach">1</property>
-                            <property name="top_attach">3</property>
-                            <property name="width">2</property>
-                          </packing>
-                        </child>
-                        <child>
-                          <object class="GtkLabel" id="jack_late_label">
-                            <property name="visible">True</property>
-                            <property name="can_focus">False</property>
-                            <property name="halign">end</property>
-                            <property name="label" translatable="yes">JACK Buffer Size (Latency):</property>
-                          </object>
-                          <packing>
-                            <property name="left_attach">0</property>
-                            <property name="top_attach">4</property>
+                            <property name="top_attach">1</property>
                           </packing>
                         </child>
                         <child>
@@ -458,68 +524,50 @@
                           </object>
                           <packing>
                             <property name="left_attach">1</property>
-                            <property name="top_attach">4</property>
-                            <property name="width">2</property>
+                            <property name="top_attach">3</property>
                           </packing>
                         </child>
                         <child>
-                          <object class="GtkLabel" id="jack_period_label">
+                          <object class="GtkComboBoxText" id="monitor_combo">
                             <property name="visible">True</property>
                             <property name="can_focus">False</property>
-                            <property name="halign">end</property>
-                            <property name="label" translatable="yes">JACK Periods:</property>
-                          </object>
-                          <packing>
-                            <property name="left_attach">0</property>
-                            <property name="top_attach">5</property>
-                          </packing>
-                        </child>
-                        <child>
-                          <object class="GtkComboBoxText" id="combo_periods">
-                            <property name="visible">True</property>
-                            <property name="can_focus">False</property>
+                            <property name="tooltip_text" translatable="yes">These are the ports that go to the speakers</property>
                             <property name="active">0</property>
-                            <items>
-                              <item id="2" translatable="yes">2</item>
-                              <item id="3" translatable="yes">3</item>
-                              <item id="15" translatable="yes">15</item>
-                            </items>
                           </object>
                           <packing>
                             <property name="left_attach">1</property>
                             <property name="top_attach">5</property>
-                            <property name="width">2</property>
                           </packing>
                         </child>
                         <child>
-                          <object class="GtkLabel" id="label_backend">
-                            <property name="visible">True</property>
-                            <property name="can_focus">False</property>
-                            <property name="halign">end</property>
-                            <property name="label" translatable="yes">JACK Backend:</property>
-                            <property name="justify">right</property>
-                          </object>
-                          <packing>
-                            <property name="left_attach">0</property>
-                            <property name="top_attach">6</property>
-                          </packing>
+                          <placeholder/>
                         </child>
                         <child>
-                          <object class="GtkComboBoxText" id="combo_backend">
-                            <property name="visible">True</property>
-                            <property name="can_focus">False</property>
-                            <property name="active">0</property>
-                            <items>
-                              <item id="alsa" translatable="yes">alsa</item>
-                              <item id="dummy" translatable="yes">dummy</item>
-                            </items>
-                            <signal name="changed" handler="jack_driver_changed" swapped="no"/>
-                          </object>
-                          <packing>
-                            <property name="left_attach">1</property>
-                            <property name="top_attach">6</property>
-                            <property name="width">2</property>
-                          </packing>
+                          <placeholder/>
+                        </child>
+                        <child>
+                          <placeholder/>
+                        </child>
+                        <child>
+                          <placeholder/>
+                        </child>
+                        <child>
+                          <placeholder/>
+                        </child>
+                        <child>
+                          <placeholder/>
+                        </child>
+                        <child>
+                          <placeholder/>
+                        </child>
+                        <child>
+                          <placeholder/>
+                        </child>
+                        <child>
+                          <placeholder/>
+                        </child>
+                        <child>
+                          <placeholder/>
                         </child>
                       </object>
                     </child>
@@ -692,29 +740,6 @@
                           </packing>
                         </child>
                         <child>
-                          <object class="GtkLabel">
-                            <property name="visible">True</property>
-                            <property name="can_focus">False</property>
-                            <property name="label" translatable="yes">Main Output Ports</property>
-                          </object>
-                          <packing>
-                            <property name="left_attach">0</property>
-                            <property name="top_attach">4</property>
-                          </packing>
-                        </child>
-                        <child>
-                          <object class="GtkComboBoxText" id="monitor_combo">
-                            <property name="visible">True</property>
-                            <property name="can_focus">False</property>
-                            <property name="tooltip_text" translatable="yes">These are the ports that go to the speakers</property>
-                            <property name="active">0</property>
-                          </object>
-                          <packing>
-                            <property name="left_attach">1</property>
-                            <property name="top_attach">4</property>
-                          </packing>
-                        </child>
-                        <child>
                           <object class="GtkButton" id="hp_switch">
                             <property name="label" translatable="yes">Manual Headphones/Speakers Switch</property>
                             <property name="visible">True</property>
@@ -728,6 +753,30 @@
                             <property name="left_attach">2</property>
                             <property name="top_attach">4</property>
                           </packing>
+                        </child>
+                        <child>
+                          <placeholder/>
+                        </child>
+                        <child>
+                          <placeholder/>
+                        </child>
+                        <child>
+                          <placeholder/>
+                        </child>
+                        <child>
+                          <placeholder/>
+                        </child>
+                        <child>
+                          <placeholder/>
+                        </child>
+                        <child>
+                          <placeholder/>
+                        </child>
+                        <child>
+                          <placeholder/>
+                        </child>
+                        <child>
+                          <placeholder/>
                         </child>
                         <child>
                           <placeholder/>
