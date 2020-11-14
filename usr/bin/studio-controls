@@ -1061,6 +1061,7 @@ class StudioControls:
             self.i_out = int(self.pj_out_combo.get_active_id())
         self.pulse_in.append(f"pulse_in-{str(self.i_in + 1)}")
         self.p_in_con.append("none")
+        self.p_in_cnt.append("2")
         self.refresh_pulse_tab(self.i_in, self.i_out)
 
 
@@ -1075,6 +1076,7 @@ class StudioControls:
             self.i_in = int(self.pj_in_combo.get_active_id())
         self.pulse_out.append(f"pulse_out-{str(self.i_out + 1)}")
         self.p_out_con.append("none")
+        self.p_out_cnt.append("2")
         self.refresh_pulse_tab(self.i_in, self.i_out)
 
 
