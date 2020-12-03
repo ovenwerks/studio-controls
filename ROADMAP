@@ -17,6 +17,7 @@ Features:
 			- on, off, hide
 		- The device list should include devices detected only once. That
 			is, the device should be configurable even if unplugged/unpowered.
+		- While we are at it change the config file to match
 		- There must be sane defaults for unknown devices in autojack
 		- In autojack, some of this info could be added to the device db
 	- add pre/post jack start/stop scripting

@@ -82,6 +82,8 @@ def read_old():
         def_config['PJ-OUT-CON'] = "none"
     if def_config['DEV'] == "default":
         def_config['DEV'] = default_device
+    if not def_config['CONNECT-MODE'] in ['a', 'A', 'e', 'E']:
+        def_config['CONNECT-MODE'] = "n"
 
     #for key in config['DEFAULT']: print(f"{key}: {def_config[key]}")
 
@@ -90,7 +92,7 @@ def make_db():
     ''' Stuff config into this db:
         Version: text
         log-level: int (20)
-        JACK:
+        JACK: # things that require restart
             Used: bool (False)
             driver: string (alsa)
             chan_in: int (2)
@@ -101,6 +103,7 @@ def make_db():
             connect_mode: char (' ')
             dev: string (1st internal non-hdmi)
             USBdev: string (blank)
+        extra: # Stuff that can be changed without restart
             A2J: bool (True)
             USBAUTO: bool (True)
             USBSingle: bool (False)
@@ -151,13 +154,15 @@ def make_db():
     jack_db = {'on': def_config['jack'], 'driver': def_config['driver'],
                 'chan-in': def_config['chan-in'], 'chan-out': def_config['chan-out'],
                 'rate': def_config['rate'], 'frame': def_config['frame'],
-                'period': def_config['period'], 'connect_mode': def_config['connect_mode'],
-                'dev': def_config['dev'], 'usbdev': def_config['usbdev'],
-                'a2j': def_config['a2j'], 'usbauto': def_config['usbauto'],
+                'period': def_config['period'], 'connect_mode': def_config['connect-mode'],
+                'dev': def_config['dev'], 'usbdev': def_config['usbdev']}
+
+    extra_db = {'a2j': def_config['a2j'], 'usbauto': def_config['usbauto'],
                 'usb-single': def_config['usb-single'], 'monitor': def_config['monitor'],
                 'phone-action': def_config['phone-action'], 'phone-device': def_config['phone-device']
                 }
     our_db['jack'] = jack_db
+    our_db['extra'] = extra_db
     pulse_in_db = {}
     pulse_out_db = {}
     pulse_db = {'inputs': pulse_in_db, 'outputs': pulse_out_db}
@@ -206,16 +211,17 @@ def make_db():
     if def_config['PHONE-DEVICE'] not in devicelist:
         devicelist.append( def_config['PHONE-DEVICE'])
     devicelist = devicelist + def_config['XDEV'].split() + def_config['BLACKLIST'].split()
-    print(f"device list: {str(devicelist)}")
+    #print(f"device list: {str(devicelist)}")
     for rdev in devicelist:
         rdev_l = rdev.split(',')
-        print(f"found: {str(rdev_l)}")
+        #print(f"found: {str(rdev_l)}")
         if len(rdev_l) == 3:
             dev, sub, ssub = rdev_l
-            print(f"Device: {dev} sub: {sub} ssub: {ssub}")
+            #print(f"Device: {dev} sub: {sub} ssub: {ssub}")
             if dev not in devices_db:
                 devices_db[dev] = make_dev_temp()
             dev_db = devices_db[dev]
+            dev_db['number'] = -1
             if dev == default_device.split(',')[0]:
                 dev_db['internal'] = True
             if dev == def_config['USBDEV'].split(',')[0]:
