@@ -15,6 +15,11 @@ studio-controls version 2.0.21
  - Moved jack callbacks out of main for crash proofing
  - Use direct dbus calls instead of executing jack_control
  - Don't list loopback devices or put them last
+ - set default icon
+ - change config file to json to allow easier grouping of device data
+ - Allow setting each device's parameters
+ - Change GUI to show one extra device at a time
+ - Allow setting non-USB device backup when USB device in use
  - Bugfixes
 
 studio-controls version 2.0.9

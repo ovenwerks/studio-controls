@@ -126,21 +126,25 @@ def make_db():
         Devices:
             {
             name: string
-            usb: bool
-            internal: bool
-            hdmi: bool
-            sub:
                 {
-                number: int
-                playback: bool
-                capture: bool
-                play_chan: int
-                cap_chan: int
-                rate: int
-                frame: int
-                nperiods: int
-                hide: bool
-                }...
+                number: int (-1 for unplugged)
+                usb: bool
+                internal: bool
+                hdmi: bool
+                rates: list
+                sub:
+                    {
+                    number: int
+                    playback: bool
+                    capture: bool
+                    play_chan: int
+                    cap_chan: int
+                    rate: int
+                    frame: int
+                    nperiods: int
+                    hide: bool
+                    }...
+                }
             }...
     '''
     print("make_db")
@@ -150,15 +154,15 @@ def make_db():
     global default_device
     
     our_db = {'Version': version}
-    our_db['log-level'] = def_config['log-level']
-    jack_db = {'on': def_config['jack'], 'driver': def_config['driver'],
-                'chan-in': def_config['chan-in'], 'chan-out': def_config['chan-out'],
-                'rate': def_config['rate'], 'frame': def_config['frame'],
-                'period': def_config['period'], 'connect_mode': def_config['connect-mode'],
+    our_db['log-level'] = int(def_config['log-level'])
+    jack_db = {'on': bool(def_config['jack'] in ['True']), 'driver': def_config['driver'],
+                'chan-in': int(def_config['chan-in']), 'chan-out': int(def_config['chan-out']),
+                'rate': int(def_config['rate']), 'frame': int(def_config['frame']),
+                'period': int(def_config['period']), 'connect-mode': def_config['connect-mode'],
                 'dev': def_config['dev'], 'usbdev': def_config['usbdev']}
 
-    extra_db = {'a2j': def_config['a2j'], 'usbauto': def_config['usbauto'],
-                'usb-single': def_config['usb-single'], 'monitor': def_config['monitor'],
+    extra_db = {'a2j': bool(def_config['a2j'] in ['True']), 'usbauto': bool(def_config['usbauto'] in ['True']),
+                'usb-single': bool(def_config['usb-single'] in ['True']), 'monitor': def_config['monitor'],
                 'phone-action': def_config['phone-action'], 'phone-device': def_config['phone-device']
                 }
     our_db['jack'] = jack_db
@@ -178,7 +182,7 @@ def make_db():
             this_cnt = "2"
         else:
             this_cnt = def_config['PJ-IN-COUNT'].split()[idx]
-        temp_db = {'connection': this_con, 'count': this_cnt}
+        temp_db = {'connection': this_con, 'count': int(this_cnt)}
         pulse_in_db[bridge] = temp_db
     for idx, bridge in enumerate(def_config['PULSE-OUT'].split()):
         con = def_config['PJ-OUT-CON'].split()
@@ -191,7 +195,7 @@ def make_db():
             this_cnt = "2"
         else:
             this_cnt = def_config['PJ-OUT-COUNT'].split()[idx]
-        temp_db = {'connection': this_con, 'count': this_cnt}
+        temp_db = {'connection': this_con, 'count': int(this_cnt)}
         pulse_out_db[bridge] = temp_db
 
     ''' Now devices we just want to add devices in the config file
@@ -221,7 +225,6 @@ def make_db():
             if dev not in devices_db:
                 devices_db[dev] = make_dev_temp()
             dev_db = devices_db[dev]
-            dev_db['number'] = -1
             if dev == default_device.split(',')[0]:
                 dev_db['internal'] = True
             if dev == def_config['USBDEV'].split(',')[0]:
@@ -230,8 +233,8 @@ def make_db():
                 dev_db['sub'][sub] = make_sub_temp()
             sub_db = dev_db['sub'][sub]
             if rdev in def_config['XDEV'].split():
-                sub_db['play_chan'] = 100
-                sub_db['cap_chan'] = 100
+                sub_db['play-chan'] = 100
+                sub_db['cap-chan'] = 100
             if rdev in def_config['BLACKLIST'].split():
                 sub_db['hide'] = True
 
@@ -239,16 +242,18 @@ def make_db():
 
 def make_dev_temp():
     ''' make a biolerplate device with no sub '''
-    dev_temp = {'usb': False, "internal": False, 'hdmi': False, 'sub': {}}
+    dev_temp = {'number': -1, 'usb': False, "internal": False, 'hdmi': False,
+                'rates': ['32000', '44100', '48000', '88200', '96000', '192000'],
+                'sub': {}}
     return dev_temp
     
 def make_sub_temp():
     ''' make a template for a sub device '''
     global def_config
     sub_temp = {'playback': True, 'capture': True, 
-                'play_chan': 0, 'cap_chan': 0,
-                'rate': def_config['RATE'], 'frame': def_config['FRAME'],
-                'nperiods': def_config['PERIOD'], 'hide': False}
+                'play-chan': 0, 'cap-chan': 0,
+                'rate': int(def_config['RATE']), 'frame': int(def_config['FRAME']),
+                'nperiods': int(def_config['PERIOD']), 'hide': False}
     return sub_temp
 
 def write_new():

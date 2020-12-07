@@ -227,14 +227,13 @@ def import_config(caller):
 
     # read in autojack config file
     c_file = expanduser(config_file)
-    '''if not os.path.isfile(c_file):
+    if not os.path.isfile(c_file):
         # no config file, make one
-        commented out as we create a new one every time till conversion complete'''
-    cp = subprocess.run(["/usr/bin/convert-studio-controls"],
-        universal_newlines=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=False)
-    logging.debug(f"convert config file: {cp.stdout.strip()}")
-    # config file exists, read it in
+        cp = subprocess.run(["/usr/bin/convert-studio-controls"],
+            universal_newlines=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=False)
+        logging.debug(f"convert config file: {cp.stdout.strip()}")
 
+    # config file exists, read it in
     with open(c_file) as f:
         conf_db = json.load(f)
     logging.log(7, json.dumps(conf_db, indent = 4))

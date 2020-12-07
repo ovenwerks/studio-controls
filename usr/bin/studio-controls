@@ -19,8 +19,9 @@ import dbus
 from dbus.mainloop.glib import DBusGMainLoop
 import time
 import jack
-import configparser
 import grp
+import json
+import copy
 
 DBusGMainLoop(set_as_default=True)
 
@@ -102,13 +103,127 @@ class RTSetup:
                 subprocess.run(["/usr/bin/pkexec", "/usr/sbin/studio-system", "noboost"], shell=False)
 
 
+class DevDB:
+    ''' class for adding system devices to config data base:
+    '''
+    #def __init__(self):
+
+
+
+    def scan_dev(self, conf):
+        ''' scan devices and create device db, scan config and add data'''
+        ndevs = 0
+
+        if os.path.exists("/proc/asound/cards"):
+            with open("/proc/asound/cards", "r") as cards_file:
+                for line in cards_file:
+                    # need to find lines with:space/int/space[
+                    # ndevs = int from above
+                    # last one is highest dev number
+                    sub = line.rstrip()[1:]
+                    sub2 = sub.split(" ")
+                    first_el = line.rstrip()[1:].split(" ")[0]
+                    if first_el.isdigit():
+                        #if sub2[0].isdigit():
+                        #ndevs = int(sub2[0])
+                        ndevs = int(first_el)
+        ndevs += 1
+        for x in range(0, ndevs):
+            # card loop
+            if os.path.exists(f"/proc/asound/card{str(x)}"):
+                if os.path.isfile(f"/proc/asound/card{str(x)}/id"):
+                    with open(f"/proc/asound/card{str(x)}/id", "r") as card_file:
+                        for line in card_file:
+                            # only need one line
+                            cname = line.rstrip()
+                else:
+                    cname = str(x)
+            #print(f"cname: {cname} card: {str(x)}")
+            if not cname in conf['devices']:
+                conf['devices'][cname] = {'number': x, 'usb': False, "internal": False, 'hdmi': False,
+                'rates': ['32000', '44100', '48000', '88200', '96000', '192000'],
+                'sub': {}}
+            else:
+                conf['devices'][cname]['number'] = x
+
+            #print(f"{cname}")
+            self.get_dev_info(conf['devices'][cname], conf['jack'])
+
+
+    def  get_dev_info(self, config, jack):
+        ''' get device info from system files '''
+        cname = ""
+        l_usb = False
+        l_internal = False
+        l_hdmi = False
+        sub = 0
+        rates = ['32000', '44100', '48000', '88200', '96000', '192000']
+        x = int(config['number'])
+        #print(f"card: {str(x)}")
+        if os.path.exists(f"/proc/asound/card{str(x)}/usbbus"):
+            l_usb = True
+            # can get supported rates from /proc/asound/card{str(x)}/stream0
+            with open(f"/proc/asound/card{str(x)}/stream0", "r") as card_file:
+                rates = []
+                for line in card_file:
+                    if 'Rates:' in line:
+                        fnd_rates = line.split()[1:]
+                        for rate in fnd_rates:
+                            rate = rate.split(',')[0]
+                            if not rate in rates:
+                                rates.append(rate)
+        if os.path.exists(f"/proc/asound/card{str(x)}/codec#0"):
+            l_internal = True
+            # can get supported rates from file above
+            with open(f"/proc/asound/card{str(x)}/codec#0", "r") as card_file:
+                rates = []
+                for line in card_file:
+                    if 'rates' in line:
+                        fnd_rates = line.split()[2:]
+                        for rate in fnd_rates:
+                            if not rate in rates:
+                                rates.append(rate)
+        '''if cname == "HDMI" or cname == "NVidia":
+            l_hdmi = True'''
+        config['hdmi'] = bool(cname in ['HDMI', 'NVidia'])
+
+        config['usb'] = l_usb
+        config['internal'] = l_internal
+        config['rates'] = rates
+
+        for y in range(0, 20):
+            cap = False
+            #cap_pid = 0
+            play = False
+            #play_pid = 0
+            if os.path.exists(f"/proc/asound/card{str(x)}/pcm{str(y)}p"):
+                play = True
+
+            if os.path.exists(f"/proc/asound/card{str(x)}/pcm{str(y)}c"):
+                cap = True
+
+            if play or cap:
+                #print(f"sub num: {str(y)} play: {str(play)} cap: {str(cap)}")
+                if not str(y) in config['sub']:
+                    config['sub'][str(y)] = {'playback': play, 'capture': cap,
+                    'play-chan': 0, 'cap-chan': 0,
+                    'rate': int(jack['rate']), 'frame': int(jack['frame']),
+                    'nperiods': int(jack['period']), 'hide': False}
+                else:
+                    sub_db = config['sub'][str(y)]
+                    sub_db['playback'] = play
+                    sub_db['capture'] = cap
+
+        #print(f"Device list: {str(config)}")
+        #print(json.dumps(config, indent = 4))
+
+
+
 class StudioControls:
     global lock_file
-    config = configparser.ConfigParser()
-    def_config = config['DEFAULT']
-    #tab_conf = config['TABLET']
-    config_path = "~/.config/autojack"
-    old_config_file = "~/.config/autojackrc"
+    config_path = "~/.config/autojack/"
+    old_config_file = f"{config_path}autojackrc"
+    config_file = f"{config_path}autojack.json"
 
 
     def __init__(self):
@@ -120,7 +235,6 @@ class StudioControls:
         c_dir = expanduser(self.config_path)
         if not os.path.isdir(c_dir):
             os.makedirs(c_dir)
-        self.config_file = expanduser(f"{self.config_path}/autojackrc")
         lock_file = expanduser(f"{self.config_path}/studio-controls.lock")
         new_pid = str(os.getpid())
         if os.path.isfile(lock_file):
@@ -152,7 +266,7 @@ class StudioControls:
         signal.signal(signal.SIGPIPE, self.sig_handler)
         signal.signal(signal.SIGALRM, self.sig_handler)
         signal.signal(signal.SIGTERM, self.sig_handler)
-        
+
 
 
         '''Create the GUI'''
@@ -183,6 +297,7 @@ class StudioControls:
         self.combobox_late = builder.get_object('combobox_late')
         self.combo_periods = builder.get_object('combo_periods')
         self.combo_backend = builder.get_object('combo_backend')
+        self.monitor_combo = builder.get_object('monitor_combo')
         self.jack_midi_check = builder.get_object('jack_midi_check')
         self.jack_ind = builder.get_object('jack_ind')
         self.jack_state = builder.get_object('jack_state')
@@ -192,13 +307,16 @@ class StudioControls:
         '''extra tab'''
         self.usb_plug_check = builder.get_object('usb_plug_check')
         self.usb_single_ck = builder.get_object('usb_single_ck')
-        self.combo_zita_add = builder.get_object('combo_zita_add')
-        self.combo_zita_remove = builder.get_object('combo_zita_remove')
-        self.blacklist_add = builder.get_object('blacklist_add')
-        self.blacklist_remove = builder.get_object('blacklist_remove')
+        self.xdev_select = builder.get_object('xdev_select')
+        self.cap_chan_spin = builder.get_object('cap_chan_spin')
+        self.play_chan_spin = builder.get_object('play_chan_spin')
+        self.hide_check = builder.get_object('hide_check')
+        self.xdev_rate_drop = builder.get_object('xdev_rate_drop')
+        self.xdev_buff_drop = builder.get_object('xdev_buff_drop')
+        self.xdev_nperiods_drop = builder.get_object('xdev_nperiods_drop')
+        ''' phones '''
         self.hp_action = builder.get_object('hp_action')
         self.hp_device = builder.get_object('hp_device')
-        self.monitor_combo = builder.get_object('monitor_combo')
         self.hp_switch = builder.get_object('hp_switch')
 
         '''pulse tab'''
@@ -220,6 +338,9 @@ class StudioControls:
                                      signal_name='V3_4_signal')
         user_bus.add_signal_receiver(self.db_new_usb, dbus_interface='org.studio.control.event',
                                      signal_name='usb_signal')
+
+        # Set default window icon for window managers
+        self.window_main.set_default_icon_name('studio-controls')
 
         '''Check if audio.conf and/or audio.conf.disabled exists, returns are true or false'''
         #self.rt_file = False
@@ -266,57 +387,6 @@ class StudioControls:
         ''' combo_fw and combo_backend '''
 
         # Audio stuff
-        default_device = "0,0,0"
-        for adir in glob.glob("/proc/asound/card*/codec*"):
-            idfile = adir.rsplit('/', 1)[0]
-            with open(f"{idfile}/id", "r") as card_file:
-                for line in card_file:
-                    # only need one line
-                    cname = line.rstrip()
-            if cname != "HDMI" and cname != "NVidia":
-                default_device = f"{cname},0,0"
-                break
-
-        # first set defaults
-        self.config['DEFAULT'] = {
-            'VERSION': '2.1-pre',
-            'LOG-LEVEL': "19",
-
-            'JACK': 'False',
-            'DRIVER': "alsa",
-            'DEV': default_device,
-            'USBDEV': "",
-            'CHAN-IN': '0',
-            'CHAN-OUT': '0',
-            'RATE': "48000",
-            'FRAME': "1024",
-            'PERIOD': "2",
-            'CONNECT-MODE': "n",
-            'A2J': "True",
-            'MONITOR': 'system:playback_1',
-
-            'ZFRAME': "512",
-            'ALSA-LIST': default_device,
-            'ALSA-RATE': "48000",
-            'ALSA-FRAME': "512",
-            'ALSA-PERIOD': "2",
-            'ALSA-IN_CNT': "0",
-            'ALSA-OUT_CNT': "0",
-            'XDEV': "",
-            'USBAUTO': "True",
-            'USB-SINGLE': "False",
-            'BLACKLIST': "",
-
-            'PULSE-IN': 'pulse_in',
-            'PULSE-OUT': 'pulse_out',
-            'PJ-IN-CON': 'system:capture_1',
-            'PJ-OUT-CON': 'system:playback_1',
-            'PJ-IN-COUNT': '2',
-            'PJ-OUT-COUNT': '2',
-
-            'PHONE-ACTION': "switch",
-            'PHONE-DEVICE': default_device,
-        }
 
         global autojack
         global newusb
@@ -340,67 +410,60 @@ class StudioControls:
 
         # read in autojack config file
         c_file = expanduser(self.config_file)
-        if os.path.isfile(c_file):
-            self.config.read(c_file)
-        if self.def_config['MONITOR'] == "none":
-            self.def_config['MONITOR'] = 'system:playback_1'
-        if self.def_config['PJ-IN-CON'] == "0":
-            self.def_config['PJ-IN-CON'] = "none"
-        if self.def_config['PJ-OUT-CON'] == "0":
-            self.def_config['PJ-OUT-CON'] = "none"
-        self.zdev = self.def_config['XDEV'].strip('"').split()
-        self.pulse_in = self.def_config['PULSE-IN'].strip('"').split()
-        self.pulse_out = self.def_config['PULSE-OUT'].strip('"').split()
-        self.p_in_con = self.def_config['PJ-IN-CON'].strip('"').split()
-        self.p_out_con = self.def_config['PJ-OUT-CON'].strip('"').split()
-        self.p_in_cnt = self.def_config['PJ-IN-COUNT'].strip('"').split()
-        self.p_out_cnt = self.def_config['PJ-OUT-COUNT'].strip('"').split()
-        self.blacklist = self.def_config['BLACKLIST'].strip('"').split()
-        # old config files may not have this, set to default
-        for i, pj_name in enumerate(self.pulse_in):
-            if len(self.p_in_cnt) < i:
-                self.p_in_cnt.append("2")
-        for i, pj_name in enumerate(self.pulse_out):
-            if len(self.p_out_cnt) < i:
-                self.p_out_cnt.append("2")
+        if not os.path.isfile(c_file):
+            # no config file, make one
+            cp = subprocess.run(["/usr/bin/convert-studio-controls"],
+            universal_newlines=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=False)
+        # config file exists, read it in
+        print(f"Config file: {c_file}")
+        with open(c_file) as f:
+            self.conf_db = json.load(f)
+
+        self.devdb = DevDB()
+        self.devdb.scan_dev(self.conf_db)
+        self.jackdb = self.conf_db['jack']
+        self.extra = self.conf_db['extra']
 
         # Find out if jack is running
         try:
             client = jack.Client('controls', use_exact_name=False, no_start_server=True)
-            self.def_config['JACK'] = "True"
+            self.jackdb['on'] = True
             client.close()
         except jack.JackError:
-            self.def_config['JACK'] = "False"
+            self.jackdb['on'] = False
 
-        self.logging_comb.set_active_id(self.def_config['LOG-LEVEL'])
+        self.logging_comb.set_active_id(str(self.conf_db['log-level']))
         # fill in Jack master widgets
-        self.jack_rate_combo.set_active_id(self.def_config['RATE'])
-        self.combobox_late.set_active_id(self.def_config['FRAME'])
-        self.combo_periods.set_active_id(self.def_config['PERIOD'])
-        self.combo_backend.set_active_id(self.def_config['DRIVER'])
+        self.jack_rate_combo.set_active_id(str(self.jackdb['rate']))
+        self.combobox_late.set_active_id(str(self.jackdb['frame']))
+        self.combo_periods.set_active_id(str(self.jackdb['period']))
+        self.combo_backend.set_active_id(self.jackdb['driver'])
         self.chan_in_spin.set_range(1, 128)
         self.chan_out_spin.set_range(1, 128)
-        self.chan_in_spin.set_value(self.def_config.getint('CHAN-IN'))
-        self.chan_out_spin.set_value(self.def_config.getint('CHAN-OUT'))
-        self.jack_midi_check.set_active(self.def_config['A2J'] == "True")
+        self.chan_in_spin.set_value(self.jackdb['chan-in'])
+        self.chan_out_spin.set_value(self.jackdb['chan-out'])
+        self.jack_midi_check.set_active(self.extra['a2j'])
         # Fill Extra devices widgets
-        self.usb_plug_check.set_active(self.def_config['USBAUTO'] == "True")
-        if self.def_config['USBAUTO'] == "True":
+        self.usb_plug_check.set_active(self.extra['usbauto'])
+        if self.extra['usbauto']:
             self.usb_single_ck.set_sensitive(True)
-            self.usb_single_ck.set_active(self.def_config['USB-SINGLE'] == "True")
+            self.usb_single_ck.set_active(self.extra['usb-single'])
         else:
             self.usb_single_ck.set_sensitive(False)
-            self.usb_single_ck.set_active(self.def_config['USB-SINGLE'] == "True")
+            self.usb_single_ck.set_active(self.extra['usb-single'])
+        self.hp_action = builder.get_object('hp_action')
+        self.hp_switch = builder.get_object('hp_switch')
+        
         # pulse bridge defaults
         self.pj_in_count.set_range(1, 10)
         self.pj_out_count.set_range(1, 10)
         # Session Manger settings
-        self.jk_connect_mode.set_active_id(self.def_config['CONNECT-MODE'])
+        self.jk_connect_mode.set_active_id(self.jackdb['connect-mode'])
 
         self.refresh_dropdowns()
-        self.i_in = 0
-        self.i_out = 0
-        self.refresh_pulse_tab(self.i_in, self.i_out)
+        self.pj_in_bridge = ""
+        self.pj_out_bridge = ""
+        self.refresh_pulse_tab(self.pj_in_bridge, self.pj_out_bridge)
 
         handlers = {
             "on_window_main_delete_event": self.on_window_main_delete_event,
@@ -427,10 +490,8 @@ class StudioControls:
             "pavucontrol_cb": self.pavucontrol_cb,
             "carla_cb": self.carla_cb,
 
-            "cb_zita_add": self.cb_zita_add,
-            "cb_zita_remove": self.cb_zita_remove,
-            "cb_blacklist_add": self.cb_blacklist_add,
-            "cb_blacklist_remove": self.cb_blacklist_remove,
+            "xdev_select_cb": self.xdev_select_cb,
+            "xdev_changed": self.xdev_changed,
             "usb_plug_cb": self.usb_plug_cb,
             "hp_action_cb": self.hp_action_cb,
             "hp_switch_cb": self.hp_switch_cb,
@@ -454,9 +515,10 @@ class StudioControls:
         self.timeout_id = GLib.timeout_add(500, self.check_jack_status, None)
         self.signal_autojack("ping")
         autojack = False
+        print("initialization complete")
 
     def jack_error(self, mesg):
-        if self.def_config['JACK'] == "True":
+        if self.jackdb['on']:
             if "not running" in mesg:
                 print(f"jack message received: {mesg}")
 
@@ -543,7 +605,7 @@ class StudioControls:
             jack_client.activate()
             jack_alive = True
             jack_ports_changed = True
-            self.refresh_pulse_tab(self.i_in, self.i_out)
+            self.refresh_pulse_tab(self.pj_in_bridge, self.pj_out_bridge)
         return True
 
 
@@ -580,152 +642,95 @@ class StudioControls:
         and USB master are set to default and no usb master. However,
         all all alsa devices will still be available for bridging and
         as output device.'''
+        #scan_dev(self, conf_db):
+        xdev_current = self.xdev_select.get_active_id()
+        self.current_ex_dev = xdev_current
 
-        if self.def_config['DRIVER'] == "alsa":
-            self.jack_device_combo.set_sensitive(True)
-            self.jack_usb_dev_combo.set_sensitive(True)
-            self.chan_in_spin.set_sensitive(False)
-            self.chan_out_spin.set_sensitive(False)
-            self.combo_periods.set_sensitive(True)
-        elif self.def_config['DRIVER'] == "firewire":
-            self.jack_device_combo.set_sensitive(False)
-            self.jack_usb_dev_combo.set_sensitive(False)
-            self.chan_in_spin.set_sensitive(False)
-            self.chan_out_spin.set_sensitive(False)
-            self.combo_periods.set_sensitive(True)
-        elif self.def_config['DRIVER'] == "dummy":
-            self.jack_device_combo.set_sensitive(False)
-            self.jack_usb_dev_combo.set_sensitive(False)
-            self.chan_in_spin.set_sensitive(True)
-            self.chan_out_spin.set_sensitive(True)
-            self.combo_periods.set_sensitive(False)
+        self.jack_device_combo.set_sensitive(False)
+        self.jack_usb_dev_combo.set_sensitive(False)
+        self.chan_in_spin.set_sensitive(False)
+        self.chan_out_spin.set_sensitive(False)
+        self.combo_periods.set_sensitive(False)
+        self.xdev_select.set_sensitive(False)
+
         self.jack_device_combo.get_model().clear()
+        self.xdev_select.get_model().clear()
 
         self.jack_usb_dev_combo.get_model().clear()
-        self.jack_usb_dev_combo.append("", "No USB Master")
+        self.jack_usb_dev_combo.append("none", "No USB Master")
 
-        if self.def_config['DRIVER'] == "alsa":
-            if self.def_config['USBDEV'] == "":
-                self.jack_usb_dev_combo.set_active_id("")
-            else:
-                self.jack_usb_dev_combo.append(self.def_config['USBDEV'], self.def_config['USBDEV'])
-                self.jack_usb_dev_combo.set_active_id(self.def_config['USBDEV'])
-                self.jack_device_combo.append("200,0,0", "USB JACK Master")
-                self.jack_device_combo.set_active_id("200,0,0")
+        if self.jackdb['usbdev'] == "":
+            self.jack_usb_dev_combo.set_active_id("none")
+        else:
+            # this next bit should not be needed with device db
+            self.jack_usb_dev_combo.append(self.jackdb['usbdev'], self.jackdb['usbdev'])
+            self.jack_usb_dev_combo.set_active_id(self.jackdb['usbdev'])
 
-        self.combo_zita_remove.get_model().clear()
-        self.combo_zita_remove.append("label", "Remove (connected)")
-        self.combo_zita_remove.set_active_id("label")
-
-        self.combo_zita_add.get_model().clear()
-        self.combo_zita_add.append("label", "Add (available)")
-        self.combo_zita_add.set_active_id("label")
-
-        self.blacklist_remove.get_model().clear()
-        self.blacklist_remove.append("label", "Remove a Device from the Blacklist")
-        self.blacklist_remove.set_active_id("label")
-        for device in self.blacklist:
-            self.blacklist_remove.append(device, device)
-
-        self.blacklist_add.get_model().clear()
-        self.blacklist_add.append("label", "Add a Device to the Blacklist")
-        self.blacklist_add.set_active_id("label")
-
+        #this next bit should not be needed with new device db
         self.hp_device.get_model().clear()
-        self.hp_device.append(self.def_config['PHONE-DEVICE'], self.def_config['PHONE-DEVICE'])
-        self.hp_device.set_active_id(self.def_config['PHONE-DEVICE'])
+        self.hp_device.append(self.extra['phone-device'], self.extra['phone-device'])
+        self.hp_device.set_active_id(self.extra['phone-device'])
 
-        usb_save = ""
-        pci_save = ""
-        for x in range(0, 10):
-            # card loop
-            cname = ""
-            next_id = ""
-            next_d = ""
-            is_usb = False
-            is_internal = False
-            if os.path.exists(f"/proc/asound/card{str(x)}"):
-                if os.path.isfile(f"/proc/asound/card{str(x)}/id"):
-                    with open(f"/proc/asound/card{str(x)}/id", "r") as card_file:
-                        for line in card_file:
-                            # only need one line
-                            cname = line.rstrip()
-                else:
-                    cname = str(x)
-            loopy = False
-            if cname == "Loopback":
-                loopy = True
-            if os.path.exists(f"/proc/asound/card{str(x)}/usbbus"):
-                is_usb = True
-            if os.path.exists(f"/proc/asound/card{str(x)}/codec#0"):
-                is_internal = True
-            for y in range(0, 10):
+        for this_dev in self.conf_db['devices']:
+            dev_db = self.conf_db['devices'][this_dev]
+            for this_sub in dev_db['sub']:
+                sub_db = dev_db['sub'][this_sub]
                 d_type = ""
-                d_desc = ""
-                if os.path.exists(f"/proc/asound/card{str(x)}/pcm{str(y)}p"):
-                    d_type = "playback"
-                if os.path.exists(f"/proc/asound/card{str(x)}/pcm{str(y)}c"):
+                if sub_db['capture']:
+                    d_type = "capture "
+                if sub_db['playback']:
                     if d_type == "":
-                        d_type = "capture"
+                        d_type = "playback"
                     else:
-                        d_type = f"{d_type} and capture"
+                        d_type = f"{d_type} and playback"
+                next_id = ""
+                dname = ""
+                next_d = ""
                 if d_type != "":
-                    for z in range(0, 10):
-                        if os.path.exists(f"/proc/asound/card{str(x)}/pcm{str(y)}{d_type[0]}/sub{str(z)}"):
-                            with open(f"/proc/asound/card{str(x)}/pcm{str(y)}{d_type[0]}/sub{str(z)}/info",
-                                      "r") as info_file:
-                                for line in info_file:
-                                    clean_line = line.rstrip()
-                                    if re.match("^name:", clean_line):
-                                        line_list = clean_line.split(": ", 1)
-                                        dname = ""
-                                        if len(line_list) > 1:
-                                            dname = line_list[1]
-                                        next_id = f"{cname},{str(y)},{str(z)}"
-                                        next_d = f"{next_id} {d_type} ({dname})"
-                            #   Have everything we need now
+                    subpath = f"/proc/asound/{str(this_dev)}/pcm{str(this_sub)}{str(d_type[0])}/sub0/info"
+                    if os.path.exists(subpath):
+                        with open(subpath, "r") as info_file:
+                            for line in info_file:
+                                clean_line = line.rstrip()
+                                if re.match("^name:", clean_line):
+                                    line_list = clean_line.split(": ", 1)
+                                    if len(line_list) > 1:
+                                        dname = line_list[1]
+                next_id = f"{this_dev},{this_sub},0"
+                if dev_db['number'] == -1:
+                    dname = "unplugged"
+                next_d = f"{next_id} {d_type} ({dname})"
+                if "Loopback" in [this_dev]:
+                    self.xdev_select.append(next_id, next_d)
+                else:
+                    self.xdev_select.insert(0, next_id, next_d)
+                if not sub_db['hide']:
+                    #this should not appear in most drop downs
+                    if not "Loopback" in [this_dev]:
+                        self.hp_device.append(next_id, next_d)
+                        if dev_db['usb']:
+                            self.jack_usb_dev_combo.append(next_id, next_d)
+                        else:
+                            self.jack_device_combo.append(next_id, next_d)
+                    if next_id == self.extra['phone-device']:
+                        self.hp_device.set_active_id(next_id)
+                    if next_id == self.jackdb['dev']:
+                        self.jack_device_combo.set_active_id(next_id)
+                    if next_id == self.jackdb['usbdev']:
+                        self.jack_usb_dev_combo.set_active_id(next_id)
+                    
+        if self.jackdb['driver'] == "alsa":
+            self.jack_device_combo.set_sensitive(True)
+            self.jack_usb_dev_combo.set_sensitive(True)
+            self.combo_periods.set_sensitive(True)
+        elif self.jackdb['driver'] == "firewire":
+            self.combo_periods.set_sensitive(True)
+        elif self.jackdb['driver'] == "dummy":
+            self.chan_in_spin.set_sensitive(True)
+            self.chan_out_spin.set_sensitive(True)
 
-                            # this block will fit where ever we know sub-ids and description
-                            if not next_id in self.blacklist:
-                                self.blacklist_add.append(next_id, next_d)
-                                if next_id != self.def_config['PHONE-DEVICE']:
-                                    if not loopy:
-                                        self.hp_device.append(next_id, next_d)
-                                if is_usb:
-                                    if usb_save == "":
-                                        usb_save = next_id
-                                    if next_id != self.def_config['USBDEV'] and self.def_config['DRIVER'] == "alsa":
-                                        self.jack_usb_dev_combo.append(next_id, next_d)
+        self.redraw_extra(xdev_current)
 
-                                else:
-                                    if pci_save == "":
-                                        pci_save = next_id
-                                    if self.def_config['DRIVER'] == "alsa":
-                                        if not loopy:
-                                            self.jack_device_combo.append(next_id, next_d)
-                                        if self.def_config['USBDEV'] == "" and self.def_config['DEV'] == next_id:
-                                            self.jack_device_combo.set_active_id(next_id)
-                                            self.dev_desc = next_d
-                                        if self.def_config['USBDEV'] == "" and self.def_config['DEV'] == "none" and is_internal:
-                                            self.jack_device_combo.set_active_id(next_id)
-                                            self.dev_desc = next_d
-                                    if (self.def_config['DEV'] != next_id or self.def_config['DRIVER'] != "alsa") and self.zdev.count(next_id) > 0:
-                                        if loopy:
-                                            self.combo_zita_remove.append(next_id, next_d)
-                                        else:
-                                            self.combo_zita_remove.insert(1, next_id, next_d)
-                                    else:
-                                        if self.def_config['DEV'] != next_id or self.def_config['DRIVER'] != "alsa":
-                                            if loopy:
-                                                self.combo_zita_add.append(next_id, next_d)
-                                            else:
-                                                self.combo_zita_add.insert(1, next_id, next_d)
-
-        if pci_save == "" and self.def_config['USBDEV'] == "":
-            self.def_config['USBDEV'] = usb_save
-            self.jack_usb_dev_combo.set_active_id(usb_save)
-            self.jack_device_combo.append("200,0,0", "USB device below")
-            self.jack_device_combo.set_active_id("200,0,0")
 
     '''Functions for all the gui controls'''
 
@@ -733,8 +738,10 @@ class StudioControls:
         self.window_help.hide_on_delete()
         return True
 
+
     def on_main_button_help_clicked(self, button):
         self.window_help.show()
+
 
     def rt_button_hit(self, button):
         subprocess.run(["/usr/bin/pkexec", "/usr/sbin/studio-system", "fix"], shell=False)
@@ -743,12 +750,14 @@ class StudioControls:
         self.message_dialog_rt_info.show()
         self.rt_warning.set_text("Session restart required for Real Time Permissions")
 
+
     # system tweaks
     def combo_governor_changed_cb(self, button):
         if button.get_active_text() == "Performance":
             self.rtsetup.set_governor(True)
         else:
             self.rtsetup.set_governor(False)
+
 
     def combo_boost_changed_cb(self, button):
         if button.get_active_text() == "on":
@@ -761,47 +770,99 @@ class StudioControls:
         else:
             self.combo_boost.set_active(0)
 
+
     def logging_changed(self, widget):
         newval = widget.get_active_id()
-        if self.def_config['LOG-LEVEL'] != newval:
-            self.def_config['LOG-LEVEL'] = newval
+        if self.conf_db['log-level'] != newval:
+            self.conf_db['log-level'] = newval
             self.cb_audio_apply(widget)
+
 
     def firewire_cb(self, widget):
         newval = widget.get_active_id()
         if newval == "alsa" or newval == "ffado":
             subprocess.run(["/usr/bin/pkexec", "/usr/sbin/studio-system", newval], shell=False)
 
+
     # Audio setup call backs
-    def cb_zita_add(self, button):
-        a_id = str(button.get_active_id())
-        if a_id != "None" and a_id != "label":
-            self.zdev.append(str(a_id))
-            if not self.dirty:
-                self.dirty = True
-
-    def cb_zita_remove(self, button):
-        a_id = str(button.get_active_id())
-        if a_id != "None" and a_id != "label":
-            self.zdev.remove(str(a_id))
-            if not self.dirty:
-                self.dirty = True
-
-    def cb_blacklist_add(self, widget):
+    def xdev_select_cb(self, widget):
         a_id = str(widget.get_active_id())
-        if a_id != "None" and a_id != "label":
-            self.blacklist.append(str(a_id))
-            self.def_config['BLACKLIST'] = ' '.join(self.blacklist)
-            if not self.dirty:
-                self.dirty = True
+        if a_id != "None" and a_id != self.current_ex_dev:
+            self.redraw_extra(a_id)
 
-    def cb_blacklist_remove(self, widget):
-        a_id = str(widget.get_active_id())
-        if a_id != "None" and a_id != "label":
-            self.blacklist.remove(str(a_id))
-            self.def_config['BLACKLIST'] = ' '.join(self.blacklist)
-            if not self.dirty:
-                self.dirty = True
+    def xdev_changed(self, widget):
+        return
+        #self.current_ex_dev
+        dev_db = self.conf_db['devices'][next_device.split(',')[0]]
+        sub_db = dev_db['sub'][str(next_device.split(',')[1])]
+        self.cap_chan_spin.set_value(sub_db['cap-chan'])
+        self.play_chan_spin.set_value(sub_db['play-chan'])
+        self.hide_check.set_active(sub_db['hide'])
+        #for rate in dev_db['rates']:
+
+        # below still to do
+        self.jack_device_combo.set_sensitive(False)
+        self.jack_usb_dev_combo.set_sensitive(False)
+        self.chan_in_spin.set_sensitive(False)
+        self.chan_out_spin.set_sensitive(False)
+        self.combo_periods.set_sensitive(False)
+        self.xdev_select.set_sensitive(False)
+
+        return
+
+    def redraw_extra(self, next_device):
+        ''' change all widgets to reflect current values of the
+        selected device '''
+        frames = [16, 32, 64, 128, 256, 512, 1024, 2048, 4096]
+        self.xdev_select.set_sensitive(False)
+        self.cap_chan_spin.set_sensitive(False)
+        self.play_chan_spin.set_sensitive(False)
+        self.hide_check.set_sensitive(False)
+        self.xdev_rate_drop.set_sensitive(False)
+        self.xdev_buff_drop.set_sensitive(False)
+        self.xdev_nperiods_drop.set_sensitive(False)
+        self.xdev_rate_drop.get_model().clear()
+        self.xdev_buff_drop.get_model().clear()
+
+        if next_device == 'none':
+            for def_dev in self.conf_db['devices']:
+                next_device = f"{def_dev},0,0"
+                break
+        #print(f"fixed Next device: {next_device}")
+        self.xdev_select.set_active_id(next_device)
+        dev_db = self.conf_db['devices'][next_device.split(',')[0]]
+        sub_db = dev_db['sub'][str(next_device.split(',')[1])]
+        if dev_db['number'] == -1:
+            # device is unplugged, some info may be missing
+            if not 'rates' in dev_db:
+                # the device may not handle all these rates but missing some would be bad
+                dev_db['rates'] = ["32000", "44100", "48000", "88200", "96000", "192000"]
+
+        self.cap_chan_spin.set_value(sub_db['cap-chan'])
+        self.play_chan_spin.set_value(sub_db['play-chan'])
+        self.hide_check.set_active(sub_db['hide'])
+        for rate in dev_db['rates']:
+            self.xdev_rate_drop.append(str(rate), str(rate))
+        self.xdev_rate_drop.set_active_id(str(sub_db['rate']))
+        for frame in frames:
+            if dev_db['hdmi'] and frame == 4096:
+                self.xdev_buff_drop.append(str(frame), str(frame))
+            elif dev_db['internal'] and frame > 64:
+                self.xdev_buff_drop.append(str(frame), str(frame))
+            else:
+                self.xdev_buff_drop.append(str(frame), str(frame))
+        self.xdev_buff_drop.set_active_id(str(sub_db['frame']))
+        self.xdev_nperiods_drop.set_active_id(str(sub_db['nperiods']))
+
+        self.xdev_select.set_sensitive(True)
+        self.hide_check.set_sensitive(True)
+        if not sub_db['hide']:
+            self.cap_chan_spin.set_sensitive(True)
+            self.play_chan_spin.set_sensitive(True)
+            self.xdev_rate_drop.set_sensitive(True)
+            self.xdev_buff_drop.set_sensitive(True)
+            self.xdev_nperiods_drop.set_sensitive(True)
+
 
     def hp_action_cb(self, widget):
         a_id = str(widget.get_active_id())
@@ -815,22 +876,22 @@ class StudioControls:
     def jack_device_changed(self, button):
         a_id = str(button.get_active_id())
         a_desc = str(button.get_active_text())
-        if a_id != "None" and a_id != "200,0,0":
-            self.def_config['DEV'] = a_id
+        if a_id != "None":
+            self.conf_db['jack']['dev'] = a_id
             self.dev_desc = a_desc
             if not self.dirty:
                 self.dirty = True
 
     def jack_driver_changed(self, button):
         a_driver = str(button.get_active_text())
-        self.def_config['DRIVER'] = a_driver
+        self.conf_db['jack']['driver'] = a_driver
         if not self.dirty:
             self.dirty = True
 
     def usb_master_changed(self, button):
         a_id = str(button.get_active_id())
         if a_id != "None":
-            self.def_config['USBDEV'] = a_id
+            self.conf_db['jack']['usbdev'] = a_id
         if not self.dirty:
             self.dirty = True
 
@@ -846,31 +907,46 @@ class StudioControls:
         with what jack offers. This refreshes the two drop downs '''
         global jack_client
         global jack_alive
-
         self.pj_in_con.set_sensitive(False)
+        self.pj_out_con.set_sensitive(False)
+        self.monitor_combo.set_sensitive(False)
+
+        in_db = self.conf_db['pulse']['inputs']
+        if in_db != {}:
+            in_exists = True
+            if self.pj_in_bridge == "":
+                for br in in_db:
+                   self.pj_in_bridge = br
+                   break 
         self.pj_in_con.get_model().clear()
         self.pj_in_con.append("none", "no connection")
-        self.pj_in_con.set_active(0)
-        active_in = self.p_in_con[self.i_in]
-        if (self.p_in_con != []) and (active_in != "0"):
-            self.pj_in_con.append(active_in, active_in)
-            self.pj_in_con.set_active_id(active_in)
+        self.pj_in_con.set_active_id('none')
+        if in_exists:
+            our_con = in_db[self.pj_in_bridge]['connection']
+            self.pj_in_con.append(our_con, our_con)
+            self.pj_in_con.set_active_id(our_con)
 
-        self.pj_out_con.set_sensitive(False)
+        out_db = self.conf_db['pulse']['outputs']
+        if out_db != {}:
+            out_exists = True
+            if self.pj_out_bridge == "":
+                for br in out_db:
+                   self.pj_out_bridge = br
+                   break 
         self.pj_out_con.get_model().clear()
         self.pj_out_con.append("none", "no connection")
         self.pj_out_con.append("monitor", "Main Output Ports")
-        self.pj_out_con.set_active(0)
-        active_out = self.p_out_con[self.i_out]
-        if (self.p_out_con != []) and (active_out != "0"):
-            if active_out != "monitor":
-                self.pj_out_con.append(active_out, active_out)
-            self.pj_out_con.set_active_id(active_out)
+        self.pj_out_con.set_active_id('none')
+        if out_exists:
+            our_con = out_db[self.pj_out_bridge]['connection']
+            if our_con != "monitor":
+                self.pj_out_con.append(our_con, our_con)
+            self.pj_out_con.set_active_id(our_con)
 
-        self.monitor_combo.set_sensitive(False)
         self.monitor_combo.get_model().clear()
-        self.monitor_combo.append(self.def_config["MONITOR"], self.def_config["MONITOR"])
-        self.monitor_combo.set_active(0)
+        monitor = self.conf_db['extra']["monitor"]
+        self.monitor_combo.append(monitor, monitor)
+        self.monitor_combo.set_active_id(monitor)
 
         if jack_alive:
             # get capture ports with audio and hardware
@@ -905,14 +981,16 @@ class StudioControls:
                         self.pj_in_con.append(last_port, f"{last_port} (mono){extra}")
                         last_dev = dev
                         last_port = port
-                    if this_port == active_in:
+                    #   our_con = in_db[self.pj_in_bridge]['connection']
+
+                    if in_exists and this_port == in_db[self.pj_in_bridge]['connection']:
                         self.pj_in_con.remove(self.pj_in_con.get_active())
-                        self.pj_in_con.set_active_id(active_in)
+                        self.pj_in_con.set_active_id(this_port)
             if not left_ch:
                 self.pj_in_con.append(last_port, f"{last_port} (mono){extra}")
-                if last_port == active_in:
+                if in_exists and last_port == in_db[self.pj_in_bridge]['connection']:
                     self.pj_in_con.remove(self.pj_in_con.get_active())
-                    self.pj_in_con.set_active_id(active_in)
+                    self.pj_in_con.set_active_id(last_port)
 
             jack_play = jack_client.get_ports("", is_audio=True, is_input=True, is_physical=True)
             left_ch = True
@@ -948,19 +1026,23 @@ class StudioControls:
                         last_dev = dev
                         last_port = port
 
-                    if this_port == active_out:
+                    #our_con = out_db[self.pj_out_bridge]['connection']
+                    if out_exists and this_port == out_db[self.pj_out_bridge]['connection']:
                         self.pj_out_con.remove(self.pj_out_con.get_active())
-                        self.pj_out_con.set_active_id(active_out)
-                    if this_port == self.def_config["MONITOR"]:
+                        self.pj_out_con.set_active_id(this_port)
+                    if this_port == monitor:
                         self.monitor_combo.remove(self.monitor_combo.get_active())
-                        self.monitor_combo.set_active_id(self.def_config["MONITOR"])
+                        self.monitor_combo.set_active_id(monitor)
                     left_ch = True
             if not left_ch:
                 self.pj_out_con.append(last_port, f"{last_port} (mono){extra}")
                 self.monitor_combo.append(last_port, f"{last_port} (mono){extra}")
-                if last_port == active_out:
+                if out_exists and last_port == out_db[self.pj_out_bridge]['connection']:
                     self.pj_out_con.remove(self.pj_out_con.get_active())
-                    self.pj_out_con.set_active_id(active_out)
+                    self.pj_out_con.set_active_id(last_port)
+                if last_port == monitor:
+                    self.monitor_combo.remove(self.monitor_combo.get_active())
+                    self.monitor_combo.set_active_id(monitor)
 
         else:
             self.pj_in_con.append("none", "Ports cannot be displayed unless JACK is running.")
@@ -974,34 +1056,53 @@ class StudioControls:
 
     def refresh_pulse_tab(self, i_in, i_out):
         ''' Fill in all pulse related widgets '''
-        '''self.combo_out_ports.set_active_id(self.def_config['PORTS'])'''
         global jack_ports_changed
+        in_db = self.conf_db['pulse']['inputs']
+        out_db = self.conf_db['pulse']['outputs']
+
         self.pj_in_combo.set_sensitive(False)
         self.pj_in_name.set_sensitive(False)
         self.pj_in_count.set_sensitive(False)
         self.pj_out_combo.set_sensitive(False)
         self.pj_out_name.set_sensitive(False)
         self.pj_out_count.set_sensitive(False)
-
+        self.pj_in_con.set_sensitive(False)
+        self.pj_out_con.set_sensitive(False)
         self.pj_in_combo.get_model().clear()
-        for i, pj_name in enumerate(self.pulse_in):
-            self.pj_in_combo.append(str(i), pj_name)
-        if len(self.pulse_in):
-            self.pj_in_combo.set_active(i_in)
-            self.pj_in_name.set_text(self.pulse_in[i_in])
-        else:
-            self.pj_in_name.set_text("")
-        self.pj_in_count.set_value(int(self.p_in_cnt[i_in]))
-
         self.pj_out_combo.get_model().clear()
-        for i, pj_name in enumerate(self.pulse_out):
-            self.pj_out_combo.append(str(i), pj_name)
-        if len(self.pulse_out):
-            self.pj_out_combo.set_active(i_out)
-            self.pj_out_name.set_text(self.pulse_out[i_out])
+        if in_db == {}:
+            # no bridges
+            self.pj_in_combo.set_active(0)
+            self.pj_in_name.set_text("")
+            self.pj_in_count.set_value(1)
+            self.pj_in_con.set_active_id('none')
         else:
+            for bridge in in_db:
+                self.pj_in_combo.append(bridge, bridge)
+                if not i_in:
+                    i_in = bridge
+                    break
+            self.pj_in_combo.set_active_id(i_in)
+            self.pj_in_name.set_text(i_in)
+            self.pj_in_count.set_value(in_db[bridge]['count'])
+            self.pj_in_con.set_active_id(in_db[bridge]['connection'])
+                    
+        if out_db == {}:
+            # no bridges
+            self.pj_out_combo.set_active(0)
             self.pj_out_name.set_text("")
-        self.pj_out_count.set_value(int(self.p_out_cnt[i_out]))
+            self.pj_out_count.set_value(1)
+            self.pj_out_con.set_active_id('none')
+        else:
+            for bridge in out_db:
+                self.pj_out_combo.append(bridge, bridge)
+                if not i_out:
+                    i_out = bridge
+                    break
+            self.pj_out_combo.set_active_id(i_out)
+            self.pj_out_name.set_text(i_out)
+            self.pj_out_count.set_value(out_db[bridge]['count'])
+            self.pj_out_con.set_active_id(out_db[bridge]['connection'])
 
         self.pj_in_combo.set_sensitive(True)
         self.pj_in_name.set_sensitive(True)
@@ -1009,6 +1110,8 @@ class StudioControls:
         self.pj_out_combo.set_sensitive(True)
         self.pj_out_name.set_sensitive(True)
         self.pj_out_count.set_sensitive(True)
+        self.pj_in_con.set_sensitive(True)
+        self.pj_out_con.set_sensitive(True)
         jack_ports_changed = True
 
 
@@ -1017,12 +1120,22 @@ class StudioControls:
         to current values '''
         if not widget.get_sensitive():
             return
-        if len(self.pulse_in):
-            self.pulse_in[self.i_in] = "".join(str(self.pj_in_name.get_text()).split())
-            self.pj_in_name.set_text(self.pulse_in[self.i_in])
-            self.p_in_con[self.i_in] = str(self.pj_in_con.get_active_id())
-            self.p_in_cnt[self.i_in] = str(int(self.pj_in_count.get_value_as_int()))
-            self.refresh_pulse_tab(self.i_in, self.i_out)
+        temp_db =self.conf_db['pulse']['inputs']
+        if len(temp_db):
+            old_name = self.pj_in_combo.get_active_id()
+            new_name = self.pj_in_name.get_text().split()[0]
+            if new_name != old_name:
+                if old_name in temp_db:
+                    del temp_db[old_name]
+                temp_db[new_name] = {
+                            'connection': f"{self.pj_in_con.get_active_id()}",
+                            'count': int(self.pj_in_count.get_value_as_int())
+                            }
+            else:
+                temp_db[new_name]['connection'] = f"{self.pj_in_con.get_active_id()}"
+                temp_db[new_name]['count'] = self.pj_in_count.get_value_as_int()
+
+            self.refresh_pulse_tab(new_name, self.pj_out_bridge)
 
 
     def pj_out_name_cb(self, widget):
@@ -1030,12 +1143,22 @@ class StudioControls:
         to current values '''
         if not widget.get_sensitive():
             return
-        if len(self.pulse_out):
-            self.pulse_out[self.i_out] = "".join(str(self.pj_out_name.get_text()).split())
-            self.pj_out_name.set_text(self.pulse_out[self.i_out])
-            self.p_out_con[self.i_out] = str(self.pj_out_con.get_active_id())
-            self.p_out_cnt[self.i_out] = str(self.pj_out_count.get_value_as_int())
-            self.refresh_pulse_tab(self.i_in, self.i_out)
+        temp_db =self.conf_db['pulse']['outputs']
+        if len(temp_db):
+            old_name = self.pj_out_combo.get_active_id()
+            new_name = self.pj_out_name.get_text().split()[0]
+            if new_name != old_name:
+                if old_name in temp_db:
+                    del temp_db[old_name]
+                temp_db[new_name] = {
+                            'connection': f"{self.pj_out_con.get_active_id()}",
+                            'count': int(self.pj_out_count.get_value_as_int())
+                            }
+            else:
+                temp_db[new_name]['connection'] = f"{self.pj_out_con.get_active_id()}"
+                temp_db[new_name]['count'] = self.pj_out_count.get_value_as_int()
+
+            self.refresh_pulse_tab(self.pj_in_bridge, new_name)
 
 
     def pj_in_combo_cb(self, widget):
@@ -1046,8 +1169,8 @@ class StudioControls:
             return
         if widget.get_active() < 0:
             return
-        self.i_in = self.pj_in_combo.get_active()
-        self.refresh_pulse_tab(self.i_in, self.i_out)
+        self.pj_in_bridge = self.pj_in_combo.get_active_id()
+        self.refresh_pulse_tab(self.pj_in_bridge, self.pj_out_bridge)
 
 
     def pj_out_combo_cb(self, widget):
@@ -1058,8 +1181,8 @@ class StudioControls:
             return
         if widget.get_active() < 0:
             return
-        self.i_out = self.pj_out_combo.get_active()
-        self.refresh_pulse_tab(self.i_in, self.i_out)
+        self.pj_out_bridge = self.pj_out_combo.get_active_id()
+        self.refresh_pulse_tab(self.pj_in_bridge, self.pj_out_bridge)
 
 
     def pj_in_add_cb(self, widget):
@@ -1067,14 +1190,21 @@ class StudioControls:
         assign connect as "none". Before switching
         to display the new bridge we need to save the
         current bridge info '''
-        self.i_in = len(self.pulse_in)
-        self.i_out = 0
-        if len(self.pulse_out):
-            self.i_out = int(self.pj_out_combo.get_active_id())
-        self.pulse_in.append(f"pulse_in-{str(self.i_in + 1)}")
-        self.p_in_con.append("none")
-        self.p_in_cnt.append("2")
-        self.refresh_pulse_tab(self.i_in, self.i_out)
+        temp_db =self.conf_db['pulse']['inputs']
+        indx = 1
+        done = False
+        new_name = ""
+        while not done:
+            new_name = f"pulse_in-{str(indx)}"
+            if not new_name in temp_db:
+                done = True
+            else:
+                indx = indx + 1
+        temp_db[new_name] = {
+                            'connection': "none",
+                            'count': 2
+                            }
+        self.refresh_pulse_tab(new_name, self.pj_out_bridge)
 
 
     def pj_out_add_cb(self, widget):
@@ -1082,44 +1212,49 @@ class StudioControls:
         assign connect as "none". Before switching
         to display the new bridge we need to save the
         current bridge info '''
-        self.i_out = len(self.pulse_out)
-        self.i_in = 0
-        if len(self.pulse_in):
-            self.i_in = int(self.pj_in_combo.get_active_id())
-        self.pulse_out.append(f"pulse_out-{str(self.i_out + 1)}")
-        self.p_out_con.append("none")
-        self.p_out_cnt.append("2")
-        self.refresh_pulse_tab(self.i_in, self.i_out)
+        temp_db =self.conf_db['pulse']['outputs']
+        indx = 1
+        done = False
+        new_name = ""
+        while not done:
+            new_name = f"pulse_in-{str(indx)}"
+            if not new_name in temp_db:
+                done = True
+            else:
+                indx = indx + 1
+        temp_db[new_name] = {
+                            'connection': "none",
+                            'count': 2
+                            }
+        self.refresh_pulse_tab(self.pj_in_bridge, new_name)
 
 
     def pj_in_rem_cb(self, widget):
         ''' get index of current bridge
         remove name from list by index
         remove connection from list by index '''
-        index = self.pj_in_combo.get_active()
-        del self.pulse_in[index]
-        del self.p_in_con[index]
-        del self.p_in_cnt[index]
-        self.i_in = 0
-        self.i_out = 0
-        if len(self.pulse_out):
-            self.i_out = int(self.pj_out_combo.get_active_id())
-        self.refresh_pulse_tab(self.i_in, self.i_out)
+        name = self.pj_in_combo.get_active_id()
+        if name in self.conf_db['pulse']['inputs']:
+            del self.conf_db['pulse']['inputs'][name]
+        self.pj_in_bridge = ""
+        for bridge in self.conf_db['pulse']['inputs']:
+            self.pj_in_bridge = bridge
+            break
+        self.refresh_pulse_tab(self.pj_in_bridge, self.pj_out_bridge)
 
 
     def pj_out_rem_cb(self, widget):
         ''' get index of current bridge
         remove name from list by index
         remove connection from list by index '''
-        index = self.pj_out_combo.get_active()
-        del self.pulse_out[index]
-        del self.p_out_con[index]
-        del self.p_out_cnt[index]
-        self.i_out = 0
-        self.i_in = 0
-        if len(self.pulse_in):
-            self.i_in = int(self.pj_in_combo.get_active_id())
-        self.refresh_pulse_tab(self.i_in, self.i_out)
+        name = self.pj_out_combo.get_active_id()
+        if name in self.conf_db['pulse']['outputs']:
+            del self.conf_db['pulse']['outputs'][name]
+        self.pj_in_bridge = ""
+        for bridge in self.conf_db['pulse']['outputs']:
+            self.pj_out_bridge = bridge
+            break
+        self.refresh_pulse_tab(self.pj_in_bridge, self.pj_out_bridge)
 
 
     ''' External applications calls '''
@@ -1127,11 +1262,11 @@ class StudioControls:
     def mixer_cb(self, button):
         '''callback for mixer button. This starts QASMixer
         with the device set to whatever is jack master'''
-        if self.def_config['USBDEV'] != "":
+        if self.conf_db['jack']['usbdev'] != "":
             # must be hw:device not hw:device,0,0
-            mixdevice = self.def_config['USBDEV'].split(',', 1)[0]
+            mixdevice = self.conf_db['jack']['usbdev'].split(',', 1)[0]
         else:
-            mixdevice = self.def_config['DEV'].split(',', 1)[0]
+            mixdevice = self.conf_db['jack']['dev'].split(',', 1)[0]
         subprocess.Popen(["/usr/bin/qasmixer", "-n", f"--device=hw:{str(mixdevice)}"], shell=False).pid
 
     def pavucontrol_cb(self, button):
@@ -1175,13 +1310,13 @@ class StudioControls:
     def cb_jack_start(self, button):
         ''' call back for Jack (re)start button'''
         global autojack
-        self.def_config['JACK'] = "True"
+        self.jackdb['on'] = "True"
         self.config_save()
         self.signal_autojack("start")
 
     def cb_jack_stop(self, button):
         global autojack
-        self.def_config['JACK'] = "False"
+        self.jackdb['on'] = "False"
         self.config_save()
         self.signal_autojack("stop")
 
@@ -1193,6 +1328,25 @@ class StudioControls:
 
     def config_save(self):
         ''' Write audio setting to ~/.config/autojack/autojackrc'''
+        
+        #"on": true,
+        #jack_db['driver'] = str(self.combo_backend.get_active_id())
+        self.jackdb['chan-in'] = str(int(self.chan_in_spin.get_value()))
+        self.jackdb['chan-out'] = str(int(self.chan_out_spin.get_value()))
+        self.jackdb['rate'] = str(self.jack_rate_combo.get_active_id())
+        self.jackdb['frame'] = str(self.combobox_late.get_active_id())
+        self.jackdb['period'] = str(self.combo_periods.get_active_id())
+        self.jackdb['connect-mode'] = str(self.jk_connect_mode.get_active_id())
+        #        "dev": "AudioFire12,0,0"
+        #"usbdev": ""  these two should already be correct
+
+        self.extra['a2j'] = str(self.jack_midi_check.get_active())
+        self.extra['usbauto'] = str(self.usb_plug_check.get_active())
+        self.extra['usb-single'] = str(self.usb_single_ck.get_active())
+        self.extra['monitor'] = str(self.monitor_combo.get_active_id())
+        self.extra['phone-action'] = str(self.hp_action.get_active_id())
+        self.extra['phone-device'] = str(self.hp_device.get_active_id())
+
         c_file = expanduser(self.config_file)
         if not os.path.isfile(c_file):
             # either first run or old version
@@ -1201,32 +1355,11 @@ class StudioControls:
                 os.makedirs(c_dir)
             if os.path.isfile(expanduser(self.old_config_file)):
                 os.remove(expanduser(self.old_config_file))
-        with open(expanduser(self.config_file), "w") as rc_file:
-            self.def_config['DRIVER'] = str(self.combo_backend.get_active_id())
-            self.def_config['CHAN-IN'] = str(int(self.chan_in_spin.get_value()))
-            self.def_config['CHAN-OUT'] = str(int(self.chan_out_spin.get_value()))
-            self.def_config['RATE'] = str(self.jack_rate_combo.get_active_id())
-            self.def_config['FRAME'] = str(self.combobox_late.get_active_id())
-            zframe = str(int(int(self.combobox_late.get_active_id()) / 2))
-            if int(zframe) < 128:
-                zframe = str(64)
-            self.def_config['ZFRAME'] = zframe
-            self.def_config['PERIOD'] = str(self.combo_periods.get_active_id())
-            self.def_config['CONNECT-MODE'] = str(self.jk_connect_mode.get_active_id())
-            self.def_config['A2J'] = str(self.jack_midi_check.get_active())
-            self.def_config['PULSE-IN'] = ' '.join(self.pulse_in)
-            self.def_config['PULSE-OUT'] = ' '.join(self.pulse_out)
-            self.def_config['PJ-IN-CON'] = ' '.join(self.p_in_con)
-            self.def_config['PJ-OUT-CON'] = ' '.join(self.p_out_con)
-            self.def_config['PJ-IN-COUNT'] = ' '.join(self.p_in_cnt)
-            self.def_config['PJ-OUT-COUNT'] = ' '.join(self.p_out_cnt)
-            self.def_config['USBAUTO'] = str(self.usb_plug_check.get_active())
-            self.def_config['USB-SINGLE'] = str(self.usb_single_ck.get_active())
-            self.def_config['XDEV'] = ' '.join(self.zdev)
-            self.def_config['PHONE-ACTION'] = str(self.hp_action.get_active_id())
-            self.def_config['PHONE-DEVICE'] = str(self.hp_device.get_active_id())
-            self.def_config['MONITOR'] = str(self.monitor_combo.get_active_id())
-            self.config.write(rc_file)
+        with open(c_file, 'w') as json_file:
+            json.dump(self.conf_db, json_file, indent = 4)
+            json_file.write("\n")
+            return
+
 
     def signal_autojack(self, signal):
         global autojack
