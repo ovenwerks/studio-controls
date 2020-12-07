@@ -3,7 +3,7 @@
 global version
 global config_path
 global new_name
-version = "2.1.0-pre"
+version = "2.0.21-pre"
 config_path = "~/.config/autojack/"
 new_name = f"{config_path}autojack.json"
 
@@ -153,7 +153,7 @@ def make_db():
     global our_db
     global default_device
     
-    our_db = {'Version': version}
+    our_db = {'version': version}
     our_db['log-level'] = int(def_config['log-level'])
     jack_db = {'on': bool(def_config['jack'] in ['True']), 'driver': def_config['driver'],
                 'chan-in': int(def_config['chan-in']), 'chan-out': int(def_config['chan-out']),

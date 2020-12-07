@@ -279,6 +279,7 @@ class StudioControls:
         self.message_dialog_rt_info = builder.get_object('message_dialog_rt_info')
         self.message_dialog_changes_info.set_transient_for(self.window_main)
         self.message_dialog_rt_info.set_transient_for(self.window_main)
+        self.title_label = builder.get_object('label_main_top')
         self.button_msg_ok = builder.get_object('button_msg_ok')
         '''Get buttons for system tab'''
         self.rt_button = builder.get_object('rt_button')
@@ -335,7 +336,7 @@ class StudioControls:
         '''Dbus monitoring'''
         user_bus = dbus.SessionBus()
         user_bus.add_signal_receiver(self.db_ses_cb, dbus_interface='org.studio.control.event',
-                                     signal_name='V3_4_signal')
+                                     signal_name='V3_5_signal')
         user_bus.add_signal_receiver(self.db_new_usb, dbus_interface='org.studio.control.event',
                                      signal_name='usb_signal')
 
@@ -424,6 +425,7 @@ class StudioControls:
         self.jackdb = self.conf_db['jack']
         self.extra = self.conf_db['extra']
 
+        self.title_label.set_text(f"Studio Set Up Utility (version: {self.conf_db['version']})")
         # Find out if jack is running
         try:
             client = jack.Client('controls', use_exact_name=False, no_start_server=True)
@@ -845,10 +847,15 @@ class StudioControls:
             self.xdev_rate_drop.append(str(rate), str(rate))
         self.xdev_rate_drop.set_active_id(str(sub_db['rate']))
         for frame in frames:
-            if dev_db['hdmi'] and frame == 4096:
-                self.xdev_buff_drop.append(str(frame), str(frame))
-            elif dev_db['internal'] and frame > 64:
-                self.xdev_buff_drop.append(str(frame), str(frame))
+            if dev_db['hdmi']:
+                if frame == 4096:
+                    self.xdev_buff_drop.append(str(frame), str(frame))
+            elif dev_db['internal']:
+                if frame > 64:
+                    self.xdev_buff_drop.append(str(frame), str(frame))
+            elif dev_db['usb']:
+                if frame > 16:
+                    self.xdev_buff_drop.append(str(frame), str(frame))
             else:
                 self.xdev_buff_drop.append(str(frame), str(frame))
         self.xdev_buff_drop.set_active_id(str(sub_db['frame']))

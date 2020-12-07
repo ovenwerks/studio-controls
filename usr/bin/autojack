@@ -734,7 +734,7 @@ def msg_cb_new(*args, **kwargs):
         audio_if = a_if[1].split(".", 1)[0]
         dev_db = {}
         for dev_name in conf_db['devices']:
-            print(f"devdb number: {conf_db['devices'][dev_name]['number']} audioif: {audio_if}")
+            #print(f"devdb number: {conf_db['devices'][dev_name]['number']} audioif: {audio_if}")
             if str(conf_db['devices'][dev_name]['number']) == audio_if:
                 dev_db = conf_db['devices'][dev_name]
             # make sure device is USB and is not midi only
@@ -1052,7 +1052,7 @@ def ses_cb_ping(*args, **kwargs):
     ''' dbus call back when config signal caught '''
     logging.info("Got ping signal.")
     time.sleep(3)
-    subprocess.run(["/usr/bin/dbus-send", "--type=signal", "/", "org.studio.control.event.V3_4_signal"],
+    subprocess.run(["/usr/bin/dbus-send", "--type=signal", "/", "org.studio.control.event.V3_5_signal"],
                    shell=False)
 
 
@@ -1339,7 +1339,7 @@ def main():
     subprocess.run(["/usr/bin/dbus-send", "--type=signal", "/",
                     "org.studio.control.event.start_signal"], shell=False)
     subprocess.run(["/usr/bin/dbus-send", "--type=signal", "/",
-                    "org.studio.control.event.V3_4_signal"], shell=False)
+                    "org.studio.control.event.V3_5_signal"], shell=False)
 
     timeout_id = GLib.timeout_add(500, check_jack_status, None)
 
