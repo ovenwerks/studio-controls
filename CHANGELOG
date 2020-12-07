@@ -20,6 +20,8 @@ studio-controls version 2.0.21
  - Allow setting each device's parameters
  - Change GUI to show one extra device at a time
  - Allow setting non-USB device backup when USB device in use
+ - Update ping version to make sure autojack will use new config file
+ - Fix extra devices latency limits
  - Bugfixes
 
 studio-controls version 2.0.9

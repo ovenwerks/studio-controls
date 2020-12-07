@@ -146,6 +146,11 @@ def import_device_array():
     global conf_db
     devices = conf_db['devices']
     ndevs = 0
+    for this_dev in devices:
+        devices[this_dev]['firewire'] = False
+        for this_sub in devices[this_dev]['sub']:
+            devices[this_dev]['sub'][this_sub]['play-pid'] = 0
+            devices[this_dev]['sub'][this_sub]['cap-pid'] = 0
 
     if os.path.exists("/proc/asound/cards"):
         with open("/proc/asound/cards", "r") as cards_file:
@@ -247,6 +252,7 @@ def import_config(caller):
     logger.setLevel(int(conf_db['log-level']))
     logging.log(7, f"log level: {str(conf_db['log-level'])}")
     import_device_array()
+    logging.log(7, json.dumps(conf_db, indent = 4))
 
 
 def reconfig():
