@@ -266,7 +266,7 @@ def write_new():
     c_file = expanduser(new_name)
     if not os.path.isfile(c_file):
         # either first run or old version
-        c_dir = expanduser(self.config_path)
+        c_dir = expanduser(config_path)
         if not os.path.isdir(c_dir):
             os.makedirs(c_dir)
 
