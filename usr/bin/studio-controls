@@ -793,24 +793,32 @@ class StudioControls:
             self.redraw_extra(a_id)
 
     def xdev_changed(self, widget):
-        return
-        #self.current_ex_dev
-        dev_db = self.conf_db['devices'][next_device.split(',')[0]]
-        sub_db = dev_db['sub'][str(next_device.split(',')[1])]
-        self.cap_chan_spin.set_value(sub_db['cap-chan'])
-        self.play_chan_spin.set_value(sub_db['play-chan'])
-        self.hide_check.set_active(sub_db['hide'])
-        #for rate in dev_db['rates']:
+        #self.xdev_select.set_sensitive(False)
+        self.cap_chan_spin.set_sensitive(False)
+        self.play_chan_spin.set_sensitive(False)
+        self.hide_check.set_sensitive(False)
+        self.xdev_rate_drop.set_sensitive(False)
+        self.xdev_buff_drop.set_sensitive(False)
+        self.xdev_nperiods_drop.set_sensitive(False)
+        this_dev = str(self.xdev_select.get_active_id())
+        dev_db = self.conf_db['devices'][this_dev.split(',')[0]]
+        sub_db = dev_db['sub'][str(this_dev.split(',')[1])]
 
-        # below still to do
-        self.jack_device_combo.set_sensitive(False)
-        self.jack_usb_dev_combo.set_sensitive(False)
-        self.chan_in_spin.set_sensitive(False)
-        self.chan_out_spin.set_sensitive(False)
-        self.combo_periods.set_sensitive(False)
-        self.xdev_select.set_sensitive(False)
-
-        return
+        sub_db['cap-chan'] = self.cap_chan_spin.get_value_as_int()
+        sub_db['play-chan'] = self.play_chan_spin.get_value_as_int()
+        sub_db['hide'] = self.hide_check.get_active()
+        sub_db['rate'] = int(self.xdev_rate_drop.get_active_id())
+        sub_db['frame'] = int(self.xdev_buff_drop.get_active_id())
+        sub_db['nperiods'] = int(self.xdev_nperiods_drop.get_active_id())
+        print(json.dumps(sub_db, indent = 4))
+        #get_value_as_int
+        self.hide_check.set_sensitive(True)
+        if not sub_db['hide']:
+            self.cap_chan_spin.set_sensitive(True)
+            self.play_chan_spin.set_sensitive(True)
+            self.xdev_rate_drop.set_sensitive(True)
+            self.xdev_buff_drop.set_sensitive(True)
+            self.xdev_nperiods_drop.set_sensitive(True)
 
     def redraw_extra(self, next_device):
         ''' change all widgets to reflect current values of the
@@ -1338,18 +1346,18 @@ class StudioControls:
         
         #"on": true,
         #jack_db['driver'] = str(self.combo_backend.get_active_id())
-        self.jackdb['chan-in'] = str(int(self.chan_in_spin.get_value()))
-        self.jackdb['chan-out'] = str(int(self.chan_out_spin.get_value()))
-        self.jackdb['rate'] = str(self.jack_rate_combo.get_active_id())
-        self.jackdb['frame'] = str(self.combobox_late.get_active_id())
-        self.jackdb['period'] = str(self.combo_periods.get_active_id())
+        self.jackdb['chan-in'] = int(self.chan_in_spin.get_value())
+        self.jackdb['chan-out'] = int(self.chan_out_spin.get_value())
+        self.jackdb['rate'] = int(self.jack_rate_combo.get_active_id())
+        self.jackdb['frame'] = int(self.combobox_late.get_active_id())
+        self.jackdb['period'] = int(self.combo_periods.get_active_id())
         self.jackdb['connect-mode'] = str(self.jk_connect_mode.get_active_id())
         #        "dev": "AudioFire12,0,0"
         #"usbdev": ""  these two should already be correct
 
-        self.extra['a2j'] = str(self.jack_midi_check.get_active())
-        self.extra['usbauto'] = str(self.usb_plug_check.get_active())
-        self.extra['usb-single'] = str(self.usb_single_ck.get_active())
+        self.extra['a2j'] = self.jack_midi_check.get_active()
+        self.extra['usbauto'] = self.usb_plug_check.get_active()
+        self.extra['usb-single'] = self.usb_single_ck.get_active()
         self.extra['monitor'] = str(self.monitor_combo.get_active_id())
         self.extra['phone-action'] = str(self.hp_action.get_active_id())
         self.extra['phone-device'] = str(self.hp_device.get_active_id())
