@@ -794,6 +794,8 @@ class StudioControls:
 
     def xdev_changed(self, widget):
         #self.xdev_select.set_sensitive(False)
+        if not self.xdev_select.get_sensitive():
+            return
         self.cap_chan_spin.set_sensitive(False)
         self.play_chan_spin.set_sensitive(False)
         self.hide_check.set_sensitive(False)
@@ -801,6 +803,7 @@ class StudioControls:
         self.xdev_buff_drop.set_sensitive(False)
         self.xdev_nperiods_drop.set_sensitive(False)
         this_dev = str(self.xdev_select.get_active_id())
+        print(f"xdev changed, this dev: {this_dev}")
         dev_db = self.conf_db['devices'][this_dev.split(',')[0]]
         sub_db = dev_db['sub'][str(this_dev.split(',')[1])]
 
