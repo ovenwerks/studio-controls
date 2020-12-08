@@ -442,8 +442,8 @@ class StudioControls:
         self.combo_backend.set_active_id(self.jackdb['driver'])
         self.chan_in_spin.set_range(1, 128)
         self.chan_out_spin.set_range(1, 128)
-        self.chan_in_spin.set_value(self.jackdb['chan-in'])
-        self.chan_out_spin.set_value(self.jackdb['chan-out'])
+        self.chan_in_spin.set_value(int(self.jackdb['chan-in']))
+        self.chan_out_spin.set_value(int(self.jackdb['chan-out']))
         self.jack_midi_check.set_active(self.extra['a2j'])
         # Fill Extra devices widgets
         self.usb_plug_check.set_active(self.extra['usbauto'])
