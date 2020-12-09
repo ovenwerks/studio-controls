@@ -163,15 +163,16 @@ class DevDB:
         if os.path.exists(f"/proc/asound/card{str(x)}/usbbus"):
             l_usb = True
             # can get supported rates from /proc/asound/card{str(x)}/stream0
-            with open(f"/proc/asound/card{str(x)}/stream0", "r") as card_file:
-                rates = []
-                for line in card_file:
-                    if 'Rates:' in line:
-                        fnd_rates = line.split()[1:]
-                        for rate in fnd_rates:
-                            rate = rate.split(',')[0]
-                            if not rate in rates:
-                                rates.append(rate)
+            if os.path.exists(f"/proc/asound/card{str(x)}/stream0"):
+                with open(f"/proc/asound/card{str(x)}/stream0", "r") as card_file:
+                    rates = []
+                    for line in card_file:
+                        if 'Rates:' in line:
+                            fnd_rates = line.split()[1:]
+                            for rate in fnd_rates:
+                                rate = rate.split(',')[0]
+                                if not rate in rates:
+                                    rates.append(rate)
         if os.path.exists(f"/proc/asound/card{str(x)}/codec#0"):
             l_internal = True
             # can get supported rates from file above
@@ -250,6 +251,12 @@ class StudioControls:
                 time.sleep(1)
         with open(lock_file, "w") as lk_file:
             lk_file.write(new_pid)
+        self.version = ""
+        vfile = "/usr/share/studio-controls/version"
+        if os.path.isfile(vfile):
+            with open(vfile, "r") as version_file:
+                for line in version_file:
+                    self.version = line.strip()
 
         signal.signal(signal.SIGHUP, self.sig_handler)
         signal.signal(signal.SIGINT, self.sig_handler)
@@ -281,6 +288,7 @@ class StudioControls:
         self.message_dialog_rt_info.set_transient_for(self.window_main)
         self.title_label = builder.get_object('label_main_top')
         self.button_msg_ok = builder.get_object('button_msg_ok')
+        self.title_label.set_text(f"Studio Set Up Utility (version: {self.version})")
         '''Get buttons for system tab'''
         self.rt_button = builder.get_object('rt_button')
         self.rt_warning = builder.get_object('rt_warning')
@@ -425,7 +433,6 @@ class StudioControls:
         self.jackdb = self.conf_db['jack']
         self.extra = self.conf_db['extra']
 
-        self.title_label.set_text(f"Studio Set Up Utility (version: {self.conf_db['version']})")
         # Find out if jack is running
         try:
             client = jack.Client('controls', use_exact_name=False, no_start_server=True)
@@ -803,7 +810,6 @@ class StudioControls:
         self.xdev_buff_drop.set_sensitive(False)
         self.xdev_nperiods_drop.set_sensitive(False)
         this_dev = str(self.xdev_select.get_active_id())
-        print(f"xdev changed, this dev: {this_dev}")
         dev_db = self.conf_db['devices'][this_dev.split(',')[0]]
         sub_db = dev_db['sub'][str(this_dev.split(',')[1])]
 
@@ -813,7 +819,6 @@ class StudioControls:
         sub_db['rate'] = int(self.xdev_rate_drop.get_active_id())
         sub_db['frame'] = int(self.xdev_buff_drop.get_active_id())
         sub_db['nperiods'] = int(self.xdev_nperiods_drop.get_active_id())
-        print(json.dumps(sub_db, indent = 4))
         #get_value_as_int
         self.hide_check.set_sensitive(True)
         if not sub_db['hide']:

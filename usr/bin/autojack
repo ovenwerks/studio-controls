@@ -745,7 +745,7 @@ def msg_cb_new(*args, **kwargs):
             #print(f"devdb number: {conf_db['devices'][dev_name]['number']} audioif: {audio_if}")
             if str(conf_db['devices'][dev_name]['number']) == audio_if:
                 dev_db = conf_db['devices'][dev_name]
-            # make sure device is USB and is not midi only
+                # make sure device is USB and is not midi only
                 if dev_db['usb'] and len(dev_db['sub']):
                     # tell gui devicelist has changed so it can up date device dropdowns
                     subprocess.run(["/usr/bin/dbus-send", "--type=signal", "/", "org.studio.control.event.usb_signal"],

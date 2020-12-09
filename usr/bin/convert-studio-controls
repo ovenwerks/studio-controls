@@ -3,7 +3,6 @@
 global version
 global config_path
 global new_name
-version = "2.0.21-pre"
 config_path = "~/.config/autojack/"
 new_name = f"{config_path}autojack.json"
 
@@ -17,11 +16,16 @@ import json
 
 def read_old():
     ''' read old config file. '''
-    print("read_old")
+    print("read old file")
     global config
     global def_config
     global version
     global default_device
+    vfile = "/usr/share/studio_controls/version"
+    if os.path.isfile(vfile):
+        with open(vfile, "r") as version_file:
+            for line in version_file:
+                version = line.strip()
     config = configparser.ConfigParser()
     def_config = config['DEFAULT']
     config_path = "~/.config/autojack"
@@ -147,7 +151,7 @@ def make_db():
                 }
             }...
     '''
-    print("make_db")
+    print("make new data base")
     global def_config
     global version
     global our_db
@@ -258,7 +262,7 @@ def make_sub_temp():
 
 def write_new():
     ''' write new config file '''
-    print("write_new")
+    print("write new config file")
     global our_db
     #print(f"our-db {str(our_db)}")
     #print(json.dumps(our_db, indent = 4))
