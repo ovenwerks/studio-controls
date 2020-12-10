@@ -460,8 +460,8 @@ class StudioControls:
         else:
             self.usb_single_ck.set_sensitive(False)
             self.usb_single_ck.set_active(self.extra['usb-single'])
-        self.hp_action = builder.get_object('hp_action')
-        self.hp_switch = builder.get_object('hp_switch')
+        #self.hp_action = builder.get_object('hp_action')
+        #self.hp_switch = builder.get_object('hp_switch')
         
         # pulse bridge defaults
         self.pj_in_count.set_range(1, 10)
@@ -472,6 +472,7 @@ class StudioControls:
         self.refresh_dropdowns()
         self.pj_in_bridge = ""
         self.pj_out_bridge = ""
+        #self.refresh_pulse_io()
         self.refresh_pulse_tab(self.pj_in_bridge, self.pj_out_bridge)
 
         handlers = {
@@ -935,6 +936,7 @@ class StudioControls:
         self.monitor_combo.set_sensitive(False)
 
         in_db = self.conf_db['pulse']['inputs']
+        in_exists = False
         if in_db != {}:
             in_exists = True
             if self.pj_in_bridge == "":
@@ -946,10 +948,12 @@ class StudioControls:
         self.pj_in_con.set_active_id('none')
         if in_exists:
             our_con = in_db[self.pj_in_bridge]['connection']
-            self.pj_in_con.append(our_con, our_con)
-            self.pj_in_con.set_active_id(our_con)
+            if our_con != 'none':
+                self.pj_in_con.append(our_con, our_con)
+                self.pj_in_con.set_active_id(our_con)
 
         out_db = self.conf_db['pulse']['outputs']
+        out_exists = False
         if out_db != {}:
             out_exists = True
             if self.pj_out_bridge == "":
@@ -962,7 +966,7 @@ class StudioControls:
         self.pj_out_con.set_active_id('none')
         if out_exists:
             our_con = out_db[self.pj_out_bridge]['connection']
-            if our_con != "monitor":
+            if our_con != "monitor" and our_con != 'none':
                 self.pj_out_con.append(our_con, our_con)
             self.pj_out_con.set_active_id(our_con)
 
@@ -974,96 +978,42 @@ class StudioControls:
         if jack_alive:
             # get capture ports with audio and hardware
             jack_cap = jack_client.get_ports("", is_audio=True, is_output=True, is_physical=True)
-            left_ch = True
+            extra = ""
             last_dev = ""
-            last_port = ""
             for jport in jack_cap:
-                if left_ch:
-                    extra = ""
                 port = jport.name
                 dev = port.split(':', 1)[0]
                 paliases = jport.aliases
                 for palias in paliases:
                     adev = palias.split(':', 1)[0]
                     if adev == "system":
-                        if left_ch:
-                            extra = f" <{dev}>"
+                        extra = f" <{dev}>"
                         dev = adev
                         port = palias
-                if left_ch:
-                    last_dev = dev
-                    last_port = port
-                    left_ch = False
-                else:
-                    this_port = last_port
-                    if dev == last_dev:
-                        right_ch = port.rsplit('_', 1)[1]
-                        self.pj_in_con.append(last_port, f"{last_port} and {str(right_ch)}{extra}")
-                        left_ch = True
-                    else:
-                        self.pj_in_con.append(last_port, f"{last_port} (mono){extra}")
-                        last_dev = dev
-                        last_port = port
-                    #   our_con = in_db[self.pj_in_bridge]['connection']
-
-                    if in_exists and this_port == in_db[self.pj_in_bridge]['connection']:
-                        self.pj_in_con.remove(self.pj_in_con.get_active())
-                        self.pj_in_con.set_active_id(this_port)
-            if not left_ch:
-                self.pj_in_con.append(last_port, f"{last_port} (mono){extra}")
-                if in_exists and last_port == in_db[self.pj_in_bridge]['connection']:
+                self.pj_in_con.append(port, f"{port} {extra}")
+                if in_exists and port == in_db[self.pj_in_bridge]['connection']:
                     self.pj_in_con.remove(self.pj_in_con.get_active())
-                    self.pj_in_con.set_active_id(last_port)
+                    self.pj_in_con.set_active_id(port)
 
             jack_play = jack_client.get_ports("", is_audio=True, is_input=True, is_physical=True)
-            left_ch = True
+            extra = ""
             last_dev = ""
-            last_port = ""
             for jport in jack_play:
-                if left_ch:
-                    extra = ""
                 port = jport.name
                 dev = port.split(':', 1)[0]
                 paliases = jport.aliases
                 for palias in paliases:
                     adev = palias.split(':', 1)[0]
                     if adev == "system":
-                        if left_ch:
-                            extra = f" <{dev}>"
+                        extra = f" <{dev}>"
                         dev = adev
                         port = palias
-                if left_ch:
-                    last_dev = dev
-                    last_port = port
-                    left_ch = False
-                else:
-                    this_port = last_port
-                    if dev == last_dev:
-                        right_ch = port.rsplit('_', 1)[1]
-                        self.pj_out_con.append(last_port, f"{last_port} and {str(right_ch)}{extra}")
-                        self.monitor_combo.append(last_port, f"{last_port} and {str(right_ch)}{extra}")
-                        left_ch = True
-                    else:
-                        self.pj_out_con.append(last_port, f"{last_port} (mono){extra}")
-                        self.monitor_combo.append(last_port, f"{last_port} (mono){extra}")
-                        last_dev = dev
-                        last_port = port
-
-                    #our_con = out_db[self.pj_out_bridge]['connection']
-                    if out_exists and this_port == out_db[self.pj_out_bridge]['connection']:
-                        self.pj_out_con.remove(self.pj_out_con.get_active())
-                        self.pj_out_con.set_active_id(this_port)
-                    if this_port == monitor:
-                        self.monitor_combo.remove(self.monitor_combo.get_active())
-                        self.monitor_combo.set_active_id(monitor)
-                    left_ch = True
-            if not left_ch:
-                self.pj_out_con.append(last_port, f"{last_port} (mono){extra}")
-                self.monitor_combo.append(last_port, f"{last_port} (mono){extra}")
-                if out_exists and last_port == out_db[self.pj_out_bridge]['connection']:
+                self.pj_out_con.append(port, f"{port} {extra}")
+                self.monitor_combo.append(port, f"{port} {extra}")
+                if out_exists and port == out_db[self.pj_out_bridge]['connection']:
                     self.pj_out_con.remove(self.pj_out_con.get_active())
-                    self.pj_out_con.set_active_id(last_port)
-                if last_port == monitor:
+                    self.pj_out_con.set_active_id(port)
+                if port == monitor:
                     self.monitor_combo.remove(self.monitor_combo.get_active())
                     self.monitor_combo.set_active_id(monitor)
 
@@ -1104,12 +1054,12 @@ class StudioControls:
                 self.pj_in_combo.append(bridge, bridge)
                 if not i_in:
                     i_in = bridge
-                    break
             self.pj_in_combo.set_active_id(i_in)
             self.pj_in_name.set_text(i_in)
-            self.pj_in_count.set_value(in_db[bridge]['count'])
-            self.pj_in_con.set_active_id(in_db[bridge]['connection'])
-                    
+            self.pj_in_count.set_value(in_db[i_in]['count'])
+            self.pj_in_con.set_active_id(in_db[i_in]['connection'])
+        self.pj_in_bridge = i_in
+
         if out_db == {}:
             # no bridges
             self.pj_out_combo.set_active(0)
@@ -1121,11 +1071,11 @@ class StudioControls:
                 self.pj_out_combo.append(bridge, bridge)
                 if not i_out:
                     i_out = bridge
-                    break
             self.pj_out_combo.set_active_id(i_out)
             self.pj_out_name.set_text(i_out)
-            self.pj_out_count.set_value(out_db[bridge]['count'])
-            self.pj_out_con.set_active_id(out_db[bridge]['connection'])
+            self.pj_out_count.set_value(out_db[i_out]['count'])
+            self.pj_out_con.set_active_id(out_db[i_out]['connection'])
+        self.pj_out_bridge = i_out
 
         self.pj_in_combo.set_sensitive(True)
         self.pj_in_name.set_sensitive(True)
@@ -1135,6 +1085,7 @@ class StudioControls:
         self.pj_out_count.set_sensitive(True)
         self.pj_in_con.set_sensitive(True)
         self.pj_out_con.set_sensitive(True)
+        # rebuild the the connection dropdowns
         jack_ports_changed = True
 
 
@@ -1144,12 +1095,14 @@ class StudioControls:
         if not widget.get_sensitive():
             return
         temp_db =self.conf_db['pulse']['inputs']
-        if len(temp_db):
+        if temp_db != {}:
             old_name = self.pj_in_combo.get_active_id()
             new_name = self.pj_in_name.get_text().split()[0]
             if new_name != old_name:
                 if old_name in temp_db:
                     del temp_db[old_name]
+                    # because the bridge name is used as a key
+                    # it has to be removed and a new one created
                 temp_db[new_name] = {
                             'connection': f"{self.pj_in_con.get_active_id()}",
                             'count': int(self.pj_in_count.get_value_as_int())
@@ -1167,11 +1120,13 @@ class StudioControls:
         if not widget.get_sensitive():
             return
         temp_db =self.conf_db['pulse']['outputs']
-        if len(temp_db):
+        if temp_db != {}:
             old_name = self.pj_out_combo.get_active_id()
             new_name = self.pj_out_name.get_text().split()[0]
             if new_name != old_name:
                 if old_name in temp_db:
+                    # because the bridge name is used as a key
+                    # it has to be removed and a new one created
                     del temp_db[old_name]
                 temp_db[new_name] = {
                             'connection': f"{self.pj_out_con.get_active_id()}",
@@ -1240,7 +1195,7 @@ class StudioControls:
         done = False
         new_name = ""
         while not done:
-            new_name = f"pulse_in-{str(indx)}"
+            new_name = f"pulse_out-{str(indx)}"
             if not new_name in temp_db:
                 done = True
             else:
