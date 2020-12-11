@@ -113,7 +113,11 @@ class DevDB:
     def scan_dev(self, conf):
         ''' scan devices and create device db, scan config and add data'''
         ndevs = 0
+        # first reset device number to -1
+        for dev in conf['devices']:
+            conf['devices'][dev]['number'] = -1
 
+        # now find the real number
         if os.path.exists("/proc/asound/cards"):
             with open("/proc/asound/cards", "r") as cards_file:
                 for line in cards_file:
@@ -653,6 +657,7 @@ class StudioControls:
         all all alsa devices will still be available for bridging and
         as output device.'''
         #scan_dev(self, conf_db):
+        self.devdb.scan_dev(self.conf_db)
         xdev_current = self.xdev_select.get_active_id()
         self.current_ex_dev = xdev_current
 
@@ -672,11 +677,10 @@ class StudioControls:
         if self.jackdb['usbdev'] == "":
             self.jack_usb_dev_combo.set_active_id("none")
         else:
-            # this next bit should not be needed with device db
-            self.jack_usb_dev_combo.append(self.jackdb['usbdev'], self.jackdb['usbdev'])
+            if self.jackdb['usbdev'] != "none":
+                self.jack_usb_dev_combo.append(self.jackdb['usbdev'], self.jackdb['usbdev'])
             self.jack_usb_dev_combo.set_active_id(self.jackdb['usbdev'])
 
-        #this next bit should not be needed with new device db
         self.hp_device.get_model().clear()
         self.hp_device.append(self.extra['phone-device'], self.extra['phone-device'])
         self.hp_device.set_active_id(self.extra['phone-device'])
@@ -697,6 +701,7 @@ class StudioControls:
                 dname = ""
                 next_d = ""
                 if d_type != "":
+                    # we have an audio device (not MIDI)
                     subpath = f"/proc/asound/{str(this_dev)}/pcm{str(this_sub)}{str(d_type[0])}/sub0/info"
                     if os.path.exists(subpath):
                         with open(subpath, "r") as info_file:
@@ -715,7 +720,7 @@ class StudioControls:
                 else:
                     self.xdev_select.insert(0, next_id, next_d)
                 if not sub_db['hide']:
-                    #this should not appear in most drop downs
+                    # not hidden so we can add it
                     if not "Loopback" in [this_dev]:
                         self.hp_device.append(next_id, next_d)
                         if dev_db['usb']:

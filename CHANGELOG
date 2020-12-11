@@ -1,3 +1,12 @@
+studio-controls version 2.0.24-pre
+
+ [ Len Ovens ]
+ - Fix pulse widgets at startup
+ - Add more tooltips
+ - Remove duplicate device in USB JACK master
+ - Don't remove device type once set
+ - Reset device number before device scan
+
 studio-controls version 2.0.23-pre
 
  [ Len Ovens ]
