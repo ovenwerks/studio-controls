@@ -100,7 +100,7 @@ def get_dev_info(x):
         device['sub'] = {}
 
     for y in range(0, 20):
-        
+
         subdevice = {}
         cap = False
         cap_pid = 0
@@ -124,7 +124,7 @@ def get_dev_info(x):
 
         if play or cap:
             if not str(y) in device['sub']:
-                device['sub'][str(y)] = {'playback': True, 'capture': True, 
+                device['sub'][str(y)] = {'playback': True, 'capture': True,
                         'play-chan': 0, 'cap-chan': 0,
                         'rate': conf_db['jack']['rate'], 'frame': conf_db['jack']['frame'],
                         'nperiods': conf_db['jack']['period'], 'hide': False}
@@ -208,7 +208,7 @@ def extra_devices():
                 else:
                     if sub_db['cap-pid'] or sub_db['play-pid']:
                         kill_slave(fullname)
-                    
+
 
 def import_config(caller):
     ''' sets default parmeters, then reads values from configuration file'''
@@ -262,16 +262,58 @@ def reconfig():
     to do this without stopping jack if not needed'''
     global phones
     global conf_db
+    global last_master
 
     old_conf_db = copy.deepcopy(conf_db)
     import_config("reconfig")
+    ol_jkdb = old_conf_db['jack']
+    jackdb = conf_db['jack']
 
-    if old_conf_db['jack'] != conf_db['jack']:
+    old_jack = [ol_jkdb['on'], ol_jkdb['driver'], ol_jkdb['dev']]
+    new_jack = [jackdb['on'], jackdb['driver'], jackdb['dev']]
+    if old_jack != new_jack:
         config_start()
         return
+    if ol_jkdb['usbdev'] != jackdb['usbdev']
+        if ol_jkdb['usbdev'] == last_master:
+            config_start()
+            return
+        if conf_db['devices'][jackdb['usbdev']]['number'] != -1:
+            config_start()
+            return
     if not conf_db['jack']['on']:
         return
         # no use checking anything else
+
+    old_jack = [ol_jkdb['rate'], ol_jkdb['frame'], ol_jkdb['period'],
+            ol_jkdb['connect-mode'], ol_jkdb['chan-in'], ol_jkdb['chan-out']]
+    new_jack = [jackdb['rate'], jackdb['frame'], jackdb['period'],
+            jackdb['connect-mode'], jackdb['chan-in'], jackdb['chan-out']]
+    if old_jack != new_jack:
+        bus = dbus.SessionBus()
+
+        controller = bus.get_object(service_name, "/org/jackaudio/Controller")
+        control_iface = dbus.Interface(controller, control_interface_name)
+        configure_iface = dbus.Interface(controller, configure_interface_name)
+
+        if jackdb['connect-mode'] != 'n':
+            configure_iface.SetParameterValue(['engine', 'self-connect-mode'],
+                dbus.Byte(ord(jackdb['connect-mode'])))
+        time.sleep(.2)
+        configure_iface.SetParameterValue(['driver', 'rate'], dbus.UInt32(jackdb['rate']))
+        time.sleep(.2)
+        configure_iface.SetParameterValue(['driver', 'period'], dbus.UInt32(jackdb['frame']))
+        if jackdb['driver'] != "dummy":
+            configure_iface.SetParameterValue(['driver', 'nperiods'],
+                dbus.UInt32(jackdb['period']))
+        else:
+            configure_iface.SetParameterValue(['driver', 'capture'],
+                dbus.UInt32(conf_db['jack']['chan-in']))
+            configure_iface.SetParameterValue(['driver', 'playback'],
+                dbus.UInt32(conf_db['jack']['chan_out']))
+            configure_iface.SetParameterValue(['driver', 'monitor'], True)
+        time.sleep(2)
+        control_iface.SwitchMaster()
 
     pulse_dirty = False
     if old_conf_db['pulse']['inputs'] != conf_db['pulse']['inputs']:
@@ -341,6 +383,9 @@ def config_start():
     global control_interface_name
     global configure_interface_name
     global service_name
+    global jack_died
+
+    jack_died = True
 
     logging.info("Running: config_start()")
 
@@ -403,7 +448,7 @@ def config_start():
 
     # Now start jackdbus with the configured device
     if conf_db['jack']['connect-mode'] != 'n':
-        configure_iface.SetParameterValue(['engine', 'self-connect-mode'], 
+        configure_iface.SetParameterValue(['engine', 'self-connect-mode'],
             dbus.Byte(ord(conf_db['jack']['connect-mode'])))
 
     if conf_db['jack']['driver'] == "firewire":
@@ -753,7 +798,7 @@ def msg_cb_new(*args, **kwargs):
                     logging.debug(f"USB device {dev_name} has been plugged in")
                     # why are we importing config again?
                     #import_config("msg_cb_new")
-        
+
                     for subn in dev_db['sub']:
                         subname = f"{dev_name},{str(subn)},0"
                         if subname == last_master:
@@ -763,7 +808,7 @@ def msg_cb_new(*args, **kwargs):
                         sub_db = dev_db['sub'][subn]
                         logging.debug(f" device = {subname} play:{str(sub_db['playback'])}"
                                     f" capture:{str(sub_db['capture'])}")
-        
+
                         if (conf_db['jack']['driver'] == "alsa") and (conf_db['jack']['usbdev'] == subname):
                             # change_jack_master(cid, "sm")
                             logging.debug(f"Changing jack master to: {subname}")
@@ -779,6 +824,7 @@ def msg_cb_removed(*args, **kwargs):
     ''' dbus call back when a USB device removal has been detected by udev '''
     global last_master
     global conf_db
+    global jack_died
 
     if not conf_db['jack']['on']:
         # then we don't care
@@ -810,6 +856,8 @@ def msg_cb_removed(*args, **kwargs):
                     subname = f"{dev_name},{str(subn)},0"
                     logging.debug(f"Subdevice {subname} unplugged")
                     if conf_db['jack']['usbdev'] == subname:
+                        # must get rid of our jack client
+                        jack_died = True
                         if last_master == conf_db['jack']['usbdev']:
                             kill_slave(conf_db['jack']['dev'])
                             time.sleep(1)
@@ -885,7 +933,7 @@ def start_slave(ldev):
         #don't start a slave blacklisted device
         logging.debug(f"Blacklisted: {ldev} don't start")
         return
-        
+
     buff_size = sub_db['frame']
     #should do play and capture separately
     if sub_db['play-pid'] or sub_db['cap-pid']:
@@ -1082,7 +1130,7 @@ def phones_switch(plugged):
     dname, l_dev, sub = conf_db['extra']['phone-device'].split(",", 2)
     dev_db = conf_db['devices'][dname]
     sub_db = dev_db['sub'][l_dev]
-    
+
     if conf_db['extra']['phone-action'] == "switch":
         logging.debug("Switching outputs")
         if dev_db['internal']:

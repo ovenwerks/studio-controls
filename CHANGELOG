@@ -6,6 +6,8 @@ studio-controls version 2.0.24-pre
  - Remove duplicate device in USB JACK master
  - Don't remove device type once set
  - Reset device number before device scan
+ - Make sure jack client is cleaned up with USB master unplug
+ - Don't restart jack unless we need to.
 
 studio-controls version 2.0.23-pre
 
