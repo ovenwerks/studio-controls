@@ -21,7 +21,7 @@ def read_old():
     global def_config
     global version
     global default_device
-    vfile = "/usr/share/studio_controls/version"
+    vfile = "/usr/share/studio-controls/version"
     if os.path.isfile(vfile):
         with open(vfile, "r") as version_file:
             for line in version_file:
@@ -156,6 +156,7 @@ def make_db():
     global version
     global our_db
     global default_device
+    print(f"version: {version}")
     
     our_db = {'version': version}
     our_db['log-level'] = int(def_config['log-level'])

@@ -8,6 +8,8 @@ studio-controls version 2.0.24-pre
  - Reset device number before device scan
  - Make sure jack client is cleaned up with USB master unplug
  - Don't restart jack unless we need to.
+ - Fix version file name in convert
+ - Add JACK log file rotate
 
 studio-controls version 2.0.23-pre
 

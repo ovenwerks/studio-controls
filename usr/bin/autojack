@@ -133,7 +133,7 @@ def get_dev_info(x):
             device['sub'][str(y)]['capture'] = cap
             device['sub'][str(y)]['play-pid'] = play_pid
             device['sub'][str(y)]['cap-pid'] = cap_pid
-    logging.log(7, f"Device name: {str(cname)}")
+    logging.log(7, f"Device scan found: {str(cname)}")
     #logging.log(7, json.dumps(device, indent = 4))
     #logging.log(7, f"Device list: {str(device)}")
 
@@ -174,6 +174,7 @@ def extra_devices():
     ''' set up all extra device as per configuration '''
     global conf_db
     global phones
+    logging.debug("updating extra devices")
 
     if not conf_db['jack']['on']:
         return
@@ -208,6 +209,7 @@ def extra_devices():
                 else:
                     if sub_db['cap-pid'] or sub_db['play-pid']:
                         kill_slave(fullname)
+    logging.debug("updating extra devices complete")
 
 
 def import_config(caller):
@@ -263,60 +265,40 @@ def reconfig():
     global phones
     global conf_db
     global last_master
+    logging.debug("reconfigure autojack")
 
     old_conf_db = copy.deepcopy(conf_db)
     import_config("reconfig")
     ol_jkdb = old_conf_db['jack']
     jackdb = conf_db['jack']
 
-    old_jack = [ol_jkdb['on'], ol_jkdb['driver'], ol_jkdb['dev']]
-    new_jack = [jackdb['on'], jackdb['driver'], jackdb['dev']]
+    old_jack = [ol_jkdb['on'], ol_jkdb['driver'], ol_jkdb['dev'],
+            ol_jkdb['rate'], ol_jkdb['frame'], ol_jkdb['period'],
+            ol_jkdb['connect-mode'], ol_jkdb['chan-in'], ol_jkdb['chan-out']]
+    new_jack = [jackdb['on'], jackdb['driver'], jackdb['dev'],
+            jackdb['rate'], jackdb['frame'], jackdb['period'],
+            jackdb['connect-mode'], jackdb['chan-in'], jackdb['chan-out']]
     if old_jack != new_jack:
+        logging.debug("change requires restart")
         config_start()
         return
-    if ol_jkdb['usbdev'] != jackdb['usbdev']
+    if ol_jkdb['usbdev'] != jackdb['usbdev']:
         if ol_jkdb['usbdev'] == last_master:
+            logging.debug("change requires restart")
             config_start()
             return
-        if conf_db['devices'][jackdb['usbdev']]['number'] != -1:
+        usb_name = jackdb['usbdev'].split(',')[0]
+        if jackdb['usbdev'] != 'none' and conf_db['devices'][usb_name]['number'] != -1:
+            logging.debug("change requires restart")
             config_start()
             return
     if not conf_db['jack']['on']:
         return
         # no use checking anything else
 
-    old_jack = [ol_jkdb['rate'], ol_jkdb['frame'], ol_jkdb['period'],
-            ol_jkdb['connect-mode'], ol_jkdb['chan-in'], ol_jkdb['chan-out']]
-    new_jack = [jackdb['rate'], jackdb['frame'], jackdb['period'],
-            jackdb['connect-mode'], jackdb['chan-in'], jackdb['chan-out']]
-    if old_jack != new_jack:
-        bus = dbus.SessionBus()
-
-        controller = bus.get_object(service_name, "/org/jackaudio/Controller")
-        control_iface = dbus.Interface(controller, control_interface_name)
-        configure_iface = dbus.Interface(controller, configure_interface_name)
-
-        if jackdb['connect-mode'] != 'n':
-            configure_iface.SetParameterValue(['engine', 'self-connect-mode'],
-                dbus.Byte(ord(jackdb['connect-mode'])))
-        time.sleep(.2)
-        configure_iface.SetParameterValue(['driver', 'rate'], dbus.UInt32(jackdb['rate']))
-        time.sleep(.2)
-        configure_iface.SetParameterValue(['driver', 'period'], dbus.UInt32(jackdb['frame']))
-        if jackdb['driver'] != "dummy":
-            configure_iface.SetParameterValue(['driver', 'nperiods'],
-                dbus.UInt32(jackdb['period']))
-        else:
-            configure_iface.SetParameterValue(['driver', 'capture'],
-                dbus.UInt32(conf_db['jack']['chan-in']))
-            configure_iface.SetParameterValue(['driver', 'playback'],
-                dbus.UInt32(conf_db['jack']['chan_out']))
-            configure_iface.SetParameterValue(['driver', 'monitor'], True)
-        time.sleep(2)
-        control_iface.SwitchMaster()
-
     pulse_dirty = False
     if old_conf_db['pulse']['inputs'] != conf_db['pulse']['inputs']:
+        logging.debug("reconfiguring pulse bridges")
         pulse_dirty = True
         # next line needs to be changed to use old_conf_db
         disconnect_pa(old_conf_db)
@@ -332,6 +314,7 @@ def reconfig():
             logging.debug(f"Load jackd_source: {cp.stdout.strip()}")
 
     if old_conf_db['pulse']['outputs'] != conf_db['pulse']['outputs']:
+        logging.debug("reconfiguring pulse bridges")
         if not pulse_dirty:
             pulse_dirty = True
             # next line needs to be changed to use old_conf_db
@@ -349,6 +332,7 @@ def reconfig():
             logging.debug(f"PA load jack-sink: {cp.stdout.strip()}")
 
     if old_conf_db['extra']['a2j'] != conf_db['extra']['a2j']:
+        logging.debug("reconfiguring MIDI bridge")
         cp = subprocess.run(["/usr/bin/killall", "-9", "a2jmidid"],
                             universal_newlines=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=False)
         logging.debug(f"kill old a2j: {cp.stdout.strip()}")
@@ -357,12 +341,15 @@ def reconfig():
             subprocess.Popen(["/usr/bin/a2jmidid", "-e"], shell=False).pid
 
     # extra devices compares what is to config and fixes things
+    logging.debug("Check extra devices")
     extra_devices()
 
     if conf_db['extra']['phone-device'] != old_conf_db['extra']['phone-device']:
+        logging.debug("reconfigure Headphones setup")
         phones = False
         phones_check()
     if conf_db['extra']['monitor'] != "system:playback_1" and not phones:
+        logging.debug("Check main outputs")
         mon_dev, ldev, temp = conf_db['extra']['monitor'].split('-')
         if not conf_db['devices'][mon_dev]['sub'][ldev] and conf_db['jack']['driver']  != "alsa" or mon_dev != last_master:
             start_slave(mon_dev)
@@ -585,7 +572,7 @@ def check_jack_status(user_data):
         jack_count = 0
 
         logfile = expanduser("~/.log/autojack.log")
-        if os.path.isfile(logfile) and os.path.getsize(logfile) > 100000:
+        if os.path.isfile(logfile) and os.path.getsize(logfile) > 200000:
             logging.debug("Log File getting large: rotate")
             for old_idx in range(5, -1, -1):
                 if old_idx:
@@ -597,6 +584,16 @@ def check_jack_status(user_data):
                     logging.basicConfig(filename=logfile, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
                                         level=conf_db['log-level'])
             logging.debug("Log File rotated")
+        logfile = expanduser("~/.log/jack/jackdbus.log")
+        if os.path.isfile(logfile) and os.path.getsize(logfile) > 200000:
+            logging.debug("JACK log File getting large: rotate")
+            for old_idx in range(5, -1, -1):
+                if old_idx:
+                    if os.path.isfile(f"{logfile}.{str(old_idx)}"):
+                        os.replace(f"{logfile}.{str(old_idx)}", f"{logfile}.{str(old_idx + 1)}")
+                else:
+                    os.replace(logfile, f"{logfile}.1")
+            logging.debug("JACK Log File rotated")
 
     if con_dirty and jack_alive:
         logging.debug("Connection changed")
@@ -691,8 +688,9 @@ def connect_pa():
     global jack_client
     global jack_alive
     if not jack_alive:
-        logging.debug("Can't connect, jack not running")
+        logging.debug("Can't connect pulse, jack not running")
         return
+    logging.debug("connect pulse bridges")
 
     for bridge in conf_db['pulse']['inputs']:
         connection = conf_db['pulse']['inputs'][bridge]['connection']
@@ -732,6 +730,7 @@ def disconnect_pa(our_config):
     if not jack_alive:
         logging.debug("Jack not running")
         return
+    logging.debug("disconnect pulse bridges")
     p_in_db = our_config['pulse']['inputs']
     p_out_db = our_config['pulse']['outputs']
     for bridge in p_in_db:
@@ -1248,6 +1247,7 @@ def ses_cb_phones(*args, **kwargs):
     else:
         phones_switch(True)
         phones = True
+    logging.debug(f"Manual phones switch to: {str(phones)}")
 
 
 def phones_plug(*args, **kwargs):
