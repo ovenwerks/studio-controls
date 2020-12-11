@@ -656,7 +656,6 @@ class StudioControls:
         and USB master are set to default and no usb master. However,
         all all alsa devices will still be available for bridging and
         as output device.'''
-        #scan_dev(self, conf_db):
         self.devdb.scan_dev(self.conf_db)
         xdev_current = self.xdev_select.get_active_id()
         self.current_ex_dev = xdev_current
@@ -670,16 +669,11 @@ class StudioControls:
 
         self.jack_device_combo.get_model().clear()
         self.xdev_select.get_model().clear()
-
         self.jack_usb_dev_combo.get_model().clear()
-        self.jack_usb_dev_combo.append("none", "No USB Master")
 
-        if self.jackdb['usbdev'] == "":
+        self.jack_usb_dev_combo.append("none", "No USB Master")
+        if self.jackdb['usbdev'] == "" or self.jackdb['usbdev'] == "none":
             self.jack_usb_dev_combo.set_active_id("none")
-        else:
-            if self.jackdb['usbdev'] != "none":
-                self.jack_usb_dev_combo.append(self.jackdb['usbdev'], self.jackdb['usbdev'])
-            self.jack_usb_dev_combo.set_active_id(self.jackdb['usbdev'])
 
         self.hp_device.get_model().clear()
         self.hp_device.append(self.extra['phone-device'], self.extra['phone-device'])
