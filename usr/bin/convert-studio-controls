@@ -3,15 +3,17 @@
 global version
 global config_path
 global new_name
+global old_name
 config_path = "~/.config/autojack/"
 new_name = f"{config_path}autojack.json"
+old_name = f"{config_path}/autojackrc"
 
 import os
 from os.path import expanduser
 import glob
 import configparser
 import json
-
+import sys, getopt
 
 
 def read_old():
@@ -21,15 +23,8 @@ def read_old():
     global def_config
     global version
     global default_device
-    vfile = "/usr/share/studio-controls/version"
-    if os.path.isfile(vfile):
-        with open(vfile, "r") as version_file:
-            for line in version_file:
-                version = line.strip()
     config = configparser.ConfigParser()
     def_config = config['DEFAULT']
-    config_path = "~/.config/autojack"
-    config_file = "{path}/autojackrc".format(path=config_path)
 
     default_device = "0,0,0"
     for adir in glob.glob("/proc/asound/card*/codec*"):
@@ -72,11 +67,12 @@ def read_old():
         "MONITOR": 'system:playback_1'
     }
 
-    c_file = expanduser(config_file)
+    c_file = expanduser(old_name)
     if os.path.isfile(c_file):
         # config file exists, read it in
         config.read(c_file)
-        # rename file *.back just in case
+        # rename to *.old
+        os.replace(c_file, f"{c_file}.bak")
     # fix some well known problems
     if def_config['MONITOR'] == "none":
         def_config['MONITOR'] = 'system:playback_1'
@@ -280,12 +276,106 @@ def write_new():
         json_file.write("\n")
     return
 
-def main():
-    read_old()
-    make_db()
-    write_new()
-    return
+def check_new(use_bk):
+    global new_name
+    global old_name
+    global our_db
+    global version
+    print(f"checking config file for compatability with version {version}")
+    c_file = expanduser(new_name)
+    if use_bk:
+        c_file = expanduser(old_name)
+    if os.path.isfile(c_file):
+        # config file exists, read it in
+        with open(c_file) as f:
+            our_db = json.load(f)
+    else:
+        print(f"Error, {c_file} not found.")
+        # set to 0 to not cause errors that stop something
+        sys.exit(0)
+
+    if our_db['version'] == version:
+        print(f"same version {version}, no fix needed")
+    else:
+        print(f"config file is version: {our_db['version']} updating")
+        print(f"saving old config file to: {c_file}.{our_db['version']}")
+        os.replace(c_file, f"{c_file}.{our_db['version']}")
+
+        maj, mn, sub_stuff = our_db['version'].split('.')
+        subls = sub_stuff.split('-')
+        sub = subls[0]
+        if int(maj) > 1:
+            #this is up to date major
+            if int(mn) > -1:
+                #this is up to date minor
+                if int(sub) > 20:
+                    #this is up to date sub
+                    # no change needed just update version
+                    our_db['version'] = version
+                else:
+                    print("print version unusable please run convert-studio-controls -r")
+                    return
+            else:
+                print("print version unusable please run convert-studio-controls -r")
+                return
+        else:
+            print("print version unusable please run convert-studio-controls -r")
+            return
+        write_new()
+
+
+def main(argv):
+
+    global config_path
+    global new_name
+    global old_name
+    global version
+    force = False
+    use_bk = False
+    vfile = "/usr/share/studio-controls/version"
+
+    # what is our version?
+    if os.path.isfile(vfile):
+        with open(vfile, "r") as version_file:
+            for line in version_file:
+                version = line.strip()
+                print(f"Convert Studio Conrols Config File (version {version})")
+
+    try:
+        opts, args = getopt.getopt(argv,"hrvb:")
+    except getopt.GetoptError:
+        print ('bad parameters')
+        sys.exit(2)
+    for opt, arg in opts:
+        if opt == '-h':
+            print ('convert-studio-controls is not meant to be run manually')
+            sys.exit()
+        elif opt in ("-r"):
+            # for testing pre json config
+            old_name = f"{old_name}.bak"
+            force = True
+        elif opt in ("-b"):
+            # for testing old json config
+            old_name = f"{new_name}.{arg}"
+            use_bk = True
+        elif opt in ("-v"):
+            print(f"Convert Studio Controls config Version: {version}")
+            sys.exit()
+
+    c_file = expanduser(new_name)
+    if not force and os.path.isfile(c_file):
+        # Found a config file, test it
+        check_new(use_bk)
+    else:
+        ''' no usable config file found.
+            - search for pre json config and convert
+            - or use defaults and create one
+            - if force is True then use .bak on file name
+        '''
+        read_old()
+        make_db()
+        write_new()
 
 if __name__ == '__main__':
-    main()
+    main(sys.argv[1:])
 

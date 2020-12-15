@@ -403,6 +403,7 @@ def config_start():
                     universal_newlines=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=False)
         logging.debug(f"JACK is {str(conf_db['jack']['on'])} restart pulse: {cp.stdout.strip()}")
         return
+    logging.debug(f"JACK is {str(conf_db['jack']['on'])} start up jack")
 
     # Assume start of session where pulse may be fully loaded
     # get rid of anything that can automatically interfere
@@ -1348,6 +1349,10 @@ def main():
     logging.basicConfig(filename=logfile, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s', level=logging.DEBUG)
     logging.info('Autojack started: logging started')
     print("logging started")
+
+    cp = subprocess.run(["/usr/bin/convert-studio-controls"],
+        universal_newlines=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=False)
+    logging.debug(f"check config file: {cp.stdout.strip()}")
 
     phones_check()
     dbus.mainloop.glib.DBusGMainLoop(set_as_default=True)

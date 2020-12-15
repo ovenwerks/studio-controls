@@ -1287,13 +1287,13 @@ class StudioControls:
     def cb_jack_start(self, button):
         ''' call back for Jack (re)start button'''
         global autojack
-        self.jackdb['on'] = "True"
+        self.jackdb['on'] = True
         self.config_save()
         self.signal_autojack("start")
 
     def cb_jack_stop(self, button):
         global autojack
-        self.jackdb['on'] = "False"
+        self.jackdb['on'] = False
         self.config_save()
         self.signal_autojack("stop")
 
@@ -1306,16 +1306,12 @@ class StudioControls:
     def config_save(self):
         ''' Write audio setting to ~/.config/autojack/autojackrc'''
         
-        #"on": true,
-        #jack_db['driver'] = str(self.combo_backend.get_active_id())
         self.jackdb['chan-in'] = int(self.chan_in_spin.get_value())
         self.jackdb['chan-out'] = int(self.chan_out_spin.get_value())
         self.jackdb['rate'] = int(self.jack_rate_combo.get_active_id())
         self.jackdb['frame'] = int(self.combobox_late.get_active_id())
         self.jackdb['period'] = int(self.combo_periods.get_active_id())
         self.jackdb['connect-mode'] = str(self.jk_connect_mode.get_active_id())
-        #        "dev": "AudioFire12,0,0"
-        #"usbdev": ""  these two should already be correct
 
         self.extra['a2j'] = self.jack_midi_check.get_active()
         self.extra['usbauto'] = self.usb_plug_check.get_active()
