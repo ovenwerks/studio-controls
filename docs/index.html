@@ -2,9 +2,9 @@
 <html>
 <head>
 <title>Studio Controls</title>
-<meta name="generator" content="Bluefish 2.2.10" >
+<meta name="generator" content="Bluefish 2.2.11" >
 <meta name="author" content="Len Ovens" >
-<meta name="date" content="2020-12-15T12:17:59-0800" >
+<meta name="date" content="2020-12-16T09:08:56-0800" >
 <meta name="copyright" content="copyright Len Ovens 2020">
 <meta name="keywords" content="">
 <meta name="description" content="">
@@ -16,69 +16,98 @@
 </head>
 <body>
 
-<h2>Studio Controls</h2>
+<h1>Studio Controls</h1>
+<table>
+<tr>
+	<td>
+		<img src="img/studio-controls.png" width="128" height="128" alt="logo">
+	</td>
+	<td>
+		<p>
+		Studio Controls is the easiest and best way to configure your Linux-based audio installation for real-time audio. Studio Controls has several key features that make it unique:
+		</p>
+		<ul>
+			<li>Adjusts the CPU Governor for higher processing power as required</li>
+			<li>Adds the user to the Audio group for real-time permissions if needed</li>
+			<li>Gives control over the JACK Audio Connection Kit</li>
+			<li>Bridges ALSA MIDI and PulseAudio to JACK if needed</li>
+			<li>Allows for multiple, custom-named PulseAudio Bridges</li>
+			<li>Adds USB Devices to JACK when they are plugged in</li>
+			<li>Allows multiple audio devices to use JACK at once</li>
+			<li>Switches Firewire drivers between ALSA and FFADO</li>
+			<li>Shows the status of JACK</li>
+			<li>Settings persist between reboots, including JACK's running state</li>
+		</ul>
+	</td>
+</tr>
+</table>
+<h2>Obtaining Studio Controls</h2>
 <p>
-Studio Controls is a utility for setting up a system for studio use.
-</p>
-<p>
-Allows USB microphones to work with JACK when plugged in. Desktop audio just works.
-Pulseaudio sees JACK as only "device", protecting JACK from extra xruns or crashing
-when in freewheel mode. ALSA to JACK bridging uses zita-ajbridge for superior
-software sync with lower CPU load. Pulseaudio to JACK bridges can have user set
-channel count and naming. If JACK's master device is a USB device, Studio Controls
-will fallback to internal device when USB device is unplugged.
-</p>
-<img src="img/jackmaster-screen.png" width="1047" height="629" alt="Screen shot">
-<p>Studio Controls:
-<ul>
-<li>
-Corrects real time permissions for JACK install (many installers skip this)
-</li>
-<li>
-Sets the CPU to run full speed only (performance mode, Boost off)
-</li>
-<li>
-Switches Firewire drivers between ALSA and FFADO
-</li>
-<li>
-Starts and runs JACK at session start
-</li>
-<li>
-Bridges ALSA MIDI to JACK MIDI
-</li>
-<li>
-Bridges extra devices to JACK
-</li>
-<li>
-Detects USB device plug in and bridges them to JACK
-</li>
-<li>
-Creates PulseAudio to JACK bridges
-</li>
-<li>
-Settings for use with session managers
-</li>
-</ul>
-</p>
-<h3>Downloads:</h3>
-<p>
-Your distribution may already have a package you can install. Ubuntu and Arch are known
+Your distribution may already have a package you can install. Ubuntu, Fedora and Arch are known
 to have a package.
 </p>
+<h3>Ubuntu</h3>
 <p>
-A tarball or zipped package can be downloaded:
-<a href="https://github.com/ovenwerks/studio-controls/releases">here.</a>
+Studio Controls is installed in <a href="https://ubuntustudio.org">Ubuntu Studio</a> by default.
+Prior to 20.10, Studio Controls was known as Ubuntu Studio Controls. The version covered in this
+page is only part of Ubuntu Studio 20.10 and higher, or any supported Ubuntu Studio version with
+the backports PPA.
 </p>
-<h3>Help:</h3>
 <p>
-The Manual is <a href="manual.html">here.</a> 
+To obtain this newest version, add the <a href="https://help.ubuntu.com/community/UbuntuStudio/BackportsPPA">
+Ubuntu Studio Backports PPA</a>
+</p>
+<p>
+If you are running a different official flavor of Ubuntu than Ubuntu Studio, Studio Controls
+installs with the Ubuntu Studio Installer.
+</p>
+<p>
+If not already installed, open a terminal and type:
+<br>
+<code>sudo apt install studio-controls</code>
+</p>
+<h3>Fedora</h3>
+<p>
+Studio Controls is installed in <a href="https://labs.fedoraproject.org/en/jam/">Fedora Jam</a>
+(33 and higher) by default and is available in Fedora 31 and higher.
+</p>
+<p>
+To install, open a terminal and type:<br>
+<code>sudo dnf install studio-controls</code>
+</p>
+<h3>Tar Ball Package</h3>
+<p>
+A tarball or zipped package can be downloaded from
+<a href="https://github.com/ovenwerks/studio-controls/releases">GitHub.</a>
+</p>
+<p>
+To install:
+<ol>
+<li>open a terminal</li>
+<li>cd to the directory where the package was downloaded to</li>
+<li>extract the contents of the tar ball</li>
+<li>cd into the directory the extraction created</li>
+<li>type:<br>
+<code>sudo make install</code></li>
+</ol>
+</p>
+<h3>Using Studio Controls</h3>
+<p>
+For many people the use of Studio Controls is straight forward.
+However, if JACK is new to you or you want to go deeper, there is an online
+<a href="manual.html">manual.</a> 
 </p>
 <h3>Bugs?</h3>
+<p>Well we hope not but there probably are.</p>
 <p>
 Bugs and feature requests should be submitted to
 <a href="https://github.com/ovenwerks/studio-controls/issues" name="github">issues.</a>
 </p>
-
+<h3>Support the project</h3>
+<p>Bug reports, feature requests and comments are probably the best support we could ask for. However,
+financial support would also be welcome. This would be used to buy hardware needed for further testing.
+For example to buy a USB 2.0 audio device. I have currently done all testing with cheap (under $10)
+USB 1.1 devices. Firewire support has only been made possible by the kind donation of a firewire device.</p>
 <a href="https://www.paypal.com/cgi-bin/webscr?cmd=_donations&business=QW8JBJSLZQVCE&item_name=to+support+free+software&currency_code=CAD">
 <img src="https://www.paypalobjects.com/webstatic/en_US/btn/btn_donate_74x21.png" alt="Donate Button">
 </a>
