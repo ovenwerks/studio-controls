@@ -4,7 +4,7 @@
 <title>Studio Controls Manual</title>
 <meta name="generator" content="Bluefish 2.2.11" >
 <meta name="author" content="Len Ovens" >
-<meta name="date" content="2020-12-16T00:27:41-0800" >
+<meta name="date" content="2020-12-17T12:03:01-0800" >
 <meta name="copyright" content="">
 <meta name="keywords" content="">
 <meta name="description" content="">
@@ -17,11 +17,38 @@
 <body>
 <h2>Studio Controls Manual</h2>
 <p>
+	Studio Controls is a response to the pitfalls people have encountered setting up
+	audio on Linux for (semi)professional use. Many installers on Linux do not install
+	JACK with correct system permissions. Being able to hear desktop audio is often
+	desirable or needed while using JACK. USB microphones have become common. While
+	it has always been possible to deal with these problems, It meant manually creating
+	and running scripts at each jack startup. It means learning the "gottchas" and restarting
+	the whole thing just because a USB device was plugged in.
+</p>
+<p>
+	Studio Controls expects pulseaudio to be configured for desktop use. Cadence in particular
+	and possibly hand crafted pulseaudio configurations are likely to cause pulseaudio to fail
+	to start when it should. Cadence deserves special mention because it writes pulseaudio
+	configuration files to the user directory which means that even removing Cadence from the
+	machine does not remove these files leaving the machine without a proper working pulseaudio
+	setup. In these cases it is perhaps better to continue using Cadence than switching to
+	Studio Controls.
+</p>
+<p>
 Studio Controls has been divided into tabs in order to present the settings
 in an easier to understand manner. This manual will use the same layout.
 </p>
+<p><em>Please Note: Studio Controls uses the system's theme. So screen
+shots may look different on your machine.</em></p>
 <ol>
-<li><a href="RT-perm.html">Real Time permissions.</a></li>
+<li><a href="RT-perm.html">Real Time permissions</a></li>
+<li><a href="system-tweaks.html">System Tweaks</a></li>
+<li><a href="jack-master.html">Audio Setup - Jack Master Settings</a></li>
+<li><a href="extra-devices.html">Audio Setup - Extra Devices</a></li>
+<li><a href="pulse-bridging.html">Audio Setup - Pulse Bridges</a></li>
+<li><a href="session.html">Audio Setup - Jack Session Management</a></li>
 </ol>
+<hr width="50">
+<a href="index.html">Studio Controls Home</a>
 </body>
 </html>
