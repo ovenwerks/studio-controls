@@ -4,7 +4,7 @@
 <title>Real Time Permissions</title>
 <meta name="generator" content="Bluefish 2.2.11" >
 <meta name="author" content="Len Ovens" >
-<meta name="date" content="2020-12-16T00:27:32-0800" >
+<meta name="date" content="2020-12-17T12:01:11-0800" >
 <meta name="copyright" content="">
 <meta name="keywords" content="">
 <meta name="description" content="">
@@ -15,6 +15,34 @@
 <meta http-equiv="expires" content="0">
 </head>
 <body>
-
+<h1>JACK requires extra permissions</h1>
+<p>
+	JACK and other Audio programs such as Ardour (even running with the ALSA backend),
+	require permissions that most desktops do not provide by default. They require the
+	ability to raise their priority level to prevent such things as mouse movements or
+	other applications heavy CPU use from causing skips, pops or other noises in the audio
+	signal.
+</p>
+<p>
+	These programs also require permission to lock memory they use from being swapped out
+	As that could cause a recording gap in that "perfect take".
+</p>
+<p>
+	The installation script that is included in most JACK packages tries to set this at
+	install time but many modern installers skip this step. If your installer has skipped
+	this step, Studio Controls will warn you of this problem. This is generally a one time fix
+	but each user account will need to do this fix. Studio Controls will show this at the top
+	of it's window:
+</p>
+<img src="img/rt-bad.png" width="1027" height="593" alt="Bad RT permissions screen shot">
+<p>To correct this problem, click on the button that says <em>Fix Real Time Permissions</em>.
+Then reboot the system for these settings to take effect. Before systemd, only a logout and 
+login was required but most desktop environments do not make sure systemd actually logs them
+all the way out at the time of writing.</p>
+<hr width="50">
+<p>
+<a href="manual.html">Introduction</a> --- <a href="system-tweaks.html">System Tweaks</a>
+</p>
+<a href="index.html">Studio Controls Home</a>
 </body>
 </html>

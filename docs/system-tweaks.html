@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>System Tweaks</title>
+<meta name="generator" content="Bluefish 2.2.11" >
+<meta name="author" content="Len Ovens" >
+<meta name="date" content="2020-12-17T12:02:45-0800" >
+<meta name="copyright" content="">
+<meta name="keywords" content="">
+<meta name="description" content="">
+<meta name="ROBOTS" content="NOINDEX, NOFOLLOW">
+<meta http-equiv="content-type" content="text/html; charset=UTF-8">
+<meta http-equiv="content-type" content="application/xhtml+xml; charset=UTF-8">
+<meta http-equiv="content-style-type" content="text/css">
+<meta http-equiv="expires" content="0">
+</head>
+<body>
+<h1>System Tweaks</h1>
+<p>
+	There are some system tweaks that give better audio performance. As a general suggestion,
+	it is recomended that the user install a low latency Linux kernel.
+</p>
+<p>
+	The System Tweaks tab looks like:
+</p>
+<img src="img/system-tweaks.png" width="1020" height="271" alt="System Tweaks image">
+<p>
+	It has four controls:
+</p>
+<ul>
+<li>
+	CPU Governor: The performance setting runs the CPU at it highest rated speed and gives the
+	best audio performance. However, it may use more power and so it may be worthwhile switching
+	to <em>Powersave</em> or <em>Ondemand</em> when not doing audio work. It has been noticed that
+	audio glitches sometimes happen when the CPU changes speed, in particular when the CPU switches
+	to a lower speed.
+</li>
+<li>Intel Boost: While it would seem like a great idea to be able to run a little faster when the CPU
+	is able, the same problem arises when the CPU switches back down to the rated speed, the audio may
+	glitch. Turning Intel Boost off while doing audio work gives the best audio stability.
+</li>
+<li>
+	Logging level: Studio Controls has a background process called Autojack that runs from session start
+	to session end. It is the real workhorse in Studio Controls, the GUI is just a front end for this
+	process. Autojack has a logging facility and the logging level determines how much autojack writes
+	to it's log file. If sending a bug report about Studio Controls, attaching a logfile with the logging
+	level set to <em>Extra</em> may be helpful for debugging purposes. The log file may be found at:
+	~/.log/autojack.log
+</li>
+<li>
+	FireWire Module select: Chooses the kernel modules to use for FireWire devices. There are the FFADO
+	modules and the newer ALSA Firewire modules (the ALSA firewire modules are based on the FFADO modules).
+	The ALSA modules are easier to use and only work with JACK's ALSA back end. However, there are some
+	Firewire devices that do not have working ALSA modules and work better with the FFADO modules. The FFADO
+	modules also give sample accurate MIDI input and output. <strong>Once a change has been made to this setting,
+	A reboot is required to make the new setting available to JACK.</strong>
+</li>
+</ul>
+<hr width="50">
+<p>
+<a href="RT-perm.html">Real Time Permissions</a> --- <a href="manual.html">Introduction</a> --- 
+<a href="jack-master.html">Audio Setup - Jack Master Settings</a>
+</p>
+<a href="index.html">Studio Controls Home</a>
+</body>
+</html>
