@@ -4,7 +4,7 @@
 <title>Audio Setup - JACK Master Settings</title>
 <meta name="generator" content="Bluefish 2.2.11" >
 <meta name="author" content="Len Ovens" >
-<meta name="date" content="2020-12-17T12:09:26-0800" >
+<meta name="date" content="2020-12-18T09:46:44-0800" >
 <meta name="copyright" content="">
 <meta name="keywords" content="">
 <meta name="description" content="">
@@ -44,9 +44,9 @@
 	such as the clock source.
 </p>
 <p>
-	The JACK Master Settings tab allows setting this master device up.
+	The <strong>JACK Master Settings</strong> tab allows setting this master device up.
 </p>
-<img src="img/jackmaster-screen.png" width="1044" height="485" alt="JACK Master Settings screen shot">
+<img src="img/jackmaster-screen.png" width="1027" height="291" alt="JACK Master Settings screen shot">
 <p>
 	Studio Controls allows setting two <strong>master devices</strong>, an
 	<strong>internal device</strong> which includes	PCI(e) devices as well as firewire
@@ -71,6 +71,8 @@
 	rates than 48000, I would suggest viewing the video at xiph.org
 	<a href="https://xiph.org/video/vid2.shtml" name="digital show & tell video">
 	Digital Show & Tell</a>. In any case either 48000 or 44100 should work for you just fine.
+	Anything higher will use more disk space and allow fewer audio tracks because more CPU
+	power is used. However, the choice is with the user or in some cases the client.
 </p>
 <p>
 	The <strong>JACK Buffer Size</strong> drop down lists buffer sizes JACK can use. Buffer
@@ -137,13 +139,13 @@
 	The <strong>Autojack control</strong> line has three buttons:
 </p>
 <ul>
-<li><strong>JACK Start or Restart</strong> Will start JACK or if it is already running restart JACK.
-	This option also saves settings to the config file.</li>
-<li><strong>Stop JACK</strong> will stop JACK and reset Pulseaudio for normal desktop operation.
-	This option will save settings to the config file.</li>
-<li><strong>Apply Audio Settings</strong> will Save settings to the config file and tell
-	autojack to read the config file in and use the new settings. Autojack will only restart
-	JACK if the settings changed apply to the master device.</li>
+	<li><strong>JACK Start or Restart</strong> Will start JACK or if it is already running restart JACK.
+		This option also saves settings to the config file.</li>
+	<li><strong>Stop JACK</strong> will stop JACK and reset Pulseaudio for normal desktop operation.
+		This option will save settings to the config file.</li>
+	<li><strong>Apply Audio Settings</strong> will Save settings to the config file and tell
+		autojack to read the config file in and use the new settings. Autojack will only restart
+		JACK if the settings changed apply to the master device.</li>
 </ul>
 <p>
 	If JACK is started when the system is rebooted, JACK will be started automatically on next
@@ -153,17 +155,21 @@
 	The last line has a set of convenience buttons.
 </p>
 <ul>
-<li><strong>QASmixer</strong> will start QAS mixer set to the master device</li>
-<li><strong>Pulse Control</strong> opens the pulse control application so that desktop levels can
-be set.</li>
-<li><strong>Carla</strong> will be started. The main use is to use the patch bay Carla includes
-for making JACK routing connections.</li>
+	<li><strong>QASmixer</strong> will start QAS mixer set to the master device</li>
+	<li><strong>Pulse Control</strong> opens the pulse control application so that desktop levels can
+	be set.</li>
+	<li><strong>Carla</strong> will be started. The main use is to use the patch bay Carla includes
+	for making JACK routing connections.</li>
 </ul>
 <hr width="50">
-<p>
-<a href="system-tweaks.html">System Tweaks</a> --- <a href="manual.html">Introduction</a> ---
-<a href="extra-devices.html">Audio Setup - Extra Devices</a>
+<!-- navigation -->
+<p align="center">
+<a href="system-tweaks.html"><img src="img/left.png" width="24" height="24" alt="">
+Previous: System Tweaks</a>
+--- <a href="manual.html">Introduction</a> ---
+<a href="extra-devices.html">Next: Audio Setup - Extra Devices
+<img src="img/right.png" width="24" height="24" alt=""></a>
 </p>
-<a href="index.html">Studio Controls Home</a>
+<p align="center"><a href="index.html">Studio Controls Home</a></p>
 </body>
 </html>

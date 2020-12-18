@@ -4,7 +4,7 @@
 <title>Audio Setup - Extra Devices</title>
 <meta name="generator" content="Bluefish 2.2.11" >
 <meta name="author" content="Len Ovens" >
-<meta name="date" content="2020-12-17T12:01:56-0800" >
+<meta name="date" content="2020-12-18T12:12:04-0800" >
 <meta name="copyright" content="">
 <meta name="keywords" content="">
 <meta name="description" content="">
@@ -15,6 +15,86 @@
 <meta http-equiv="expires" content="0">
 </head>
 <body>
+<h1>Audio Setup - Extra Devices</h1>
+<p>
+	The <strong>Extra Devices</strong> tab allows other audio devices in the system
+	to show up as JACK clients and be used by JACK applications. These bridges are
+	created using zita-ajbridge a light weight but high quality bridge. These
+	bridges use resampling to make sure the audio is in sync with the master
+	audio device.
+</p>
+<p>
+	Studio Controls keeps it's own database of devices, it includes both devices
+	Studio Controls can see in the system as well as devices that have been plugged
+	before. This tab sets up what autojack will do when it detect these devices are
+	present.
+</p>
 <img src="img/extra.png" width="1025" height="294" alt="Extra devices screen shot">
+<p>
+	The <strong>Select Device to Edit</strong> drop down chooses the device the settings
+	in this tab apply to.
+</p>
+<p>
+	The <strong>Hide This Device</strong> check box will tell autojack to ignore this device.
+	It will also keep this device from showing up in the jack master drop downs.
+</p>
+<p>
+	The <strong>Sample Rate</strong>, <strong>Buffer Size</strong> and <strong>number of periods</strong>
+	are the same as for JACK master. The device may not work at the same rate, buffer size or
+	number of periods as JACK master, that is ok. Zita-ajbridge can deal with the difference.
+</p>
+<p>
+	<strong>Capture</strong> and <strong>Playback</strong> ports is the number of ports that should be
+	created for input or output bridges. A port count of zero is the same as off or not used. A number
+	greater than the available ports on the device will use the maximum number of ports available.
+</p>
+<p>
+	<strong>Headphones</strong> can sometimes be detected by the system if they are motherboard
+	headphones or USB headphones. Three settings are available for headphones:
+</p>
+<ul>
+	<li><strong>Action</strong>
+		<ul>
+			<li><strong>Switch</strong> will switch the main outputs to the phone device</li>
+			<li><strong>User Script</strong> will run a user supplied script ~/.config/autojack/headphone
+				<em>plugged</em>, where plugged is either "True" or "False"</li>
+			<li><strong>No Action</strong> will do nothing</li>
+		</ul></li>
+	<li><strong>Device</strong> is the device headphones are (or will be) connected to. If the headphones
+	are USB headphones then they need to have been plugged in at some time in order for that device
+	to show up on the list</li>
+	<li><strong>Manual Headphones/Speaker Switch</strong> is for headphone devices that cannot be
+	auto detected. The main outputs will be switched between <strong>Main Output Ports</strong>
+	and the <strong>Headphone Device</strong></li>
+</ul>
+<p>
+	In some cases it is helpful if USB devices will just show as a JACK client without setup
+	ahead of time. There are two checkboxes that control this:
+</p>
+<ul>
+	<li><strong>Bridge USB Devices to JACK When Plugged In</strong> will create a bridge for any
+	USB device that is plugged in except a device that is <strong>Hidden</strong> (above) or a
+	device that manually set up with more than zero which will be bridged in any case.</li>
+	<li><strong>USB device bridge is input only</strong> will only create an input bridge
+	even if the system detects an output device is present. Some input only devices, for
+	example guitar to USB, use a USB chip that has one audio input and two outputs.
+	Because these outputs are not connected to anything, if opened for use they may
+	add a buzz to the input audio, so this option bypasses the creation of an output
+	bridge.</li>
+</ul>
+
+<!-- navigation -->
+<hr width="50">
+<p align="center">
+<a href="jack-master.html"><img src="img/left.png" width="24" height="24" alt="">
+Previous: Audio Setup - Jack Master Settings</a>
+--- <a href="manual.html">Introduction</a> ---
+<a href="pulse-bridging.html">Next: Audio Setup - Pulse Bridges
+<img src="img/right.png" width="24" height="24" alt=""></a>
+</p>
+<p align="center"><a href="index.html">Studio Controls Home</a></p>
+
+
+
 </body>
 </html>

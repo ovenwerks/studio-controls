@@ -4,7 +4,7 @@
 <title>Audio Setup - JACK session Management</title>
 <meta name="generator" content="Bluefish 2.2.11" >
 <meta name="author" content="Len Ovens" >
-<meta name="date" content="2020-12-17T12:02:24-0800" >
+<meta name="date" content="2020-12-18T14:15:07-0800" >
 <meta name="copyright" content="">
 <meta name="keywords" content="">
 <meta name="description" content="">
@@ -15,6 +15,70 @@
 <meta http-equiv="expires" content="0">
 </head>
 <body>
+<h1>Audio Setup - Jack Session Management</h1>
+<p>
+	When a project uses more than one JACK application, a session manager will help by
+	automatically starting all applications needed for a project and making any
+	connections in JACK needed as well.
+</p>
+
 <img src="img/session.png" width="1027" height="242" alt="Session manager screen">
+
+<p>
+	In order for the session manager to do it's job, it needs a "clean" system with no
+	jack connections made. However, many applications auto connect on startup to the system
+	inputs and outputs 1 and 2. Other applications will make more connections on
+	startup. JACK provides a <strong>Self Connect Mode</strong> that can prevent an
+	application from making these connections.
+</p>
+<p>
+	<strong>Connect Mode</strong> has five modes
+</p>
+<ul>
+	<li><strong>Don't restrict self connect requests</strong> is the default mode for JACK.
+	JACK allows any client to make any connections.</li>
+	<li><strong>Fail self connect requests to external ports only</strong> will allow a client
+	to connect it's own ports only to ports that are not hardware but will fail to connect
+	to hardware ports. A fail means the application is aware the connection was not made</li>
+	<li><strong>Ignore self connect requests to external ports only</strong> will
+	silently ignore requests for an application to connect its own port to hardware port</li>
+	<li><strong>Fail all self connect requests</strong> will not allow a JACK client
+	to connect any of it's own ports and will respond with a fail.</li>
+	<li><strong>Ignore all self connect requests</strong>will silently ignore a JACK
+	clients request to connect it's own ports.</li>
+</ul>
+<p>
+	There are also three convenience buttons to start session manager controls. There have
+	been a number of session managers for Linux but the one that seems to have remained
+	is NSM. The original Non Session Manger was a part of the non group of application but
+	because of licensing issues was not packaged for many distributions. Development also
+	slowed down and bugs were not being fixed. However, more applications are "NSM ready"
+	than any other session manager. Raysession was started for this reason as a reimagined
+	NSM controller followed by the new session manger which was non session manager ported
+	from NTK to FLTK and with bugs fixed and some enhancement. Then Agordejo was developed
+	as a modern graphic interface to go with new session manager.
+</p>
+<ul>
+	<li><strong>Agordejo</strong> sets itself as the main graphic user interface to the
+	<strong>New Session Manager</strong>. It was developed by the same development team as
+	the new session manager.</li>
+	<li><strong>RaySession</strong> is another session manager that uses the same interface
+	as new session manager</li>
+	<li><strong>New Session Manager</strong> will start the legacy NSM GUI ported to FLTK.</li>
+</ul>
+
+
+<!-- navigation -->
+<hr width="50">
+<p align="center">
+<a href="pulse-bridging.html">
+<img src="img/left.png" width="24" height="24" alt="">
+Previous: Audio Setup - Pulse Bridges
+</a>
+--- <a href="manual.html">Introduction</a> ---
+<!-- <img src="img/right.png" width="24" height="24" alt=""> --></a>
+</p>
+<p align="center"><a href="index.html">Studio Controls Home</a></p>
+
 </body>
 </html>
