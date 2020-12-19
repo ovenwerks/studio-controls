@@ -4,7 +4,7 @@
 <title>Audio Setup - Pulse Bridging</title>
 <meta name="generator" content="Bluefish 2.2.11" >
 <meta name="author" content="Len Ovens" >
-<meta name="date" content="2020-12-18T12:07:57-0800" >
+<meta name="date" content="2020-12-19T06:53:18-0800" >
 <meta name="copyright" content="">
 <meta name="keywords" content="">
 <meta name="description" content="">
@@ -16,7 +16,59 @@
 </head>
 <body>
 <h1>Audio Setup - Pulse Bridging</h1>
+<p>
+	For most Linux desktops, Pulseaudio is the desktop audio server and many desktop
+	applications talk directly to Pulseaudio. JACK will take exclusive access to any
+	device it uses as master to ensure no other application changes it's sample rate or
+	interferes with the audio in some other way. The utility used for bridging extra
+	devices also takes exclusive access of the device it uses.
+	So for desktop applications to have audio while the JACK audio server is running
+	Pulseaudio needs to be bridged to JACK. In this way, JACK acts as the "device"
+	for Pulseaudio.
+</p>
+<p>
+	It has been found that when Pulseaudio is bridged to JACK it will cause interference
+	if it can still see any audio hardware and so before bridging, Studio Controls will
+	disable any ALSA modules in Pulseaudio making JACK the only audio "device" Pulseaudio
+	sees.
+</p>
+<p>
+	Studio Controls can set up any number of pulse->JACK bridges with any number of channels.
+	The bridging tab has two sub tabs, one for bridges from pulse to JACK and one for bridges
+	from JACK to pulse.
+</p>
+<p>
+	The first is <strong>Pulse outputs to JACK</strong>.
+</p>
 <img src="img/pulse-out.png" width="1027" height="295" alt="Pulse Out screen">
+<p>
+	This screen consists of these controls:
+</p>
+<ul>
+	<li><strong>Bridge to Configure</strong> is a drop down that lists all the Pulse output
+	bridges the user has configured. This is used to select the output bridge to edit.</li>
+	<li><strong>Bridge Name</strong> allows changing the name of the bridge to something
+	that better describes that bridge. The name must be unique out of all JACK clients
+	or the auto connections will not work. Names should not have spaces or other characters
+	that have special meaning on the command line.</li>
+	<li><strong>Bridge Channel Count</strong> is the number of channels this bridge should
+	have. The channels will be labeled as 3d appropriate names</li>
+	<li><strong>Auto Connect Port</strong> is the first of channel count ports that this
+	bridge should connect to. Connections are made starting at this port and continuing
+	to channel count or the last device port which ever is less.</li>
+	<li><strong>Add an Output Bridge</strong> will add another Pulse to JACK bridge with
+	the default name pulse_out-<code>num</code> where <code>num</code> is the first number
+	that makes the JACK client name unique. The new bridge will default to two channels
+	and no auto connections.</li>
+	<li><strong>Remove Output Bridge</strong> will remove the bridge displayed.</li>
+</ul>
+<p>
+	The second tab, <strong>Pulse Inputs from JACK</strong>, is the same as the first
+	but only deals with inputs to Pulse. It has all the same settings tha work the same way
+	with the exception that new ports will be named pulse_in-<code>num</code> instead.
+</p>
+
+
 <img src="img/pulse-in.png" width="1027" height="289" alt="Pulse in screen">
 
 
