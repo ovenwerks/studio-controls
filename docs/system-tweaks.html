@@ -29,18 +29,18 @@
 </p>
 <ul>
 <li>
-	CPU Governor: The performance setting runs the CPU at it highest rated speed and gives the
+	CPU Governor</strong>: The performance setting runs the CPU at it highest rated speed and gives the
 	best audio performance. However, it may use more power and so it may be worthwhile switching
 	to <em>Powersave</em> or <em>Ondemand</em> when not doing audio work. It has been noticed that
 	audio glitches sometimes happen when the CPU changes speed, in particular when the CPU switches
 	to a lower speed.
 </li>
-<li>Intel Boost: While it would seem like a great idea to be able to run a little faster when the CPU
+<li>	<strong>Intel Boost</strong>: While it would seem like a great idea to be able to run a little faster when the CPU
 	is able, the same problem arises when the CPU switches back down to the rated speed, the audio may
 	glitch. Turning Intel Boost off while doing audio work gives the best audio stability.
 </li>
 <li>
-	Logging level: Studio Controls has a background process called Autojack that runs from session start
+	<strong>Logging level</strong>: Studio Controls has a background process called Autojack that runs from session start
 	to session end. It is the real workhorse in Studio Controls, the GUI is just a front end for this
 	process. Autojack has a logging facility and the logging level determines how much autojack writes
 	to it's log file. If sending a bug report about Studio Controls, attaching a logfile with the logging
@@ -48,7 +48,7 @@
 	~/.log/autojack.log
 </li>
 <li>
-	FireWire Module select: Chooses the kernel modules to use for FireWire devices. There are the FFADO
+	<strong>FireWire Module select</strong>: Chooses the kernel modules to use for FireWire devices. There are the FFADO
 	modules and the newer ALSA Firewire modules (the ALSA firewire modules are based on the FFADO modules).
 	The ALSA modules are easier to use and only work with JACK's ALSA back end. However, there are some
 	Firewire devices that do not have working ALSA modules and work better with the FFADO modules. The FFADO
