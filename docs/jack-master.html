@@ -50,7 +50,7 @@
 <p>
 	Studio Controls allows setting two <strong>master devices</strong>, an
 	<strong>internal device</strong> which includes	PCI(e) devices as well as firewire
-	devices that use the ALSA backend and A <strong>USB master	device</strong>.
+	devices that use the ALSA backend and A <strong>USB master device</strong>.
 	In the case that a USB master device is used, the Internal device acts as a
 	backup device that will automatically be used should the USB device be unplugged.
 	The USB device will take over master again when plugged in. Currently, when the
@@ -63,7 +63,7 @@
 </p>
 <p>
 	The <strong>JACK sample rate</strong> drop down allows choosing the sample rate
-	Jack should run at. Note that jACK will not complain if you tell it to use a rate
+	JACK should run at. Note that JACK will not complain if you tell it to use a rate
 	the device doesn't understand, JACK will pick the closest rate and use it. Your
 	Application may think it is using one rate and reality may be different leading
 	to unintended sound. There are a number of Laptops for example, that only run at 48000
@@ -75,7 +75,7 @@
 	power is used. However, the choice is with the user or in some cases the client.
 </p>
 <p>
-	<strong>Note:</strong> Studio controls tries to find the range of sample rates a device supports.
+	<strong>Note:</strong> Studio Controls tries to find the range of sample rates a device supports.
 	However, more rates may be displayed than are supported for some devices.
 </p>
 <p>
@@ -115,7 +115,7 @@
 	monitoring ports are different such as ice1712 based devices where the digital outputs
 	channels 9 and 10 or some of the digital mixers (x32 for example) where the master outputs
 	are the last two channels. If autojack detects a connect to system:playback_1 or 2 it will
-	be moved to the <strong>Main Output Port</strong> and the next port. Many jack clients auto
+	be moved to the <strong>Main Output Port</strong> and the next port. Many JACK clients auto
 	connect to the first two system ports. This reconnects them to the requested ports. Note that
 	for more complex setups it is better to use a session manager (NSM) to manage connections
 	so that the first two ports can be used for other uses.
@@ -137,7 +137,7 @@
 	used. With a low latency kernel the JACK can take priority over most other CPU operations and so
 	even is CPU usage is higher, JACK can force it's way in to take what it needs for audio processing
 	and make other processes wait. DSP usage should normally stay below 60% with only the odd peak
-	to 80%. Above this xruns become more likely as Jack may not finish in time.
+	to 80%. Above this xruns become more likely as JACK may not finish in time.
 </p>
 <p>
 	The <strong>Autojack control</strong> line has three buttons:
@@ -156,10 +156,10 @@
 	login.
 </p>
 <p>
-	The last line has a set of convenience buttons.
+	The last line has a set of convenience buttons:
 </p>
 <ul>
-	<li><strong>QASmixer</strong> will start QAS mixer set to the master device</li>
+	<li><strong>QASmixer</strong> will start QAS mixer set to the master device.</li>
 	<li><strong>Pulse Control</strong> opens the pulse control application so that desktop levels can
 	be set.</li>
 	<li><strong>Carla</strong> will be started. The main use is to use the patch bay Carla includes
