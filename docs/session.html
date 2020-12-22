@@ -32,38 +32,38 @@
 	application from making these connections.
 </p>
 <p>
-	<strong>Connect Mode</strong> has five modes
+	<strong>Connect Mode</strong> has five modes:
 </p>
 <ul>
 	<li><strong>Don't restrict self connect requests</strong> is the default mode for JACK.
 	JACK allows any client to make any connections.</li>
 	<li><strong>Fail self connect requests to external ports only</strong> will allow a client
 	to connect it's own ports only to ports that are not hardware but will fail to connect
-	to hardware ports. A fail means the application is aware the connection was not made</li>
+	to hardware ports. A fail means the application is aware the connection was not made.</li>
 	<li><strong>Ignore self connect requests to external ports only</strong> will
-	silently ignore requests for an application to connect its own port to hardware port</li>
+	silently ignore requests for an application to connect its own port to hardware port.</li>
 	<li><strong>Fail all self connect requests</strong> will not allow a JACK client
 	to connect any of it's own ports and will respond with a fail.</li>
-	<li><strong>Ignore all self connect requests</strong>will silently ignore a JACK
+	<li><strong>Ignore all self connect requests</strong> will silently ignore a JACK
 	clients request to connect it's own ports.</li>
 </ul>
 <p>
 	There are also three convenience buttons to start session manager controls. There have
 	been a number of session managers for Linux but the one that seems to have remained
-	is NSM. The original Non Session Manger was a part of the non group of application but
+	is NSM. The original <em>Non Session Manger</em> was a part of the Non group of applications, but
 	because of licensing issues was not packaged for many distributions. Development also
 	slowed down and bugs were not being fixed. However, more applications are "NSM ready"
-	than any other session manager. Raysession was started for this reason as a reimagined
-	NSM controller followed by the new session manger which was non session manager ported
-	from NTK to FLTK and with bugs fixed and some enhancement. Then Agordejo was developed
-	as a modern graphic interface to go with new session manager.
+	than any other session manager. <em>Raysession</em> was started for this reason as a reimagined
+	NSM controller followed by the <em>New Session Manager</em> which was Non Session Manger ported
+	from NTK to FLTK and with bugs fixed and some enhancement. Then <em>Agordejo</em> was developed
+	as a modern graphic interface to go with New Session Manager.
 </p>
 <ul>
 	<li><strong>Agordejo</strong> sets itself as the main graphic user interface to the
 	<strong>New Session Manager</strong>. It was developed by the same development team as
-	the new session manager.</li>
+	the New Session Manager.</li>
 	<li><strong>RaySession</strong> is another session manager that uses the same interface
-	as new session manager</li>
+	as New Session Manager.</li>
 	<li><strong>New Session Manager</strong> will start the legacy NSM GUI ported to FLTK.</li>
 </ul>
 
