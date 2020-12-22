@@ -181,9 +181,14 @@ class DevDB:
             l_internal = True
             # can get supported rates from file above
             with open(f"/proc/asound/card{str(x)}/codec#0", "r") as card_file:
+                node = False
                 rates = []
                 for line in card_file:
-                    if 'rates' in line:
+                    if 'Node' in line:
+                        node = True
+                        if 'Digital' in line:
+                            node = False
+                    if node and 'rates' in line:
                         fnd_rates = line.split()[2:]
                         for rate in fnd_rates:
                             if not rate in rates:
@@ -665,11 +670,15 @@ class StudioControls:
         self.chan_in_spin.set_sensitive(False)
         self.chan_out_spin.set_sensitive(False)
         self.combo_periods.set_sensitive(False)
+        self.jack_rate_combo.set_sensitive(False)
         self.xdev_select.set_sensitive(False)
 
         self.jack_device_combo.get_model().clear()
         self.xdev_select.get_model().clear()
         self.jack_usb_dev_combo.get_model().clear()
+        self.jack_rate_combo.get_model().clear()
+        rates =[]
+        def_rates = ['32000', '44100', '48000', '88200', '96000', '192000']
 
         self.jack_usb_dev_combo.append("none", "No USB Master")
         if self.jackdb['usbdev'] == "" or self.jackdb['usbdev'] == "none":
@@ -725,9 +734,25 @@ class StudioControls:
                         self.hp_device.set_active_id(next_id)
                     if next_id == self.jackdb['dev']:
                         self.jack_device_combo.set_active_id(next_id)
+                        if self.jackdb['usbdev'] == "none":
+                            #this is jack master get rates
+                            rates = dev_db['rates']
                     if next_id == self.jackdb['usbdev']:
                         self.jack_usb_dev_combo.set_active_id(next_id)
-                    
+                        #this is jack master get rates
+                        rates = dev_db['rates']
+
+        if self.jackdb['driver'] != "alsa" or rates == []:
+            rates = def_rates
+
+        for rate in rates:
+            self.jack_rate_combo.append(rate, rate)
+            if str(self.jackdb['rate']) in rates:
+                self.jack_rate_combo.set_active_id(str(self.jackdb['rate']))
+            else:
+                self.jack_rate_combo.set_active(0)
+
+        self.jack_rate_combo.set_sensitive(True)
         if self.jackdb['driver'] == "alsa":
             self.jack_device_combo.set_sensitive(True)
             self.jack_usb_dev_combo.set_sensitive(True)

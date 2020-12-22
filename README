@@ -19,3 +19,5 @@ mic for input and internal audio for monitoring. These two devices have
 no way of being in sync with each other and in most cases cannot be
 used together. This application allows setting one jack device and adding
 a second device as a jack client via zita-ajbridge.
+
+Home Page: https://ovenwerks.github.io/studio-controls/

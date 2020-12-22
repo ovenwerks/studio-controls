@@ -2,6 +2,9 @@ studio-controls version 2.0.26-pre
 
  [ Len Ovens ]
  - Add docs directory and start documentation
+ - Move docs to docs branch
+ - Limit sample rates to those device supports
+ - Add webpage to README
 
 studio-controls version 2.0.25-pre
 
