@@ -4,7 +4,7 @@
 <title>System Tweaks</title>
 <meta name="generator" content="Bluefish 2.2.11" >
 <meta name="author" content="Len Ovens" >
-<meta name="date" content="2021-01-08T15:56:06-0800" >
+<meta name="date" content="2021-01-14T22:24:30-0800" >
 <meta name="copyright" content="">
 <meta name="keywords" content="">
 <meta name="description" content="">
@@ -18,7 +18,7 @@
 <h1>System Tweaks</h1>
 <p>
 	There are some system tweaks that give better audio performance. As a general suggestion,
-	it is recomended that the user install a low latency Linux kernel.
+	it is recommended that the user install a low latency Linux kernel.
 </p>
 <p>
 	The System Tweaks tab looks like:
@@ -48,12 +48,16 @@
 	~/.log/autojack.log
 </li>
 <li>
-	<strong>FireWire Module select</strong>: Chooses the kernel modules to use for FireWire devices. There are the FFADO
+	<p><strong>FireWire Module select</strong>: Chooses the kernel modules to use for FireWire devices. There are the FFADO
 	modules and the newer ALSA Firewire modules (the ALSA firewire modules are based on the FFADO modules).
 	The ALSA modules are easier to use and only work with JACK's ALSA back end. However, there are some
 	Firewire devices that do not have working ALSA modules and work better with the FFADO modules. The FFADO
 	modules also give sample accurate MIDI input and output. <strong>Once a change has been made to this setting,
-	A reboot is required to make the new setting available to JACK.</strong>
+	A reboot is required to make the new setting available to JACK.</strong></p>
+	<p>The author has an AudioFire 12 and has found that while the ALSA modules work fine for most work,
+	The lowest latency on this device using the ALSA firewire modules was setting JACK to 256/2, while
+	when using the FFADO modules, it was easy to set the latency to 32/2 and experience only 1 xrun over
+	4 hours. So the FFADO modules give lower latency and better stability, at least for this setup.</p>
 </li>
 </ul>
 <!-- navigation -->
