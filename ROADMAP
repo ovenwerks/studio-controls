@@ -5,13 +5,24 @@
  things)
 
 Fixes:
+	- usb devices bridge at startup fails
 	- none known
 
 Features:
-	- add pre/post jack start/stop scripting
+	- add pre/post jack start/stop scripting (for ffado mixer settings?)
+	- add USB naming based on serial or?
+	- add latency setting
+		- For JACK
+		- For zita-ajbridge
+	- add JACK freeze detect and correct
+	- better JACK status showing
+		- detect xruns in autojack so number is for full jack run
+		- keep xrun reason (log it?)
+	- Limit alsa fw devices to 256/2 with a note
+
 	- Add jackmixer  or jack-mix-box? auto start and connect
 	- Add packagers file describing depends/conflicts
-	- Add mutiple devices for firewire
+	- Add multiple devices for firewire
 	- bluetooth via pulse. use: pacmd load-module module-loopback latency_msec=5
 		and: pacmd unload-module module-loopback
 		need to figue out how to auto route jack->pulse bridge to loop

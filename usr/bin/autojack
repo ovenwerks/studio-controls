@@ -444,10 +444,16 @@ def config_start():
         time.sleep(3)
 
     configure_iface.SetParameterValue(['engine', 'driver'], conf_db['jack']['driver'])
+    logging.debug(f"JACK driver set to: {conf_db['jack']['driver']}")
     time.sleep(.2)
     if conf_db['jack']['driver'] == "alsa":
         # we use default device for FW right now
         configure_iface.SetParameterValue(['driver', 'device'], f"hw:{mdev}")
+        logging.debug(f"JACK device set to: {mdev}")
+        if conf_db['devices'][mdev.split(',')[0]]['firewire'] and conf_db['jack']['frame'] < 256:
+            conf_db['jack']['frame'] = 256
+            logging.info(f"Firewire device using ALSA drivers, JACK buffer set to: 256")
+            
     time.sleep(.2)
     configure_iface.SetParameterValue(['driver', 'rate'], dbus.UInt32(conf_db['jack']['rate']))
     time.sleep(.2)
@@ -462,13 +468,15 @@ def config_start():
         configure_iface.SetParameterValue(['driver', 'playback'],
             dbus.UInt32(conf_db['jack']['chan_out']))
         configure_iface.SetParameterValue(['driver', 'monitor'], True)
-    time.sleep(2)
+    logging.debug(f"JACK rate/period/nperiods set to: {conf_db['jack']['rate']}/{conf_db['jack']['frame']}/{conf_db['jack']['period']}")
+    time.sleep(3)
 
     control_iface.StartServer()
+    logging.debug("JACK started")
 
     last_master = mdev
     # maybe check for jack up (need function?)
-    time.sleep(2)
+    time.sleep(3)
 
     start_jack_client()
 

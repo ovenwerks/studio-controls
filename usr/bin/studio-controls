@@ -146,7 +146,8 @@ class DevDB:
                     cname = str(x)
             #print(f"cname: {cname} card: {str(x)}")
             if not cname in conf['devices']:
-                conf['devices'][cname] = {'number': x, 'usb': False, "internal": False, 'hdmi': False,
+                conf['devices'][cname] = {'number': x, 'usb': False, "internal": False,
+                'hdmi': False, 'firewire': False,'min_latency': 16
                 'rates': ['32000', '44100', '48000', '88200', '96000', '192000'],
                 'sub': {}}
             else:
@@ -159,15 +160,23 @@ class DevDB:
     def  get_dev_info(self, config, jack):
         ''' get device info from system files '''
         cname = ""
-        l_usb = False
-        l_internal = False
-        l_hdmi = False
+        config['usb'] = False
+        config['internal'] = False
+        config['firewire'] = False
         sub = 0
         rates = ['32000', '44100', '48000', '88200', '96000', '192000']
         x = int(config['number'])
         #print(f"card: {str(x)}")
         if os.path.exists(f"/proc/asound/card{str(x)}/usbbus"):
-            l_usb = True
+            config['usb'] = True
+            config['min_latency'] = 32
+            with open(f"/proc/asound/card{str(x)}/usbbus", "r") as bus_file:
+                for line in bus_file:
+                    config['bus'] = line.strip()
+            if os.path.isfile(f"/proc/asound/card{str(x)}/usbid"):
+                with open(f"/proc/asound/card{str(x)}/usbid", "r") as id_file:
+                    for line in id_file:
+                        config['id']  = line.strip()
             # can get supported rates from /proc/asound/card{str(x)}/stream0
             if os.path.exists(f"/proc/asound/card{str(x)}/stream0"):
                 with open(f"/proc/asound/card{str(x)}/stream0", "r") as card_file:
@@ -179,8 +188,9 @@ class DevDB:
                                 rate = rate.split(',')[0]
                                 if not rate in rates:
                                     rates.append(rate)
-        if os.path.exists(f"/proc/asound/card{str(x)}/codec#0"):
-            l_internal = True
+        elif os.path.exists(f"/proc/asound/card{str(x)}/codec#0"):
+            config['internal'] = True
+            config['min_latency'] = 128
             # can get supported rates from file above
             with open(f"/proc/asound/card{str(x)}/codec#0", "r") as card_file:
                 node = False
@@ -195,12 +205,14 @@ class DevDB:
                         for rate in fnd_rates:
                             if not rate in rates:
                                 rates.append(rate)
-        '''if cname == "HDMI" or cname == "NVidia":
-            l_hdmi = True'''
+        elif os.path.exists(f"/proc/asound/card{str(x)}/firewire"):
+            config['firewire'] = True
+            config['min_latency'] = 256
+            
         config['hdmi'] = bool(cname in ['HDMI', 'NVidia'])
+        if config['hdmi']:
+            config['min_latency'] = 4096
 
-        config['usb'] = l_usb
-        config['internal'] = l_internal
         config['rates'] = rates
 
         for y in range(0, 20):
@@ -321,6 +333,8 @@ class StudioControls:
         self.combo_periods = builder.get_object('combo_periods')
         self.combo_backend = builder.get_object('combo_backend')
         self.monitor_combo = builder.get_object('monitor_combo')
+        self.cap_lat_spin = builder.get_object('cap_lat_spin')
+        self.play_lat_spin = builder.get_object('play_lat_spin')
         self.jack_midi_check = builder.get_object('jack_midi_check')
         self.jack_ind = builder.get_object('jack_ind')
         self.jack_state = builder.get_object('jack_state')
@@ -334,9 +348,12 @@ class StudioControls:
         self.cap_chan_spin = builder.get_object('cap_chan_spin')
         self.play_chan_spin = builder.get_object('play_chan_spin')
         self.hide_check = builder.get_object('hide_check')
+        self.xdev_name = builder.get_object('xdev_name')
         self.xdev_rate_drop = builder.get_object('xdev_rate_drop')
         self.xdev_buff_drop = builder.get_object('xdev_buff_drop')
         self.xdev_nperiods_drop = builder.get_object('xdev_nperiods_drop')
+        self.xdev_cap_lat = builder.get_object('xdev_cap_lat')
+        self.xdev_play_lat = builder.get_object('xdev_play_lat')
         ''' phones '''
         self.hp_action = builder.get_object('hp_action')
         self.hp_device = builder.get_object('hp_device')
@@ -433,11 +450,13 @@ class StudioControls:
 
         # read in autojack config file
         c_file = expanduser(self.config_file)
-        if not os.path.isfile(c_file):
+        '''if not os.path.isfile(c_file):
             # no config file, make one
             cp = subprocess.run([f"{install_path}/bin/convert-studio-controls"],
             universal_newlines=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=False)
-        # config file exists, read it in
+        # config file exists, read it in'''
+        cp = subprocess.run(["/usr/bin/convert-studio-controls"],
+        universal_newlines=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=False)
         print(f"Config file: {c_file}")
         with open(c_file) as f:
             self.conf_db = json.load(f)
@@ -454,6 +473,7 @@ class StudioControls:
             client.close()
         except jack.JackError:
             self.jackdb['on'] = False
+            client.close()
 
         self.logging_comb.set_active_id(str(self.conf_db['log-level']))
         # fill in Jack master widgets
@@ -465,6 +485,10 @@ class StudioControls:
         self.chan_out_spin.set_range(1, 128)
         self.chan_in_spin.set_value(self.jackdb['chan-in'])
         self.chan_out_spin.set_value(self.jackdb['chan-out'])
+        self.cap_lat_spin.set_range(0, 1000)
+        self.play_lat_spin.set_range(0, 1000)
+        self.cap_lat_spin.set_value(self.jackdb['cap-latency']
+        self.play_lat_spin.set_value(self.jackdb['play-latency']
         self.jack_midi_check.set_active(self.extra['a2j'])
         # Fill Extra devices widgets
         self.usb_plug_check.set_active(self.extra['usbauto'])

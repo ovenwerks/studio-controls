@@ -160,7 +160,8 @@ def make_db():
                 'chan-in': int(def_config['chan-in']), 'chan-out': int(def_config['chan-out']),
                 'rate': int(def_config['rate']), 'frame': int(def_config['frame']),
                 'period': int(def_config['period']), 'connect-mode': def_config['connect-mode'],
-                'dev': def_config['dev'], 'usbdev': def_config['usbdev']}
+                'dev': def_config['dev'], 'usbdev': def_config['usbdev'],
+                'cap-latency': 0, 'play-latency': 0}
 
     extra_db = {'a2j': bool(def_config['a2j'] in ['True']), 'usbauto': bool(def_config['usbauto'] in ['True']),
                 'usb-single': bool(def_config['usb-single'] in ['True']), 'monitor': def_config['monitor'],
@@ -243,18 +244,19 @@ def make_db():
 
 def make_dev_temp():
     ''' make a biolerplate device with no sub '''
-    dev_temp = {'number': -1, 'usb': False, "internal": False, 'hdmi': False,
+    dev_temp = {'number': -1, 'usb': False, "internal": False, 'hdmi': False, 'firewire': False,
                 'rates': ['32000', '44100', '48000', '88200', '96000', '192000'],
-                'sub': {}}
+                'min_latency': 16, 'sub': {}}
     return dev_temp
     
 def make_sub_temp():
     ''' make a template for a sub device '''
     global def_config
-    sub_temp = {'playback': True, 'capture': True, 
+    sub_temp = {'name': 'none', 'playback': True, 'capture': True, 
                 'play-chan': 0, 'cap-chan': 0,
                 'rate': int(def_config['RATE']), 'frame': int(def_config['FRAME']),
-                'nperiods': int(def_config['PERIOD']), 'hide': False}
+                'nperiods': int(def_config['PERIOD']), 'hide': False,
+                'cap-latency': 0, 'play-latency': 0}
     return sub_temp
 
 def write_new():
@@ -311,6 +313,28 @@ def check_new(use_bk):
             if (int(o_sub) + 50) < int(n_sub):
                 # we are not here yet but changes would go here
                 our_db['version'] = version
+                #lets fix things
+                our_db['jack']['cap-latency'] = 0
+                our_db['jack']['play-latency'] = 0
+                for device in our_db['devices']:
+                    dev_db = our_db['devices'][device]
+                    if not 'firewire' in dev_db:
+                        dev_db['firewire'] = False
+                    if dev_db['hdmi']:
+                        dev_db['min_latency'] = 4096
+                    elif dev_db['internal']:
+                        dev_db['min_latency'] = 128
+                    elif dev_db['firewire']:
+                        dev_db['min_latency'] = 256
+                    elif dev_db['usb']:
+                        dev_db['min_latency'] = 32
+                    else:
+                        dev_db['min_latency'] = 16
+                    for sub in dev_db['sub']:
+                        sub_db = dev_db[sub]
+                        sub_db['name'] = 'none'
+                        sub_db['cap-latency'] = 0
+                        sub_db['play-latency'] = 0}
             else:
                 our_db['version'] = version
         else:
