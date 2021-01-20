@@ -1,7 +1,13 @@
+studio-controls version 2.1.1
+
+ [ Len Ovens ]
+ - Fix won't run from /usr/local
+ - Fix convert-studio-controls logic
+
 studio-controls version 2.1.0
 
  [ Len Ovens ]
- Set version to 2.1.0 release
+ - Set version to 2.1.0 release
 
 studio-controls version 2.0.26-pre
 

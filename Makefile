@@ -101,8 +101,8 @@ install:
 # ---------------------------------------------------------------------------------------------------------------------
 
 uninstall:
-	rm -f etc/acpi/studio-*
-	rm -f etc/acpi/studio.sh
+	rm -f /etc/acpi/studio-*
+	rm -f /etc/acpi/studio.sh
 
 	rm -f $(DESTDIR)$(DATADIR)/applications/studio-controls.desktop
 

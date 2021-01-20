@@ -22,6 +22,7 @@ import jack
 import grp
 import json
 import copy
+import sys
 
 DBusGMainLoop(set_as_default=True)
 
@@ -82,7 +83,7 @@ class RTSetup:
     def __init__(self):
         self.enabled_path = "/etc/security/limits.d/audio.conf"
         self.disabled_path = "/etc/security/limits.d/audio.conf.disabled"
-        self.backup_file = "/usr/share/studio-controls/audio.conf"
+        self.backup_file = f"{install_path}/share/studio-controls/audio.conf"
 
     def set_governor(self, enable):
         if enable == True:
@@ -92,15 +93,15 @@ class RTSetup:
                 gov = "powersave"
             else:
                 gov = "ondemand"
-        subprocess.run(["/usr/bin/pkexec", "/usr/sbin/studio-system", gov], shell=False)
+        subprocess.run(["/usr/bin/pkexec", f"{install_path}/sbin/studio-system", gov], shell=False)
 
     def set_boost(self, enable):
         boost_path = "/sys/devices/system/cpu/intel_pstate/no_turbo"
         if os.path.exists(boost_path):
             if enable == True:
-                subprocess.run(["/usr/bin/pkexec", "/usr/sbin/studio-system", "boost"], shell=False)
+                subprocess.run(["/usr/bin/pkexec", f"{install_path}/sbin/studio-system", "boost"], shell=False)
             else:
-                subprocess.run(["/usr/bin/pkexec", "/usr/sbin/studio-system", "noboost"], shell=False)
+                subprocess.run(["/usr/bin/pkexec", f"{install_path}/sbin/studio-system", "noboost"], shell=False)
 
 
 class DevDB:
@@ -241,6 +242,9 @@ class StudioControls:
         # this is a long chunk of code that initializes every thing
         # it should probably be split into tabs at least
         global lock_file
+        global install_path
+        install_path = os.path.abspath(f"{os.path.dirname(sys.argv[0])}/..")
+        print(f"install path: {install_path}")
         self.sysinfo = SysInfo()
         c_dir = expanduser(self.config_path)
         if not os.path.isdir(c_dir):
@@ -261,7 +265,7 @@ class StudioControls:
         with open(lock_file, "w") as lk_file:
             lk_file.write(new_pid)
         self.version = ""
-        vfile = "/usr/share/studio-controls/version"
+        vfile = f"{install_path}/share/studio-controls/version"
         if os.path.isfile(vfile):
             with open(vfile, "r") as version_file:
                 for line in version_file:
@@ -287,7 +291,7 @@ class StudioControls:
 
         '''Create the GUI'''
         builder = Gtk.Builder()
-        builder.add_from_file("/usr/share/studio-controls/studio-controls.glade")
+        builder.add_from_file(f"{install_path}/share/studio-controls/studio-controls.glade")
         '''Get windows'''
         self.window_main = builder.get_object('window_main')
         self.window_help = builder.get_object('window_help')
@@ -430,7 +434,7 @@ class StudioControls:
         c_file = expanduser(self.config_file)
         if not os.path.isfile(c_file):
             # no config file, make one
-            cp = subprocess.run(["/usr/bin/convert-studio-controls"],
+            cp = subprocess.run([f"{install_path}/bin/convert-studio-controls"],
             universal_newlines=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=False)
         # config file exists, read it in
         print(f"Config file: {c_file}")
@@ -778,7 +782,7 @@ class StudioControls:
 
 
     def rt_button_hit(self, button):
-        subprocess.run(["/usr/bin/pkexec", "/usr/sbin/studio-system", "fix"], shell=False)
+        subprocess.run(["/usr/bin/pkexec", f"{install_path}/sbin/studio-system", "fix"], shell=False)
         self.rt_button.set_label("Logout required")
         self.rt_button.set_sensitive(False)
         self.message_dialog_rt_info.show()
@@ -815,7 +819,7 @@ class StudioControls:
     def firewire_cb(self, widget):
         newval = widget.get_active_id()
         if newval == "alsa" or newval == "ffado":
-            subprocess.run(["/usr/bin/pkexec", "/usr/sbin/studio-system", newval], shell=False)
+            subprocess.run(["/usr/bin/pkexec", f"{install_path}/sbin/studio-system", newval], shell=False)
 
 
     # Audio setup call backs
@@ -1374,7 +1378,7 @@ class StudioControls:
                 subprocess.run(["/usr/bin/dbus-send", "--type=signal", "/", "org.studio.control.event.quit_signal"],
                                shell=False)
                 # do it
-                subprocess.Popen(["/usr/bin/autojack"], stdin=subprocess.DEVNULL, stdout=subprocess.DEVNULL,
+                subprocess.Popen([f"{install_path}/bin/autojack"], stdin=subprocess.DEVNULL, stdout=subprocess.DEVNULL,
                                  stderr=subprocess.STDOUT, shell=False).pid
 
 

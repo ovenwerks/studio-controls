@@ -40,6 +40,7 @@ import jack
 import alsaaudio
 import json
 import copy
+import sys
 
 def get_dev_info(x):
     '''uses audio device number to make add a device structure with device
@@ -218,6 +219,7 @@ def import_config(caller):
     global config_path
     global config_file
     global conf_db
+    global install_path
 
     logging.log(7, f"import_config called by: {caller}")
 
@@ -238,7 +240,7 @@ def import_config(caller):
     c_file = expanduser(config_file)
     if not os.path.isfile(c_file):
         # no config file, make one
-        cp = subprocess.run(["/usr/bin/convert-studio-controls"],
+        cp = subprocess.run([f"{install_path}/bin/convert-studio-controls"],
             universal_newlines=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=False)
         logging.debug(f"convert config file: {cp.stdout.strip()}")
 
@@ -857,7 +859,7 @@ def msg_cb_removed(*args, **kwargs):
                     logging.debug(f"Subdevice {subname} unplugged")
                     if conf_db['jack']['usbdev'] == subname:
                         # must get rid of our jack client
-                        jack_died = True
+                        #jack_died = True
                         if last_master == conf_db['jack']['usbdev']:
                             kill_slave(conf_db['jack']['dev'])
                             time.sleep(1)
@@ -1295,9 +1297,11 @@ def jack_info(mesg):
 def main():
     ''' Autojack runs at session start and manages audio for the session.
     this is the daemon for studio-controls'''
+    global install_path
     global last_master
     global procs
     global jack_alive
+    global jack_client
     global jack_died
     global jack_count
     global phones
@@ -1305,12 +1309,15 @@ def main():
     global lock_file
     phones = False
     jack_count = 0
+    jack_client = 0
     procs = []
     last_master = ""
     jack_alive = False
     jack_died = False
     con_dirty = False
     print("starting up")
+    install_path = os.path.abspath(f"{os.path.dirname(sys.argv[0])}/..")
+    print(f"install path: {install_path}")
 
     # Try and kill any other running instance
     config_path = expanduser("~/.config/autojack")
@@ -1350,7 +1357,7 @@ def main():
     logging.info('Autojack started: logging started')
     print("logging started")
 
-    cp = subprocess.run(["/usr/bin/convert-studio-controls"],
+    cp = subprocess.run([f"{install_path}/bin/convert-studio-controls"],
         universal_newlines=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=False)
     logging.debug(f"check config file: {cp.stdout.strip()}")
 

@@ -301,26 +301,22 @@ def check_new(use_bk):
         print(f"saving old config file to: {c_file}.{our_db['version']}")
         os.replace(c_file, f"{c_file}.{our_db['version']}")
 
-        maj, mn, sub_stuff = our_db['version'].split('.')
-        subls = sub_stuff.split('-')
-        sub = subls[0]
-        if int(maj) > 1:
-            #this is up to date major
-            if int(mn) > -1:
-                #this is up to date minor
-                if int(sub) > 20:
-                    #this is up to date sub
-                    # no change needed just update version
-                    our_db['version'] = version
-                else:
-                    print("print version unusable please run convert-studio-controls -r")
-                    return
+        o_maj, o_mn, o_sub_stuff = our_db['version'].split('.')
+        o_subls = o_sub_stuff.split('-')
+        o_sub = o_subls[0]
+        n_maj, n_mn, n_sub_stuff = version.split('.')
+        n_subls = n_sub_stuff.split('-')
+        n_sub = n_subls[0]
+        if o_maj == n_maj and o_mn == n_mn:
+            if (int(o_sub) + 50) < int(n_sub):
+                # we are not here yet but changes would go here
+                our_db['version'] = version
             else:
-                print("print version unusable please run convert-studio-controls -r")
-                return
+                our_db['version'] = version
         else:
-            print("print version unusable please run convert-studio-controls -r")
-            return
+            print("print version unusable creating new default config file")
+            read_old()
+            make_db()
         write_new()
 
 
@@ -332,7 +328,8 @@ def main(argv):
     global version
     force = False
     use_bk = False
-    vfile = "/usr/share/studio-controls/version"
+    install_path = os.path.abspath(f"{os.path.dirname(sys.argv[0])}/..")
+    vfile = f"{install_path}/share/studio-controls/version"
 
     # what is our version?
     if os.path.isfile(vfile):
@@ -359,14 +356,17 @@ def main(argv):
             old_name = f"{new_name}.{arg}"
             use_bk = True
         elif opt in ("-v"):
-            print(f"Convert Studio Controls config Version: {version}")
+            # version already printed above, just exit
             sys.exit()
 
     c_file = expanduser(new_name)
-    if not force and os.path.isfile(c_file):
+    print(f"Search for: {c_file} force: {str(force)}")
+    if (not force) and os.path.isfile(c_file):
+        print("config file found, check it")
         # Found a config file, test it
         check_new(use_bk)
     else:
+        print("Config file not found, Create one")
         ''' no usable config file found.
             - search for pre json config and convert
             - or use defaults and create one
