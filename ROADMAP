@@ -6,10 +6,13 @@
 
 Fixes:
 	- usb devices bridge at startup fails
-	- none known
+	- jackclient test for 0
+        Traceback (most recent call last):
+        File "/usr/bin/autojack", line 613, in check_jack_status jack_client.deactivate()
+        AttributeError: 'int' object has no attribute 'deactivate'
+    - add ffado-tools or multimedia-firewire as dep
 
 Features:
-	- add pre/post jack start/stop scripting (for ffado mixer settings?)
 	- add USB naming based on serial or?
 	- add latency setting
 		- For JACK

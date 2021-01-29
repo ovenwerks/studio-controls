@@ -373,13 +373,40 @@ def config_start():
 
     import_config("config_start")
 
+    bus = dbus.SessionBus()
+
+    controller = bus.get_object(service_name, "/org/jackaudio/Controller")
+    control_iface = dbus.Interface(controller, control_interface_name)
+    configure_iface = dbus.Interface(controller, configure_interface_name)
+
+
     # if at session start we should wait a few seconds for pulse
     # to be fully running
+    time.sleep(2)
+    fpath = expanduser('~/.config/autojack/prestop')
+    if os.path.isfile(fpath) and os.access(fpath, os.X_OK):
+        logging.debug("Found prestop script")
+        cp = subprocess.run([fpath],
+                    universal_newlines=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=True)
+        logging.debug(f"Running script: {fpath}")
+
+    try:
+        control_iface.StopServer()
+    except:
+        print("")
     time.sleep(2)
     # Stop jack if running
     cp = subprocess.run(["/usr/bin/killall", "-q", "-9", "jackdbus", "jackd", "a2jmidid"],
                         universal_newlines=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=False)
     logging.debug(f"Kill old Procs: {cp.stdout.strip()}")
+
+    fpath = expanduser('~/.config/autojack/poststop')
+    if os.path.isfile(fpath) and os.access(fpath, os.X_OK):
+        logging.debug("Found poststop script")
+        cp = subprocess.run([fpath],
+                    universal_newlines=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=True)
+        logging.debug(f"Running script: {fpath}")
+
     if (conf_db['jack']['driver'] == "firewire") or fw_exists:
         time.sleep(3)
         # this is a firewire device, A busreset makes for stability
@@ -411,6 +438,14 @@ def config_start():
     cp = subprocess.run(["/usr/bin/pactl", "unload-module", "module-alsa-card"],
                         universal_newlines=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=False)
     logging.debug(f"remove module-alsa-card: {cp.stdout.strip()}")
+
+    fpath = expanduser('~/.config/autojack/prestart')
+    if os.path.isfile(fpath) and os.access(fpath, os.X_OK):
+        logging.debug("Found prestart script")
+        cp = subprocess.run([fpath],
+                    universal_newlines=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=True)
+        logging.debug(f"Running script: {fpath}")
+
     if os.path.exists(f"/proc/asound/{conf_db['jack']['usbdev'].split(',')[0]}") and conf_db['jack']['usbdev'] != "":
         mdev = conf_db['jack']['usbdev']
     else:
@@ -422,12 +457,6 @@ def config_start():
     if os.path.isfile(expanduser('~/.config/jack/conf.xml')):
         logging.debug("Found previous jack config removing")
         os.remove(expanduser('~/.config/jack/conf.xml'))
-
-    bus = dbus.SessionBus()
-
-    controller = bus.get_object(service_name, "/org/jackaudio/Controller")
-    control_iface = dbus.Interface(controller, control_interface_name)
-    configure_iface = dbus.Interface(controller, configure_interface_name)
 
     # Now start jackdbus with the configured device
     if conf_db['jack']['connect-mode'] != 'n':
@@ -471,12 +500,23 @@ def config_start():
     logging.debug(f"JACK rate/period/nperiods set to: {conf_db['jack']['rate']}/{conf_db['jack']['frame']}/{conf_db['jack']['period']}")
     time.sleep(3)
 
-    control_iface.StartServer()
+    try:
+        control_iface.StartServer()
+    except:
+        logging.debug("JACK start failed")
+        return
     logging.debug("JACK started")
 
     last_master = mdev
     # maybe check for jack up (need function?)
     time.sleep(3)
+
+    fpath = expanduser('~/.config/autojack/poststart')
+    if os.path.isfile(fpath) and os.access(fpath, os.X_OK):
+        logging.debug("Found poststart script")
+        cp = subprocess.run([fpath],
+                    universal_newlines=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=True)
+        logging.debug(f"Running script: {fpath}")
 
     start_jack_client()
 

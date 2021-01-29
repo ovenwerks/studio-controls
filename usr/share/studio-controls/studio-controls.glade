@@ -2,52 +2,52 @@
 <!-- Generated with glade 3.22.2 -->
 <interface>
   <requires lib="gtk+" version="3.12"/>
-  <object class="GtkAdjustment" id="adjustment1">
+  <object class="GtkAdjustment" id="ad_jack_cap_lat">
     <property name="upper">100</property>
     <property name="step_increment">1</property>
     <property name="page_increment">10</property>
   </object>
-  <object class="GtkAdjustment" id="adjustment10">
+  <object class="GtkAdjustment" id="ad_jack_chan_cap">
     <property name="upper">100</property>
     <property name="step_increment">1</property>
     <property name="page_increment">10</property>
   </object>
-  <object class="GtkAdjustment" id="adjustment2">
+  <object class="GtkAdjustment" id="ad_jack_chan_play">
     <property name="upper">100</property>
     <property name="step_increment">1</property>
     <property name="page_increment">10</property>
   </object>
-  <object class="GtkAdjustment" id="adjustment3">
+  <object class="GtkAdjustment" id="ad_jack_play_lat">
     <property name="upper">100</property>
     <property name="step_increment">1</property>
     <property name="page_increment">10</property>
   </object>
-  <object class="GtkAdjustment" id="adjustment4">
+  <object class="GtkAdjustment" id="ad_pulse_chan_in">
     <property name="upper">100</property>
     <property name="step_increment">1</property>
     <property name="page_increment">10</property>
   </object>
-  <object class="GtkAdjustment" id="adjustment5">
+  <object class="GtkAdjustment" id="ad_pulse_chan_out">
     <property name="upper">100</property>
     <property name="step_increment">1</property>
     <property name="page_increment">10</property>
   </object>
-  <object class="GtkAdjustment" id="adjustment6">
+  <object class="GtkAdjustment" id="ad_xdev_chan_cap">
     <property name="upper">100</property>
     <property name="step_increment">1</property>
     <property name="page_increment">10</property>
   </object>
-  <object class="GtkAdjustment" id="adjustment7">
+  <object class="GtkAdjustment" id="ad_xdev_chan_play">
     <property name="upper">100</property>
     <property name="step_increment">1</property>
     <property name="page_increment">10</property>
   </object>
-  <object class="GtkAdjustment" id="adjustment8">
+  <object class="GtkAdjustment" id="ad_xdev_lat_cap">
     <property name="upper">100</property>
     <property name="step_increment">1</property>
     <property name="page_increment">10</property>
   </object>
-  <object class="GtkAdjustment" id="adjustment9">
+  <object class="GtkAdjustment" id="ad_xdev_lat_play">
     <property name="upper">100</property>
     <property name="step_increment">1</property>
     <property name="page_increment">10</property>
@@ -341,6 +341,7 @@
                             <property name="can_focus">False</property>
                             <property name="tooltip_text" translatable="yes">These are the ports that go to the speakers</property>
                             <property name="active">0</property>
+                            <signal name="changed" handler="generic_cb" swapped="no"/>
                           </object>
                           <packing>
                             <property name="left_attach">1</property>
@@ -466,6 +467,7 @@
                                   <item id="96000" translatable="yes">96000</item>
                                   <item id="192000" translatable="yes">192000</item>
                                 </items>
+                                <signal name="changed" handler="generic_cb" swapped="no"/>
                               </object>
                               <packing>
                                 <property name="left_attach">1</property>
@@ -500,6 +502,7 @@
                                   <item id="2048" translatable="yes">2048</item>
                                   <item id="4096" translatable="yes">4096</item>
                                 </items>
+                                <signal name="changed" handler="generic_cb" swapped="no"/>
                               </object>
                               <packing>
                                 <property name="left_attach">1</property>
@@ -528,6 +531,7 @@
                                   <item id="3" translatable="yes">3</item>
                                   <item id="15" translatable="yes">15</item>
                                 </items>
+                                <signal name="changed" handler="generic_cb" swapped="no"/>
                               </object>
                               <packing>
                                 <property name="left_attach">1</property>
@@ -558,7 +562,7 @@
                             <property name="visible">True</property>
                             <property name="can_focus">True</property>
                             <property name="halign">start</property>
-                            <property name="adjustment">adjustment10</property>
+                            <property name="adjustment">ad_jack_play_lat</property>
                             <property name="climb_rate">1</property>
                             <property name="numeric">True</property>
                           </object>
@@ -572,7 +576,7 @@
                             <property name="visible">True</property>
                             <property name="can_focus">True</property>
                             <property name="halign">end</property>
-                            <property name="adjustment">adjustment9</property>
+                            <property name="adjustment">ad_jack_cap_lat</property>
                             <property name="climb_rate">1</property>
                             <property name="numeric">True</property>
                           </object>
@@ -588,7 +592,7 @@
                             <property name="halign">end</property>
                             <property name="text" translatable="yes">1</property>
                             <property name="input_purpose">number</property>
-                            <property name="adjustment">adjustment3</property>
+                            <property name="adjustment">ad_jack_chan_cap</property>
                             <property name="climb_rate">1</property>
                             <property name="numeric">True</property>
                             <property name="value">1</property>
@@ -605,7 +609,7 @@
                             <property name="halign">start</property>
                             <property name="text" translatable="yes">1</property>
                             <property name="input_purpose">number</property>
-                            <property name="adjustment">adjustment4</property>
+                            <property name="adjustment">ad_jack_chan_play</property>
                             <property name="numeric">True</property>
                             <property name="update_policy">if-valid</property>
                             <property name="value">1</property>
@@ -909,7 +913,7 @@
                                 <property name="visible">True</property>
                                 <property name="can_focus">True</property>
                                 <property name="receives_default">True</property>
-                                <signal name="clicked" handler="exdev_cap_all_cb" swapped="no"/>
+                                <signal name="clicked" handler="xdev_cap_all_cb" swapped="no"/>
                               </object>
                               <packing>
                                 <property name="left_attach">2</property>
@@ -921,9 +925,8 @@
                                 <property name="visible">True</property>
                                 <property name="can_focus">True</property>
                                 <property name="text" translatable="yes">0</property>
-                                <property name="adjustment">adjustment7</property>
-                                <property name="climb_rate">1</property>
-                                <property name="snap_to_ticks">True</property>
+                                <property name="adjustment">ad_xdev_chan_cap</property>
+                                <property name="climb_rate">0.01</property>
                                 <property name="numeric">True</property>
                                 <signal name="value-changed" handler="xdev_changed" swapped="no"/>
                               </object>
@@ -944,9 +947,10 @@
                               </packing>
                             </child>
                             <child>
-                              <object class="GtkSpinButton">
+                              <object class="GtkSpinButton" id="xdev_cap_lat">
                                 <property name="visible">True</property>
                                 <property name="can_focus">True</property>
+                                <property name="adjustment">ad_xdev_lat_cap</property>
                               </object>
                               <packing>
                                 <property name="left_attach">1</property>
@@ -1017,7 +1021,7 @@
                                 <property name="visible">True</property>
                                 <property name="can_focus">True</property>
                                 <property name="text" translatable="yes">0</property>
-                                <property name="adjustment">adjustment8</property>
+                                <property name="adjustment">ad_xdev_chan_play</property>
                                 <property name="numeric">True</property>
                                 <signal name="value-changed" handler="xdev_changed" swapped="no"/>
                               </object>
@@ -1040,9 +1044,10 @@
                               </packing>
                             </child>
                             <child>
-                              <object class="GtkSpinButton">
+                              <object class="GtkSpinButton" id="xdev_play_lat">
                                 <property name="visible">True</property>
                                 <property name="can_focus">True</property>
+                                <property name="adjustment">ad_xdev_lat_play</property>
                               </object>
                               <packing>
                                 <property name="left_attach">1</property>
@@ -1215,7 +1220,7 @@
                                 <property name="visible">True</property>
                                 <property name="can_focus">True</property>
                                 <property name="max_width_chars">3</property>
-                                <property name="adjustment">adjustment5</property>
+                                <property name="adjustment">ad_pulse_chan_out</property>
                                 <property name="climb_rate">1</property>
                                 <property name="numeric">True</property>
                                 <property name="value">1</property>
@@ -1391,7 +1396,7 @@ or the last device port, whichever is less.</property>
                                 <property name="text" translatable="yes">1</property>
                                 <property name="progress_pulse_step">1</property>
                                 <property name="input_purpose">number</property>
-                                <property name="adjustment">adjustment6</property>
+                                <property name="adjustment">ad_pulse_chan_in</property>
                                 <property name="climb_rate">1</property>
                                 <property name="numeric">True</property>
                                 <property name="value">1</property>
@@ -1522,6 +1527,7 @@ In general prefer "Ignore" over "Fail" modes.
                                   <item id="A" translatable="yes">Fail all self connect requests</item>
                                   <item id="a" translatable="yes">Ignore all self connect requests</item>
                                 </items>
+                                <signal name="changed" handler="generic_cb" swapped="no"/>
                               </object>
                               <packing>
                                 <property name="expand">False</property>
@@ -1751,6 +1757,7 @@ NSM aware applications.</property>
                         <property name="halign">start</property>
                         <property name="active">True</property>
                         <property name="draw_indicator">True</property>
+                        <signal name="toggled" handler="generic_cb" swapped="no"/>
                       </object>
                       <packing>
                         <property name="left_attach">0</property>

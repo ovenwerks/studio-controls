@@ -318,6 +318,10 @@ def check_new(use_bk):
                 our_db['jack']['play-latency'] = 0
                 for device in our_db['devices']:
                     dev_db = our_db['devices'][device]
+                    # device raw is the alsa device
+                    dev_db['raw'] = device
+                    dev_db['id'] = 'none'
+                    dev_db['bus'] = 'none'
                     if not 'firewire' in dev_db:
                         dev_db['firewire'] = False
                     if dev_db['hdmi']:
@@ -331,10 +335,10 @@ def check_new(use_bk):
                     else:
                         dev_db['min_latency'] = 16
                     for sub in dev_db['sub']:
-                        sub_db = dev_db[sub]
+                        sub_db = dev_db['sub'][sub]
                         sub_db['name'] = 'none'
                         sub_db['cap-latency'] = 0
-                        sub_db['play-latency'] = 0}
+                        sub_db['play-latency'] = 0
             else:
                 our_db['version'] = version
         else:
@@ -399,6 +403,7 @@ def main(argv):
         read_old()
         make_db()
         write_new()
+
 
 if __name__ == '__main__':
     main(sys.argv[1:])

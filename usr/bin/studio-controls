@@ -147,7 +147,7 @@ class DevDB:
             #print(f"cname: {cname} card: {str(x)}")
             if not cname in conf['devices']:
                 conf['devices'][cname] = {'number': x, 'usb': False, "internal": False,
-                'hdmi': False, 'firewire': False,'min_latency': 16
+                'hdmi': False, 'firewire': False,'min_latency': 16,
                 'rates': ['32000', '44100', '48000', '88200', '96000', '192000'],
                 'sub': {}}
             else:
@@ -445,6 +445,7 @@ class StudioControls:
         self.jack_error_mesg = ""
         self.jack_info_mesg = ""
         self.dirty = False
+        self.not_applied = False
         jack.set_error_function(callback=self.jack_error)
         jack.set_info_function(callback=self.jack_info)
 
@@ -477,8 +478,8 @@ class StudioControls:
 
         self.logging_comb.set_active_id(str(self.conf_db['log-level']))
         # fill in Jack master widgets
-        self.jack_rate_combo.set_active_id(str(self.jackdb['rate']))
-        self.combobox_late.set_active_id(str(self.jackdb['frame']))
+        # done below - self.jack_rate_combo.set_active_id(str(self.jackdb['rate']))
+        # done below - self.combobox_late.set_active_id(str(self.jackdb['frame']))
         self.combo_periods.set_active_id(str(self.jackdb['period']))
         self.combo_backend.set_active_id(self.jackdb['driver'])
         self.chan_in_spin.set_range(1, 128)
@@ -487,8 +488,8 @@ class StudioControls:
         self.chan_out_spin.set_value(self.jackdb['chan-out'])
         self.cap_lat_spin.set_range(0, 1000)
         self.play_lat_spin.set_range(0, 1000)
-        self.cap_lat_spin.set_value(self.jackdb['cap-latency']
-        self.play_lat_spin.set_value(self.jackdb['play-latency']
+        self.cap_lat_spin.set_value(self.jackdb['cap-latency'])
+        self.play_lat_spin.set_value(self.jackdb['play-latency'])
         self.jack_midi_check.set_active(self.extra['a2j'])
         # Fill Extra devices widgets
         self.usb_plug_check.set_active(self.extra['usbauto'])
@@ -537,9 +538,12 @@ class StudioControls:
             "mixer_cb": self.mixer_cb,
             "pavucontrol_cb": self.pavucontrol_cb,
             "carla_cb": self.carla_cb,
+            "generic_cb": self.generic_cb,
 
             "xdev_select_cb": self.xdev_select_cb,
             "xdev_changed": self.xdev_changed,
+            "xdev_cap_all_cb": self.xdev_cap_all_cb,
+            "xdev_play_all_cb": self.xdev_play_all_cb,
             "usb_plug_cb": self.usb_plug_cb,
             "hp_action_cb": self.hp_action_cb,
             "hp_switch_cb": self.hp_switch_cb,
@@ -569,6 +573,10 @@ class StudioControls:
         if self.jackdb['on']:
             if "not running" in mesg:
                 print(f"jack message received: {mesg}")
+
+    def generic_cb(self, widget):
+        ''' changes have been made but not yet applied '''
+        self.not_applied = True
 
     def jack_info(self, mesg):
         print(f"jack_info received: {mesg}")
@@ -694,10 +702,25 @@ class StudioControls:
         xdev_current = self.xdev_select.get_active_id()
         self.current_ex_dev = xdev_current
 
+        # Should be able to remove above if this does it.
+        #self.jack_rate_combo.set_active_id(str(self.jackdb['rate']))
+        #self.combo_periods.set_active_id(str(self.jackdb['period']))
+        #self.chan_in_spin.set_value(self.jackdb['chan-in'])
+        #self.chan_out_spin.set_value(self.jackdb['chan-out'])
+
+        self.combobox_late.set_active_id(str(self.jackdb['frame']))
+        # driver is probably ok to leave above
+        self.combo_backend.set_active_id(self.jackdb['driver'])
+
+        self.cap_lat_spin.set_value(self.jackdb['cap-latency'])
+        self.play_lat_spin.set_value(self.jackdb['play-latency'])
+
+
         self.jack_device_combo.set_sensitive(False)
         self.jack_usb_dev_combo.set_sensitive(False)
         self.chan_in_spin.set_sensitive(False)
         self.chan_out_spin.set_sensitive(False)
+        self.combobox_late.set_sensitive(False)
         self.combo_periods.set_sensitive(False)
         self.jack_rate_combo.set_sensitive(False)
         self.xdev_select.set_sensitive(False)
@@ -706,8 +729,10 @@ class StudioControls:
         self.xdev_select.get_model().clear()
         self.jack_usb_dev_combo.get_model().clear()
         self.jack_rate_combo.get_model().clear()
+        self.combobox_late.get_model().clear()
         rates =[]
         def_rates = ['32000', '44100', '48000', '88200', '96000', '192000']
+        frames = [16, 32, 64, 128, 256, 512, 1024, 2048, 4096]
 
         self.jack_usb_dev_combo.append("none", "No USB Master")
         if self.jackdb['usbdev'] == "" or self.jackdb['usbdev'] == "none":
@@ -780,8 +805,25 @@ class StudioControls:
                 self.jack_rate_combo.set_active_id(str(self.jackdb['rate']))
             else:
                 self.jack_rate_combo.set_active(0)
+        minlat = 16
+        fw = False
+        if self.jackdb['driver'] == "alsa":
+            if self.jackdb['usbdev'] != 'none':
+                minlat = self.conf_db['devices'][self.jackdb['usbdev'].split(',')[0]]['min_latency']
+            else:
+                minlat = self.conf_db['devices'][self.jackdb['dev'].split(',')[0]]['min_latency']
+                fw = self.conf_db['devices'][self.jackdb['dev'].split(',')[0]]['firewire']
+        for frame in frames:
+            tplt = ""
+            if frame == minlat and fw:
+                tplt = " For lower latency Use the FFADO kernal modules."
+            if frame >= minlat:
+                self.combobox_late.append(str(frame), f"{str(frame)}{tplt}")
+        self.combobox_late.set_active_id(str(self.jackdb['frame']))
+                
 
         self.jack_rate_combo.set_sensitive(True)
+        self.combobox_late.set_sensitive(True)
         if self.jackdb['driver'] == "alsa":
             self.jack_device_combo.set_sensitive(True)
             self.jack_usb_dev_combo.set_sensitive(True)
@@ -855,6 +897,7 @@ class StudioControls:
 
     def xdev_changed(self, widget):
         #self.xdev_select.set_sensitive(False)
+        self.not_applied = True
         if not self.xdev_select.get_sensitive():
             return
         self.cap_chan_spin.set_sensitive(False)
@@ -863,6 +906,9 @@ class StudioControls:
         self.xdev_rate_drop.set_sensitive(False)
         self.xdev_buff_drop.set_sensitive(False)
         self.xdev_nperiods_drop.set_sensitive(False)
+        self.xdev_cap_lat.set_sensitive(False)
+        self.xdev_play_lat.set_sensitive(False)
+        self.xdev_name.set_sensitive(False)
         this_dev = str(self.xdev_select.get_active_id())
         dev_db = self.conf_db['devices'][this_dev.split(',')[0]]
         sub_db = dev_db['sub'][str(this_dev.split(',')[1])]
@@ -873,6 +919,7 @@ class StudioControls:
         sub_db['rate'] = int(self.xdev_rate_drop.get_active_id())
         sub_db['frame'] = int(self.xdev_buff_drop.get_active_id())
         sub_db['nperiods'] = int(self.xdev_nperiods_drop.get_active_id())
+        sub_db['name'] = self.xdev_name.get_text().split(' ')[0]
         #get_value_as_int
         self.hide_check.set_sensitive(True)
         if not sub_db['hide']:
@@ -881,6 +928,40 @@ class StudioControls:
             self.xdev_rate_drop.set_sensitive(True)
             self.xdev_buff_drop.set_sensitive(True)
             self.xdev_nperiods_drop.set_sensitive(True)
+            self.xdev_cap_lat.set_sensitive(True)
+            self.xdev_play_lat.set_sensitive(True)
+            self.xdev_name.set_sensitive(True)
+
+
+    def xdev_cap_all_cb(self, widget):
+        self.not_applied = True
+        widget.set_sensitive(False)
+        #self.cap_chan_spin.set_sensitive(False)
+        #widget.set_active(False)
+        if widget.get_label() == ' All ':
+            self.cap_chan_spin.set_value(100)            
+            widget.set_label(' Off')
+        else:
+            widget.set_label(' All ')
+            self.cap_chan_spin.set_value(0)
+        widget.set_sensitive(True)
+        self.cap_chan_spin.set_sensitive(True)
+
+
+    def xdev_play_all_cb(self, widget):
+        self.not_applied = True
+        widget.set_sensitive(False)
+        #self.play_chan_spin.set_sensitive(False)
+        #widget.set_active(False)
+        if widget.get_label() == ' All ':
+            self.play_chan_spin.set_value(100)            
+            widget.set_label(' Off')
+        else:
+            widget.set_label(' All ')
+            self.play_chan_spin.set_value(0)
+        widget.set_sensitive(True)
+        self.play_chan_spin.set_sensitive(True)
+
 
     def redraw_extra(self, next_device):
         ''' change all widgets to reflect current values of the
@@ -893,6 +974,9 @@ class StudioControls:
         self.xdev_rate_drop.set_sensitive(False)
         self.xdev_buff_drop.set_sensitive(False)
         self.xdev_nperiods_drop.set_sensitive(False)
+        self.xdev_cap_lat.set_sensitive(False)
+        self.xdev_play_lat.set_sensitive(False)
+        self.xdev_name.set_sensitive(False)
         self.xdev_rate_drop.get_model().clear()
         self.xdev_buff_drop.get_model().clear()
 
@@ -917,19 +1001,15 @@ class StudioControls:
             self.xdev_rate_drop.append(str(rate), str(rate))
         self.xdev_rate_drop.set_active_id(str(sub_db['rate']))
         for frame in frames:
-            if dev_db['hdmi']:
-                if frame == 4096:
-                    self.xdev_buff_drop.append(str(frame), str(frame))
-            elif dev_db['internal']:
-                if frame > 64:
-                    self.xdev_buff_drop.append(str(frame), str(frame))
-            elif dev_db['usb']:
-                if frame > 16:
-                    self.xdev_buff_drop.append(str(frame), str(frame))
-            else:
+            if dev_db['min_latency'] <= frame:
                 self.xdev_buff_drop.append(str(frame), str(frame))
         self.xdev_buff_drop.set_active_id(str(sub_db['frame']))
         self.xdev_nperiods_drop.set_active_id(str(sub_db['nperiods']))
+        if sub_db['name'] == 'none':
+            sub_db['name'] = next_device
+        self.xdev_name.set_text(sub_db['name'])
+        self.xdev_cap_lat.set_value(sub_db['cap-latency'])
+        self.xdev_play_lat.set_value(sub_db['cap-latency'])
 
         self.xdev_select.set_sensitive(True)
         self.hide_check.set_sensitive(True)
@@ -939,9 +1019,13 @@ class StudioControls:
             self.xdev_rate_drop.set_sensitive(True)
             self.xdev_buff_drop.set_sensitive(True)
             self.xdev_nperiods_drop.set_sensitive(True)
+            self.xdev_cap_lat.set_sensitive(True)
+            self.xdev_play_lat.set_sensitive(True)
+            self.xdev_name.set_sensitive(True)
 
 
     def hp_action_cb(self, widget):
+        self.not_applied = True
         a_id = str(widget.get_active_id())
         if a_id == "script":
             print("Script is called ~/.config/autojack/phones.sh")
@@ -951,6 +1035,7 @@ class StudioControls:
         self.signal_autojack("phones")
 
     def jack_device_changed(self, button):
+        self.not_applied = True
         a_id = str(button.get_active_id())
         a_desc = str(button.get_active_text())
         if a_id != "None":
@@ -960,12 +1045,14 @@ class StudioControls:
                 self.dirty = True
 
     def jack_driver_changed(self, button):
+        self.not_applied = True
         a_driver = str(button.get_active_text())
         self.conf_db['jack']['driver'] = a_driver
         if not self.dirty:
             self.dirty = True
 
     def usb_master_changed(self, button):
+        self.not_applied = True
         a_id = str(button.get_active_id())
         if a_id != "None":
             self.conf_db['jack']['usbdev'] = a_id
@@ -973,6 +1060,7 @@ class StudioControls:
             self.dirty = True
 
     def usb_plug_cb(self, widget):
+        self.not_applied = True
         a_id = widget.get_active()
         self.usb_single_ck.set_sensitive(a_id)
 
@@ -1147,6 +1235,7 @@ class StudioControls:
         to current values '''
         if not widget.get_sensitive():
             return
+        self.not_applied = True
         temp_db =self.conf_db['pulse']['inputs']
         if temp_db != {}:
             old_name = self.pj_in_combo.get_active_id()
@@ -1172,6 +1261,7 @@ class StudioControls:
         to current values '''
         if not widget.get_sensitive():
             return
+        self.not_applied = True
         temp_db =self.conf_db['pulse']['outputs']
         if temp_db != {}:
             old_name = self.pj_out_combo.get_active_id()
@@ -1221,6 +1311,7 @@ class StudioControls:
         assign connect as "none". Before switching
         to display the new bridge we need to save the
         current bridge info '''
+        self.not_applied = True
         temp_db =self.conf_db['pulse']['inputs']
         indx = 1
         done = False
@@ -1243,6 +1334,7 @@ class StudioControls:
         assign connect as "none". Before switching
         to display the new bridge we need to save the
         current bridge info '''
+        self.not_applied = True
         temp_db =self.conf_db['pulse']['outputs']
         indx = 1
         done = False
@@ -1264,6 +1356,7 @@ class StudioControls:
         ''' get index of current bridge
         remove name from list by index
         remove connection from list by index '''
+        self.not_applied = True
         name = self.pj_in_combo.get_active_id()
         if name in self.conf_db['pulse']['inputs']:
             del self.conf_db['pulse']['inputs'][name]
@@ -1278,6 +1371,7 @@ class StudioControls:
         ''' get index of current bridge
         remove name from list by index
         remove connection from list by index '''
+        self.not_applied = True
         name = self.pj_out_combo.get_active_id()
         if name in self.conf_db['pulse']['outputs']:
             del self.conf_db['pulse']['outputs'][name]
@@ -1343,29 +1437,34 @@ class StudioControls:
         global autojack
         self.jackdb['on'] = True
         self.config_save()
+        self.not_applied = False
         self.signal_autojack("start")
 
     def cb_jack_stop(self, button):
         global autojack
         self.jackdb['on'] = False
         self.config_save()
+        self.not_applied = False
         self.signal_autojack("stop")
 
     def cb_audio_apply(self, button):
         '''callback for audio tab apply button'''
         global autojack
         self.config_save()
+        self.not_applied = False
         self.signal_autojack("config")
 
     def config_save(self):
         ''' Write audio setting to ~/.config/autojack/autojackrc'''
         
-        self.jackdb['chan-in'] = int(self.chan_in_spin.get_value())
-        self.jackdb['chan-out'] = int(self.chan_out_spin.get_value())
+        self.jackdb['chan-in'] = int(self.chan_in_spin.get_value_as_int())
+        self.jackdb['chan-out'] = int(self.chan_out_spin.get_value_as_int())
         self.jackdb['rate'] = int(self.jack_rate_combo.get_active_id())
         self.jackdb['frame'] = int(self.combobox_late.get_active_id())
         self.jackdb['period'] = int(self.combo_periods.get_active_id())
         self.jackdb['connect-mode'] = str(self.jk_connect_mode.get_active_id())
+        self.jackdb['cap_latency'] = int(self.cap_lat_spin.get_value_as_int())
+        self.jackdb['play_latency'] = int(self.play_lat_spin.get_value_as_int())
 
         self.extra['a2j'] = self.jack_midi_check.get_active()
         self.extra['usbauto'] = self.usb_plug_check.get_active()
@@ -1435,6 +1534,24 @@ class StudioControls:
         global lock_file
         if jack_alive:
             jack_client.close()
+        #self.window_main = builder.get_object('window_main')
+        if self.not_applied:
+            dialog = Gtk.MessageDialog(
+                transient_for=self.window_main,
+                flags=0,
+                message_type=Gtk.MessageType.WARNING,
+                buttons=Gtk.ButtonsType.NONE,
+                text="Warning, New Settings have not been Applied",
+            )
+            dialog.add_buttons("Apply Settings", 10, "Exit", 11)
+            response = dialog.run()
+            if response == 10:
+                self.config_save()
+                self.not_applied = False
+                self.signal_autojack("config")
+    
+            dialog.destroy()
+
         if os.path.isfile(lock_file):
             new_pid = str(os.getpid())
             if os.path.isfile(lock_file):
