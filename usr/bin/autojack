@@ -610,8 +610,9 @@ def check_jack_status(user_data):
 
     # sent by jackdied() callback
     if jack_died:
-        jack_client.deactivate()
-        jack_client.close()
+        if jack_client:
+            jack_client.deactivate()
+            jack_client.close()
         jack_died = False
         jack_alive = False
         logging.debug("jack client closed and cleaned up")

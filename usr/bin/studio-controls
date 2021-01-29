@@ -135,6 +135,7 @@ class DevDB:
         ndevs += 1
         for x in range(0, ndevs):
             # card loop
+            cname = ""
             if os.path.exists(f"/proc/asound/card{str(x)}"):
                 if os.path.isfile(f"/proc/asound/card{str(x)}/id"):
                     with open(f"/proc/asound/card{str(x)}/id", "r") as card_file:

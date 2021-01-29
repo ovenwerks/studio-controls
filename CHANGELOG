@@ -1,3 +1,10 @@
+studio-controls version 2.1.2
+
+ [ Len Ovens ]
+ - fix missing parameter default set
+ - fix check jack client exists
+
+
 studio-controls version 2.1.1
 
  [ Len Ovens ]
