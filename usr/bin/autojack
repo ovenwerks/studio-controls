@@ -45,27 +45,6 @@ import sys
 def get_dev_info(x):
     '''uses audio device number to make add a device structure with device
     info to the config database
-
-        devicename
-            number (-1 for configured devices not plugged in)
-            usb
-            internal
-            firewire
-            sub:
-                number (not all are used) string (str(int))
-                    playback bool
-                    play_pid int
-                    play_chan int (config)
-                    capture bool
-                    cap_pid int
-                    cap_chan int (config)
-                    rate: int (config)
-                    frame: int (config)
-                    nperiods: int (config)
-                    hide: bool (config)
-    this call adds to the config parts if they exist
-
-
     '''
 
     global conf_db
@@ -73,6 +52,9 @@ def get_dev_info(x):
     fw_exists = False
     cname = ""
     sub = 0
+    usb = False
+    usbid = "none"
+    usbbus = "none"
     if os.path.exists(f"/proc/asound/card{str(x)}"):
         if os.path.isfile(f"/proc/asound/card{str(x)}/id"):
             with open(f"/proc/asound/card{str(x)}/id", "r") as card_file:
@@ -81,14 +63,29 @@ def get_dev_info(x):
                     cname = line.rstrip()
         else:
             cname = str(x)
+    if os.path.exists(f"/proc/asound/card{str(x)}/usbbus"):
+        usb = True
+        with open(f"/proc/asound/card{str(x)}/usbbus", "r") as card_file:
+            for line in card_file:
+                # only need one line
+                usbbus = line.rstrip()
+        with open(f"/proc/asound/card{str(x)}/usbid", "r") as card_file:
+            for line in card_file:
+                # only need one line
+                usbid = line.rstrip()
+        #device['usb'] = True
+
+    for ddev in conf_db['devices']:
+        if usb:
+            if usbid == conf_db['devices'][ddev]['id']:
+        if conf_db['devices'][ddev]['raw'] == cname:
+    ####################
     if cname in conf_db['devices']:
         conf_db['devices'][cname]['number'] = str(x)
     else:
         conf_db['devices'][cname] = {'number': str(x)}
     device = conf_db['devices'][cname]
 
-    #if os.path.exists(f"/proc/asound/card{str(x)}/usbbus"):
-    #    device['usb'] = True
     device['usb'] = os.path.exists(f"/proc/asound/card{str(x)}/usbbus")
     device['internal'] = os.path.exists(f"/proc/asound/card{str(x)}/codec#0")
     device['firewire'] = os.path.exists(f"/proc/asound/card{str(x)}/firewire")
@@ -183,10 +180,11 @@ def extra_devices():
     import_device_array()
     # a few loops
     for dev in conf_db['devices']:
+        rawdev = conf_db['devices'][dev]['raw']
         if int(conf_db['devices'][dev]['number']) > -1:
             usb = bool(conf_db['devices'][dev]['usb'] and conf_db['extra']['usbauto'])
             for sub in conf_db['devices'][dev]['sub']:
-                fullname = f"{dev},{sub},0"
+                fullname = f"{rawdev},{sub},0"
                 sub_db = conf_db['devices'][dev]['sub'][sub]
                 if sub_db['hide']:
                     if sub_db['cap-pid'] or sub_db['play-pid']:
