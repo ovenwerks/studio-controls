@@ -1,9 +1,14 @@
+studio-controls version 2.1.3
+
+ [ Len Ovens ]
+ - Catch jack connect exceptions
+ - Search for clients with : included to prevent false positive
+
 studio-controls version 2.1.2
 
  [ Len Ovens ]
  - fix missing parameter default set
  - fix check jack client exists
-
 
 studio-controls version 2.1.1
 
