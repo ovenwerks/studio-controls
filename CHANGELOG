@@ -1,3 +1,8 @@
+studio-controls version 2.1.4
+
+ [ Len Ovens ]
+ - Apparently regex doesn't see : filter out bad positives
+
 studio-controls version 2.1.3
 
  [ Len Ovens ]

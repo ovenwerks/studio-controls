@@ -696,6 +696,9 @@ def connect_pa():
             nextport = connection
             pulselist = jack_client.get_ports(f"{bridge}:*", is_audio=True, is_input=True)
             for pport in pulselist:
+                # apparently reg ex with : doesn't find : so sort it here
+                if pport.name.split(':')[0] != bridge:
+                    continue
                 if nextport != prevport:
                     logging.debug(f"jack connect {nextport} to {pport.name}")
                     try:
@@ -714,6 +717,8 @@ def connect_pa():
                 nextport = conf_db['extra']['MONITOR']
             pulselist = jack_client.get_ports(f"{bridge}:*", is_audio=True, is_output=True)
             for pport in pulselist:
+                if pport.name.split(':')[0] != bridge:
+                    continue
                 if nextport != prevport:
                     logging.debug(f"jack connect {pport.name} to {nextport}")
                     try:
