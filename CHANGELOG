@@ -3,6 +3,11 @@ studio-controls version 2.1.60
  [ Len Ovens ]
  - Add not applied dialog on exit
  - Add user script for pre/post start/stop
+ - Add custom extra device naming
+ - Reimagine the GUI
+ - Add qmidinet starting for networked MIDI (GUI)
+ - Add zita-njbridge for networked audio (GUI so far)
+ - Add JACK and bridge extra latency in GUI
 
 studio-controls version 2.1.4
 

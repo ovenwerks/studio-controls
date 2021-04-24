@@ -165,7 +165,8 @@ def make_db():
 
     extra_db = {'a2j': bool(def_config['a2j'] in ['True']), 'usbauto': bool(def_config['usbauto'] in ['True']),
                 'usb-single': bool(def_config['usb-single'] in ['True']), 'monitor': def_config['monitor'],
-                'phone-action': def_config['phone-action'], 'phone-device': def_config['phone-device']
+                'phone-action': def_config['phone-action'], 'phone-device': def_config['phone-device'],
+                'usbnext': 1
                 }
     our_db['jack'] = jack_db
     our_db['extra'] = extra_db
@@ -227,6 +228,7 @@ def make_db():
             if dev not in devices_db:
                 devices_db[dev] = make_dev_temp()
             dev_db = devices_db[dev]
+            dev_db[raw] = dev
             if dev == default_device.split(',')[0]:
                 dev_db['internal'] = True
             if dev == def_config['USBDEV'].split(',')[0]:
@@ -234,6 +236,7 @@ def make_db():
             if sub not in dev_db['sub']:
                 dev_db['sub'][sub] = make_sub_temp()
             sub_db = dev_db['sub'][sub]
+            sub_db['name'] = rdev
             if rdev in def_config['XDEV'].split():
                 sub_db['play-chan'] = 100
                 sub_db['cap-chan'] = 100
@@ -246,7 +249,7 @@ def make_dev_temp():
     ''' make a biolerplate device with no sub '''
     dev_temp = {'number': -1, 'usb': False, "internal": False, 'hdmi': False, 'firewire': False,
                 'rates': ['32000', '44100', '48000', '88200', '96000', '192000'],
-                'min_latency': 16, 'sub': {}}
+                'min_latency': 16, 'id':'none', 'bus': 'none', 'sub': {}}
     return dev_temp
     
 def make_sub_temp():
@@ -316,12 +319,23 @@ def check_new(use_bk):
                 #lets fix things
                 our_db['jack']['cap-latency'] = 0
                 our_db['jack']['play-latency'] = 0
-                for device in our_db['devices']:
+                our_db['extra']['usbnext'] = 1
+                if not 'znet' in our_db:
+                    our_db['znet'] = {}
+                if not 'mnet' in our_db:
+                    our_db['mnet'] = {'type': 'jack', 'count': 0}
+                dev_list = list(our_db['devices'])
+                for device in dev_list:
                     dev_db = our_db['devices'][device]
                     # device raw is the alsa device
-                    dev_db['raw'] = device
-                    dev_db['id'] = 'none'
-                    dev_db['bus'] = 'none'
+                    if not 'raw' in dev_db:
+                        dev_db['raw'] = device
+                    if not 'number' in dev_db:
+                        dev_db['number'] = -1
+                    if not 'id' in dev_db:
+                        dev_db['id'] = 'none'
+                    if not 'bus' in dev_db:
+                        dev_db['bus'] = 'none'
                     if not 'firewire' in dev_db:
                         dev_db['firewire'] = False
                     if dev_db['hdmi']:
@@ -332,11 +346,17 @@ def check_new(use_bk):
                         dev_db['min_latency'] = 256
                     elif dev_db['usb']:
                         dev_db['min_latency'] = 32
+                        if not (device[0:2] == 'USB' and device[3].isdigit()):
+                            new_dev = f"USB{our_db['extra']['usbnext']}"
+                            our_db['extra']['usbnext'] = our_db['extra']['usbnext'] + 1
+                            our_db['devices'][new_dev] = our_db['devices'].pop(device)
+                            dev_db = our_db['devices'][new_dev]
                     else:
                         dev_db['min_latency'] = 16
                     for sub in dev_db['sub']:
                         sub_db = dev_db['sub'][sub]
-                        sub_db['name'] = 'none'
+                        #sub_db['name'] = 'none'
+                        sub_db['name'] = f"{dev_db['raw']},{sub},0"
                         sub_db['cap-latency'] = 0
                         sub_db['play-latency'] = 0
             else:
@@ -367,7 +387,7 @@ def main(argv):
                 print(f"Convert Studio Conrols Config File (version {version})")
 
     try:
-        opts, args = getopt.getopt(argv,"hrvb:")
+        opts, args = getopt.getopt(argv,"hrvb")
     except getopt.GetoptError:
         print ('bad parameters')
         sys.exit(2)

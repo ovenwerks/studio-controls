@@ -12,8 +12,20 @@ Fixes:
         AttributeError: 'int' object has no attribute 'deactivate'
     - add ffado-tools or multimedia-firewire as dep
 
+TODO: (part way done)
+	[GUI]
+	- find false possitive for session changed
+	- make help work with current tab
+	- remove warning dialogs and create on the fly as needed
+
+	[Backend]
+	- use xdev added latency
+	- use jack added latency
+	- add qmidinet
+	- add zita-njbridge
+	- add JACK xrun counter
+
 Features:
-	- add USB naming based on serial or?
 	- add latency setting
 		- For JACK
 		- For zita-ajbridge
@@ -21,7 +33,6 @@ Features:
 	- better JACK status showing
 		- detect xruns in autojack so number is for full jack run
 		- keep xrun reason (log it?)
-	- Limit alsa fw devices to 256/2 with a note
 
 	- Add jackmixer  or jack-mix-box? auto start and connect
 	- Add packagers file describing depends/conflicts
