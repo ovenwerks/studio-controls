@@ -7,7 +7,10 @@ studio-controls version 2.1.60
  - Reimagine the GUI
  - Add qmidinet starting for networked MIDI (GUI)
  - Add zita-njbridge for networked audio (GUI so far)
- - Add JACK and bridge extra latency in GUI
+ - Add JACK and bridge extra latency
+ - Fixed bridge find rate
+ - Fixed device number setting in device DB
+ - Add post bridge script
 
 studio-controls version 2.1.4
 

@@ -19,8 +19,6 @@ TODO: (part way done)
 	- remove warning dialogs and create on the fly as needed
 
 	[Backend]
-	- use xdev added latency
-	- use jack added latency
 	- add qmidinet
 	- add zita-njbridge
 	- add JACK xrun counter
