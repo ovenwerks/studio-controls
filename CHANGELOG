@@ -5,7 +5,7 @@ studio-controls version 2.1.60
  - Add user script for pre/post start/stop
  - Add custom extra device naming
  - Reimagine the GUI
- - Add qmidinet starting for networked MIDI (GUI)
+ - Add qmidinet starting for networked MIDI
  - Add zita-njbridge for networked audio (GUI so far)
  - Add JACK and bridge extra latency
  - Fixed bridge find rate

@@ -384,6 +384,20 @@ def reconfig():
             # Can't add logging for background processes. Will show up in syslog
             subprocess.Popen(["/usr/bin/a2jmidid", "-e"], shell=False).pid
 
+    if [old_conf_db['mnet']['count'], old_conf_db['mnet']['type']] != [conf_db['mnet']['count'], conf_db['mnet']['type']]:
+        logging.debug("reconfiguring MIDI network")
+        #cp = subprocess.run(["/usr/bin/killall", "-9", "a2jmidid"],
+        cp = subprocess.run(["/usr/bin/killall", "qmidinet"],
+                            universal_newlines=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=False)
+        logging.debug(f"kill old qmidinet: {cp.stdout.strip()}")
+        if conf_db['mnet']['count']:
+            mtype = ""
+            if conf_db['mnet']['type'] == 'jack':
+                mtype = "--alsa-midi=no --jack-midi=yes"
+            cmd = f"/usr/bin/qmidinet --num-ports={str(conf_db['mnet']['count'])} --no-gui {mtype}" 
+            subprocess.Popen(shlex.split(cmd), shell=False).pid
+
+
     # extra devices compares what is to config and fixes things
     logging.debug("Check extra devices")
     extra_devices()
@@ -618,6 +632,13 @@ def config_start():
     if conf_db['extra']['a2j']:
         # Can't set up logging
         cmd = "/usr/bin/a2jmidid -e"
+        subprocess.Popen(shlex.split(cmd), shell=False).pid
+
+    if conf_db['mnet']['count']:
+        mtype = ""
+        if conf_db['mnet']['type'] == 'jack':
+            mtype = "--alsa-midi=no --jack-midi=yes"
+        cmd = f"/usr/bin/qmidinet --num-ports={str(conf_db['mnet']['count'])} --no-gui {mtype}" 
         subprocess.Popen(shlex.split(cmd), shell=False).pid
 
     fpath = expanduser('~/.config/autojack/postbridge')
