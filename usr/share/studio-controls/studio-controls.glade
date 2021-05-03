@@ -2233,6 +2233,7 @@ NSM aware applications.</property>
                                   <item id="16bit" translatable="yes">16bit integer</item>
                                   <item id="24bit" translatable="yes">24bit integer</item>
                                   <item id="float" translatable="yes">32bit float</item>
+                                  <item id="none" translatable="yes">N/A  (Receiver)</item>
                                 </items>
                                 <signal name="changed" handler="znet_changed_cb" swapped="no"/>
                               </object>
@@ -2246,7 +2247,7 @@ NSM aware applications.</property>
                                 <property name="visible">True</property>
                                 <property name="can_focus">False</property>
                                 <property name="halign">end</property>
-                                <property name="label" translatable="yes">Playback Bits: </property>
+                                <property name="label" translatable="yes">Sender Bit Depth: </property>
                               </object>
                               <packing>
                                 <property name="left_attach">2</property>
@@ -2288,7 +2289,7 @@ NSM aware applications.</property>
                                 <property name="visible">True</property>
                                 <property name="can_focus">False</property>
                                 <property name="halign">end</property>
-                                <property name="label" translatable="yes">Bridge Sender IP: </property>
+                                <property name="label" translatable="yes">Bridge Receiver IP: </property>
                               </object>
                               <packing>
                                 <property name="left_attach">2</property>
@@ -2311,7 +2312,7 @@ NSM aware applications.</property>
                                 <property name="visible">True</property>
                                 <property name="can_focus">False</property>
                                 <property name="halign">end</property>
-                                <property name="label" translatable="yes">Bridge Sender Port: </property>
+                                <property name="label" translatable="yes">Bridge Receiver Port: </property>
                               </object>
                               <packing>
                                 <property name="left_attach">2</property>
@@ -2350,7 +2351,7 @@ NSM aware applications.</property>
                                 <property name="visible">True</property>
                                 <property name="can_focus">False</property>
                                 <property name="halign">end</property>
-                                <property name="label" translatable="yes">Latency (ms): </property>
+                                <property name="label" translatable="yes">Receiver Latency (ms): </property>
                               </object>
                               <packing>
                                 <property name="left_attach">2</property>

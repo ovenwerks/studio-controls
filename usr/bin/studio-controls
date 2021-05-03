@@ -1426,6 +1426,7 @@ class StudioControls:
         self.znet_port.set_sensitive(False)
         self.znet_bits.set_sensitive(False)
         self.znet_name.set_sensitive(False)
+        self.znet_late.set_sensitive(False)
 
         self.znet_bridge.get_model().clear()
         our_ip = "0.0.0.0"
@@ -1436,10 +1437,11 @@ class StudioControls:
             self.znet_count.set_value(1)
             self.znet_ip.set_text(our_ip)
             self.znet_port.set_value(8300)
-            self.znet_bits.set_active_id('16bit')
-            self.znet_late.set_value(10)
+            self.znet_bits.set_active_id('none')
+            self.znet_late.set_value(0)
             self.znet_name.set_text("")
             self.znetbridge = ""
+            return
         else:
             for bridge in znet_db:
                 self.znet_bridge.append(bridge, bridge)
@@ -1451,8 +1453,12 @@ class StudioControls:
             self.znet_count.set_value(znet_db[new_bridge]['count'])
             self.znet_ip.set_text(znet_db[new_bridge]['ip'])
             self.znet_port.set_value(znet_db[new_bridge]['port'])
-            self.znet_bits.set_active_id(znet_db[new_bridge]['bits'])
-            self.znet_late.set_value(znet_db[new_bridge]['latency'])
+            if znet_db[new_bridge]['direction'] == 'out':
+                self.znet_bits.set_active_id(znet_db[new_bridge]['bits'])
+                self.znet_late.set_value(0)
+            else:
+                self.znet_bits.set_active_id('none')
+                self.znet_late.set_value(znet_db[new_bridge]['latency'])
             self.znetbridge = new_bridge
 
         if shutil.which("zita-n2j") == None:
@@ -1460,18 +1466,21 @@ class StudioControls:
         else:
             self.znet_warn.set_text("")
 
+            if znet_db[new_bridge]['direction'] == 'in':
+                self.znet_late.set_sensitive(True)
+            if znet_db[new_bridge]['direction'] == 'out':
+                self.znet_bits.set_sensitive(True)
             self.znet_bridge.set_sensitive(True)
             #self.znet_direction.set_sensitive(True) # should never be true
             self.znet_count.set_sensitive(True)
             self.znet_ip.set_sensitive(True)
             self.znet_port.set_sensitive(True)
-            self.znet_bits.set_sensitive(True)
             self.znet_name.set_sensitive(True)
 
 
     '''audio'''
     def znet_bridge_cb(self, widget):
-        ''' callback to look at different pa bridge.
+        ''' callback to look at different znet bridge.
         need to save name and connection, then
         refresh name and connections to match '''
         if not widget.get_sensitive():
@@ -1484,12 +1493,36 @@ class StudioControls:
     def znet_changed_cb(self, widget):
         if not widget.get_sensitive():
             return
+        this_db = self.conf_db['znet']
+        if this_db != {}:
+            old_name = self.znet_bridge.get_active_id()
+            new_name = self.znet_name.get_text().split()[0]
+            if new_name != old_name:
+                if old_name in this_db:
+                    this_db[new_name] = this_db.pop(old_name)
+                else:
+                    # probably a "" string
+                    return
+            this_db[new_name]['count'] = self.znet_count.get_value_as_int()
+            this_db[new_name]['ip'] = self.znet_ip.get_text()
+            this_db[new_name]['port'] = self.znet_port.get_value_as_int()
+            if this_db[new_name]['direction'] == 'out':
+                if self.znet_bits.get_active_id() != 'none':
+                    this_db[new_name]['bits'] = self.znet_bits.get_active_id()
+            else:
+                this_db[new_name]['bits'] = 'none'
+            if this_db[new_name]['direction'] == 'in':
+                this_db[new_name]['latency'] = self.znet_late.get_value_as_int()
+            else:
+                this_db[new_name]['latency'] = 0
+
+            self.not_applied = True
+            self.refresh_net(new_name)
 
     def znet_add_cb(self, widget):
-        ''' need to create a name for the bridge and
-        assign connect as "none". Before switching
-        to display the new bridge we need to save the
-        current bridge info '''
+        ''' need to create a name for the bridge and default values
+        before switching to display the new bridge
+        '''
         if not widget.get_sensitive():
             return
         direct = 'out'
@@ -1512,15 +1545,28 @@ class StudioControls:
         s.connect(("8.8.8.8", 80))
         ip = s.getsockname()[0]
         s.close()
-        if widget.get_active_id() == 'in':
+        late = 10
+        bits = "none"
+        if widget.get_active_id() == 'out':
             ipl = ip.split('.')
             ip = f"{ipl[0]}.{ipl[1]}.{ipl[2]}."
+            late = 0
+            bits = "16bit"
+            dialog = Gtk.MessageDialog(
+                transient_for=self.window_main,
+                flags=0,
+                message_type=Gtk.MessageType.WARNING,
+                buttons=Gtk.ButtonsType.OK,
+                text="Warning, The IP is not complete",
+            )
+            response = dialog.run()
+            dialog.destroy()
         temp_db[new_name] = {
                             'direction': widget.get_active_id(),
                             'ip': ip,
                             'port': 8300,
-                            'bits': '16bit',
-                            'latency': 10,
+                            'bits': bits,
+                            'latency': late,
                             'count': 2
                             }
         self.refresh_net(new_name)
@@ -1528,8 +1574,8 @@ class StudioControls:
         widget.set_sensitive(True)
 
     def znet_rem_cb(self, widget):
-        ''' get index of current bridge
-        remove name from list by index'''
+        ''' Remove the currently displayed bridge
+        and refresh display (which defaults to the first in the list)'''
         self.not_applied = True
         name = self.znet_bridge.get_active_id()
         if name in self.conf_db['znet']:
