@@ -228,7 +228,7 @@ def make_db():
             if dev not in devices_db:
                 devices_db[dev] = make_dev_temp()
             dev_db = devices_db[dev]
-            dev_db[raw] = dev
+            dev_db['raw'] = dev
             if dev == default_device.split(',')[0]:
                 dev_db['internal'] = True
             if dev == def_config['USBDEV'].split(',')[0]:
