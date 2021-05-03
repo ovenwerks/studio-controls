@@ -15,11 +15,11 @@ Fixes:
 TODO: (part way done)
 	[GUI]
 	- find false possitive for session changed
+	- znet not saving
 	- make help work with current tab
 	- remove warning dialogs and create on the fly as needed
 
 	[Backend]
-	- add zita-njbridge
 	- add JACK xrun counter
 
 Features:

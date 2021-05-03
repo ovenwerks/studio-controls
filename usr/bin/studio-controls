@@ -738,7 +738,6 @@ class StudioControls:
                 jack_client = jack.Client('controls', use_exact_name=False, no_start_server=True)
             except jack.JackError:
                 self.jack_state.set_text(" Stopped")
-                self.jack_ind.set_from_icon_name("gtk-stop", 0)
                 self.xrun_lab.set_text(" 0")
                 xrun_count = 0
                 return True

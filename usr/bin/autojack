@@ -270,6 +270,48 @@ def extra_devices():
     logging.debug("updating extra devices complete")
 
 
+def net_bridge():
+    ''' set up all audio network bridges as per configuration '''
+    global conf_db
+    logging.debug("updating Audio network bridges")
+
+    if not conf_db['jack']['on']:
+        return
+        # no use checking anything else
+    cp = subprocess.run(["/usr/bin/killall", "zita-n2j"],
+                        universal_newlines=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=False)
+    cp1 = subprocess.run(["/usr/bin/killall", "zita-j2n"],
+                        universal_newlines=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=False)
+    logging.debug(f"kill old zita-njbridge: {cp.stdout.strip()}{cp1.stdout.strip()}")
+    for bridge in conf_db['znet']:
+        br_db = conf_db['znet'][bridge]
+        cmd = ""
+        cnt_str = "--chan "
+        late_bits = ""
+        if br_db['direction'] == "out":
+            cmd = "zita-j2n "
+            cnt_str = f"{cnt_str}{str(br_db['count'])}"
+            late_bits = f"--{br_db['bits']}"
+        elif br_db['direction'] == "in":
+            cmd = "zita-n2j"
+            late_bits = f"--buff {str(br_db['latency'])}"
+            for i in range(1, (br_db['count'] + 1)):
+                if i == br_db['count']:
+                    cnt_str = f"{cnt_str}{str(i)}"
+                else:
+                    cnt_str = f"{cnt_str}{str(i)},"
+        else:
+            logging.warning(f"audio network bridge {bridge} invalid")
+            continue
+
+        cmd = f"{cmd} --jname {bridge} {cnt_str} {late_bits} {br_db['ip']} {str(br_db['port'])}"
+        print(cmd)
+        subprocess.Popen(shlex.split(cmd), shell=False).pid
+
+
+    logging.debug("updating network audio bridges complete")
+
+
 def import_config(caller):
     ''' sets default parmeters, then reads values from configuration file'''
     global config
@@ -401,6 +443,7 @@ def reconfig():
     # extra devices compares what is to config and fixes things
     logging.debug("Check extra devices")
     extra_devices()
+    net_bridge()
 
     if conf_db['extra']['phone-device'] != old_conf_db['extra']['phone-device']:
         logging.debug("reconfigure Headphones setup")
@@ -609,6 +652,7 @@ def config_start():
         logging.debug(f"Pulseaudio: {cp.stdout.strip()}")
 
     extra_devices()
+    net_bridge()
 
     # check if phones device exists
     ph_dev = conf_db['extra']['phone-device'].split(',')[0]
