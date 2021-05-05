@@ -15,16 +15,10 @@ Fixes:
 TODO: (part way done)
 	[GUI]
 	- find false possitive for session changed
+
+Future Features:
 	- make help work with current tab
 	- remove warning dialogs and create on the fly as needed
-
-	[Backend]
-	- add JACK xrun counter
-
-Features:
-	- add latency setting
-		- For JACK
-		- For zita-ajbridge
 	- add JACK freeze detect and correct
 	- better JACK status showing
 		- detect xruns in autojack so number is for full jack run
@@ -44,11 +38,7 @@ Features:
 		have displays.
 		- Then see if we can match plasma utility for setting size and 
 		setting buttons etc.
-	- USB devices should not have a buffer size 16, PCH should be 64 and
-		above. USB devices at 32 should probably set periods to 3.
 
-	- add button to system page to select between lowlatency or generic
-		kernel as default.
 	- add use of internals (net manager, audio and net adapters)
 		option to use audioadapter instead of zita bridge?
 		that may only work for one device, zita can do many.

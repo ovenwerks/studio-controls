@@ -1,3 +1,8 @@
+studio-controls version 2.1.61
+
+ [ Len Ovens ]
+ - Bugfix, don't close jack client if it fails to open
+
 studio-controls version 2.1.60
 
  [ Len Ovens ]
