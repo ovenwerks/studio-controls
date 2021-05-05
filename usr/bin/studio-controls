@@ -541,7 +541,6 @@ class StudioControls:
             client.close()
         except jack.JackError:
             self.jackdb['on'] = False
-            client.close()
 
         self.logging_comb.set_active_id(str(self.conf_db['log-level']))
         # fill in Jack master widgets
