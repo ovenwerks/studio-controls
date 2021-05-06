@@ -4,7 +4,7 @@
 <title>Audio Setup - Extra Devices</title>
 <meta name="generator" content="Bluefish 2.2.11" >
 <meta name="author" content="Len Ovens" >
-<meta name="date" content="2021-05-03T13:32:29-0700" >
+<meta name="date" content="2021-05-05T22:42:13-0700" >
 <meta name="copyright" content="copyright Len Ovens 2021">
 <meta name="keywords" content="">
 <meta name="description" content="">
@@ -39,6 +39,11 @@
 	It will also keep this device from showing up in the JACK master drop downs.
 </p>
 <p>
+	<strong>JACK Base Name</strong> Is the base part of the name that will be used for an
+	extra device bridge for this device. An -in or -out will be added to this to keep all
+	JACK client names unique.
+</p>
+<p>
 	The <strong>Sample Rate</strong>, <strong>Buffer Size</strong> and <strong>Number of periods</strong>
 	are the same as for JACK master. The device may not work at the same rate, buffer size or
 	number of periods as JACK master, that is ok. Zita-ajbridge can deal with the difference.
@@ -51,6 +56,19 @@
 	<strong>Capture</strong> and <strong>Playback</strong> ports is the number of ports that should be
 	created for input or output bridges. A port count of zero is the same as off or not used. A number
 	greater than the available ports on the device will use the maximum number of ports available.
+</p>
+<p>
+	In some cases it is helpful if USB devices will just show as a JACK client without setup
+	ahead of time. There are two checkboxes that control this:
+</p>
+<p>
+	<strong>Bridge USB Devices to JACK When Plugged In</strong> Auto bridges any unknown USB device
+	when it is plugged in. If the user has set this device to zero ports or has hidden the device,
+	it will not be auto connected.
+</p>
+<p>
+	<strong>USB device bridge is input only</strong> is used for USB devices that are input only but
+	are detected to also have outputs and create extra noise when opened as an output as well.
 </p>
 <p>
 	<strong>Headphones</strong> can sometimes be detected by the system if they are motherboard
@@ -71,29 +89,14 @@
 	auto detected. The main outputs will be switched between <strong>Main Output Ports</strong>
 	and the <strong>Headphone Device</strong></li>
 </ul>
-<p>
-	In some cases it is helpful if USB devices will just show as a JACK client without setup
-	ahead of time. There are two checkboxes that control this:
-</p>
-<ul>
-	<li><strong>Bridge USB Devices to JACK When Plugged In</strong> will create a bridge for any
-	USB device that is plugged in except a device that is <strong>Hidden</strong> (above) or a
-	device that manually set up with more than zero which will be bridged in any case.</li>
-	<li><strong>USB device bridge is input only</strong> will only create an input bridge
-	even if the system detects an output device is present. Some input only devices, for
-	example guitar to USB, use a USB chip that has one audio input and two outputs.
-	Because these outputs are not connected to anything, if opened for use they may
-	add a buzz to the input audio, so this option bypasses the creation of an output
-	bridge.</li>
-</ul>
 
 <!-- navigation -->
 <hr width="50">
 <p align="center">
 <a href="jack-master.html"><img src="img/left.png" width="24" height="24" alt="">
-Previous: Audio Setup - Jack Master Settings</a>
+Previous: Jack Master Settings</a>
 --- <a href="manual.html">Introduction</a> ---
-<a href="pulse-bridging.html">Next: Audio Setup - Pulse Bridges
+<a href="pulse-bridging.html">Next: Pulse Bridges
 <img src="img/right.png" width="24" height="24" alt=""></a>
 </p>
 <p align="center"><a href="index.html">Studio Controls Home</a></p>

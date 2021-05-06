@@ -4,7 +4,7 @@
 <title>Audio Setup - JACK Master Settings</title>
 <meta name="generator" content="Bluefish 2.2.11" >
 <meta name="author" content="Len Ovens" >
-<meta name="date" content="2021-05-03T13:32:25-0700" >
+<meta name="date" content="2021-05-05T22:18:39-0700" >
 <meta name="copyright" content="copyright Len Ovens 2021">
 <meta name="keywords" content="">
 <meta name="description" content="">
@@ -46,7 +46,7 @@
 <p>
 	The <strong>JACK Master Settings</strong> tab allows setting this master device up.
 </p>
-<img src="img/jackmaster-screen.png" width="1027" height="291" alt="JACK Master Settings screen shot">
+<img src="img/master.png" width="1027" height="291" alt="JACK Master Settings screen shot">
 <p>
 	Studio Controls allows setting two <strong>master devices</strong>, an
 	<strong>internal device</strong> which includes	PCI(e) devices as well as firewire
@@ -87,8 +87,10 @@
 	out right refuse to start. In general, modern mother board audio devices (HDA or PCH) will
 	work down to 128 samples per period. HDMI on the other hand seems to need 4096 and so is
 	not suitable for low latency work. Some of the older PCI and newer PCIe device will work
-	at 16 sample per period. Firewire and USB have a builtin hard limit of 32 and need to use
-	3 periods instead of 2 (see below) to do that. Different settings may be appropriate for
+	at 16 sample per period. USB has a builtin hard limit of 32 and needs to use
+	3 periods instead of 2 (see below) to do that. Firewire devices will need a buffer size of
+	256 if using the ALSA modules or JACK may lock up. However, with the ffado drivers, buffersize
+	may be as low as 16. Different settings may be appropriate for
 	different uses. A buffer size of 1024 will generally work well for a mixing audio that
 	has been recorded previously. However, for more real time uses such as broadcast routing,
 	softsynth use or guitar effects on stage, a buffer size of 128 or lower is preferred
@@ -100,9 +102,13 @@
 	The <strong>JACK Periods</strong> drop down lists the number of buffers JACK uses. For many
 	devices two periods works well, one buffer for the device to write to and one for JACK to
 	read from or the other way around for outputs. However, for lower latency (buffer size 32)
-	USB or Firewire devices will need three buffers because the transfer is time based rather
+	USB devices will need three buffers because the transfer is time based rather
 	sample clock based. Fifteen was envisioned to work with Opus which needs a 5ms total buffer
 	size.
+</p>
+<p>
+	The <strong>JACK Extra Latency</strong> boxes allow extra latency to be added to either
+	the input or the output ports of a device for timing purposes.
 </p>
 <p>
 	<strong>Channel Count for Dummy back end</strong> - JACK will always use as many channels
@@ -120,51 +126,10 @@
 	for more complex setups it is better to use a session manager (NSM) to manage connections
 	so that the first two ports can be used for other uses.
 </p>
-<hr width="50">
-<p>
-	The <strong>bottom</strong> part of the <strong>Audio Setup</strong> tabs remains the
-	same for all sub tabs.
-</p>
-<img src="img/jack-bottom.png" width="1026" height="130" alt="Audio setup bottom frame">
 <p>
 	<strong>Bridge ALSA To JACK MIDI</strong> runs a2jmidid to allow ALSA MIDI ports to show up as
 	JACK MIDI ports. This should normally be left checked.
 </p>
-<p>
-	<strong>JACK Status</strong> includes JACK DSP usage, xruns since Studio Controls was started
-	or since last reset. DSP usage is different from CPU usage. JACK has buffer size samples in time
-	to deal with all audio processing for those samples. DSP usage is how much of that time was actually
-	used. With a low latency kernel the JACK can take priority over most other CPU operations and so
-	even is CPU usage is higher, JACK can force it's way in to take what it needs for audio processing
-	and make other processes wait. DSP usage should normally stay below 60% with only the odd peak
-	to 80%. Above this xruns become more likely as JACK may not finish in time.
-</p>
-<p>
-	The <strong>Autojack control</strong> line has three buttons:
-</p>
-<ul>
-	<li><strong>JACK Start or Restart</strong> Will start JACK or if it is already running restart JACK.
-		This option also saves settings to the config file.</li>
-	<li><strong>Stop JACK</strong> will stop JACK and reset Pulseaudio for normal desktop operation.
-		This option will save settings to the config file.</li>
-	<li><strong>Apply Audio Settings</strong> will Save settings to the config file and tell
-		autojack to read the config file in and use the new settings. Autojack will only restart
-		JACK if the settings changed apply to the master device.</li>
-</ul>
-<p>
-	If JACK is started when the system is rebooted, JACK will be started automatically on next
-	login.
-</p>
-<p>
-	The last line has a set of convenience buttons:
-</p>
-<ul>
-	<li><strong>QASmixer</strong> will start QAS mixer set to the master device.</li>
-	<li><strong>Pulse Control</strong> opens the pulse control application so that desktop levels can
-	be set.</li>
-	<li><strong>Carla</strong> will be started. The main use is to use the patch bay Carla includes
-	for making JACK routing connections.</li>
-</ul>
 <hr width="50">
 <!-- navigation -->
 <p align="center">

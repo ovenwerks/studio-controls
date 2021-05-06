@@ -687,7 +687,7 @@ def config_start():
 
     fpath = expanduser('~/.config/autojack/postbridge')
     if os.path.isfile(fpath) and os.access(fpath, os.X_OK):
-        logging.debug("Found poststart script")
+        logging.debug("Found postbridge script")
         cp = subprocess.run([fpath],
                     universal_newlines=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=True)
         logging.debug(f"Running script: {fpath}")

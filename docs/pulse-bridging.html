@@ -4,7 +4,7 @@
 <title>Audio Setup - Pulse Bridging</title>
 <meta name="generator" content="Bluefish 2.2.11" >
 <meta name="author" content="Len Ovens" >
-<meta name="date" content="2021-05-03T13:32:49-0700" >
+<meta name="date" content="2021-05-05T22:26:31-0700" >
 <meta name="copyright" content="copyright Len Ovens 2021">
 <meta name="keywords" content="">
 <meta name="description" content="">
@@ -34,13 +34,8 @@
 </p>
 <p>
 	Studio Controls can set up any number of pulse->JACK bridges with any number of channels.
-	The bridging tab has two sub tabs, one for bridges from pulse to JACK and one for bridges
-	from JACK to pulse.
 </p>
-<p>
-	The first is <strong>Pulse outputs to JACK</strong>.
-</p>
-<img src="img/pulse-out.png" width="1027" height="295" alt="Pulse Out screen">
+<img src="img/pulse.png" width="1027" height="295" alt="Pulse Tab">
 <p>
 	This screen consists of these controls:
 </p>
@@ -56,30 +51,21 @@
 	<li><strong>Auto Connect Port</strong> is the first of channel count ports that this
 	bridge should connect to. Connections are made starting at this port and continuing
 	to channel count or the last device port which ever is less.</li>
-	<li><strong>Add an Output Bridge</strong> will add another Pulse to JACK bridge with
-	the default name pulse_out-<code>num</code> where <code>num</code> is the first number
-	that makes the JACK client name unique. The new bridge will default to two channels
+	<li><strong>Add A New Bridge</strong> will add another Pulse to JACK bridge with
+	the default name pulse<code>num</code>_<code>dirrection</code> where <code>num</code> is the first number
+	that makes the JACK client name unique and <code>dirrection</code> is in or out depending
+	on the direction chosen. The new bridge will default to two channels
 	and no auto connections.</li>
 	<li><strong>Remove Output Bridge</strong> will remove the bridge displayed.</li>
 </ul>
-<p>
-	The second tab, <strong>Pulse Inputs from JACK</strong>, is the same as the first
-	but only deals with inputs to Pulse. It has all the same settings tha work the same way
-	with the exception that new ports will be named pulse_in-<code>num</code> instead.
-</p>
-
-
-<img src="img/pulse-in.png" width="1027" height="289" alt="Pulse in screen">
-
-
 <hr width="50">
 <!-- navigation -->
 <p align="center">
 <a href="extra-devices.html">
 <img src="img/left.png" width="24" height="24" alt="">
-Previous: Audio Setup - Extra Devices</a>
+Previous: Extra Devices</a>
 --- <a href="manual.html">Introduction</a> ---
-<a href="session.html">Next: Audio Setup - Jack Session Management
+<a href="session.html">Next: Jack Session Management
 <img src="img/right.png" width="24" height="24" alt=""></a>
 </p>
 <p align="center"><a href="index.html">Studio Controls Home</a></p>

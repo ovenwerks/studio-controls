@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>Network</title>
+<meta name="generator" content="Bluefish 2.2.11" >
+<meta name="author" content="Len Ovens" >
+<meta name="date" content="2021-05-05T23:28:26-0700" >
+<meta name="copyright" content="copyright Len Ovens 2021">
+<meta name="keywords" content="">
+<meta name="description" content="">
+<meta name="ROBOTS" content="NOINDEX, NOFOLLOW">
+<meta http-equiv="content-type" content="text/html; charset=UTF-8">
+<meta http-equiv="content-type" content="application/xhtml+xml; charset=UTF-8">
+<meta http-equiv="content-style-type" content="text/css">
+<meta http-equiv="expires" content="0">
+</head>
+<body>
+<h1>Audio And MIDI Networking</h1>
+<p>
+	Studio Controls uses the excellent zita-njbridge for audio networking. This has proven to be
+	a stable and easy to set up way of doing things. It can be set up and running on one computer
+	while the other is shut down with no problems. It is the most like a patch cable in operation.
+</p>
+<p>
+	NOTE: a network bridge needs to be set up on each end, it can not be done all on one computer.
+</p>
+<p>
+	Select the <strong>Bridge to Edit</strong> with the drop down list. The name of the bridge
+	as it will show in JACK can be edited with the <strong>Bridge Name</strong> entry box.
+	The <strong>Audio Direction</strong> is an indication of what direction this bridge is.
+	<strong>Channel count</strong> is the number of channels and can be from 1 to 64. The
+	<strong>Add Network Bridge</strong> dropdown allows adding either an output or an input bridge.
+</p>
+<p>
+	The <strong>Bridge receiver IP</strong> will be filled in automatically on the receiver end but
+	only the network part will be filled in on the sender. The user needs to finish this address off
+	to match the receiver IP. The <strong>Bridge Receiver Port</strong> should likewise be the same
+	on both machines. Also note that ports for more than one bridge should be separated by more than one
+	port number. (it may be easiest to put them 10 apart)
+</p>
+<p>
+	The Sender may send the data as 16 bit integers, 24 bit integers or 32 bit float. Use the smallest
+	bit depth that will do the job. If the bridge is to be connected at one end only to an audio output
+	device, 16bit integer will work well. If one end will only be connected to an audio input device,
+	24 bit integer will work well. If on board processing will be done with the signal at both ends
+	(for example a remote synth), 32 bit float is a good choice. Lower bit depth will use less
+	network bandwidth and be less likely to suffer dropouts. The bit depth can only be set at the
+	sending end and the receiver will receive either.
+</p>
+<p>
+	The <strong>Receiver Latency</strong> is set in ms and can be set longer to improve stability
+	if needed.
+</p>
+<h1>MIDI networking</h1>
+<p>
+	MIDI networking uses qmidinet which uses the ipmidi method of MIDI transfer. There are ipmidi
+	utilities for both macos and windows as well.
+</p>
+<p>
+	Setting 0 channels turns this off. The type selector allows the midi ports to be either JACK
+	or ALSA MIDI ports.
+</p>
+<!-- navigation -->
+<hr width="50">
+<p align="center">
+<a href="pulse-bridging.html">
+<img src="img/left.png" width="24" height="24" alt="">
+Previous: Jack Session Management
+</a>
+--- <a href="manual.html">Introduction</a> ---
+<!--a href="network.html">Next: Network
+<img src="img/right.png" width="24" height="24" alt=""></a>
+<!-- <img src="img/right.png" width="24" height="24" alt=""></a-->
+</p>
+<p align="center"><a href="index.html">Studio Controls Home</a></p>
+
+
+</body>
+</html>

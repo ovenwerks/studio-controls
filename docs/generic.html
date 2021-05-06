@@ -4,7 +4,7 @@
 <title>Generic Controls</title>
 <meta name="generator" content="Bluefish 2.2.11" >
 <meta name="author" content="Len Ovens" >
-<meta name="date" content="2021-05-05T07:58:54-0700" >
+<meta name="date" content="2021-05-05T22:17:51-0700" >
 <meta name="copyright" content="copyright Len Ovens 2021">
 <meta name="keywords" content="">
 <meta name="description" content="">
@@ -21,5 +21,50 @@
 	The top three buttons control JACK, then there is a JACK status area and finally,
 	some buttons to start level controls or Carla for making JACK connections.
 </p>
+<img src="img/Generic.png" width="175" height="346" alt="">
+<ul>
+<li>
+	Start or Restart JACK - Saves any changes and starts or restarts JACK with new values.
+	NOTE:
+	If JACK is running when the system is rebooted, JACK will be started automatically on next
+	login.
+</li>
+<li>
+	Stop JACK - Stops JACK and restarts pulse with system default settings
+</li>
+<li>
+	Apply Audio Settings = Saves settings and tells background process (Autojack) to use those settings.
+	JACK will be restarted only if JACK master settings are changed.
+</li>
+</ul>
+<p>
+	The Jack status Area shows JACK Status (running or stopped), The amount of DSP being used
+	and the number of Xruns since last GUI start or last reset.
+</p>
+<ul>
+<li>
+Open QASMixer - Opens QASMixer to control the ALSA levels and settings for the JACK master device.
+</li>
+<li>
+Open Pulse Control - Opens pavucontrol to allow basic routing and level setting in pulse
+</li>
+<li>
+Open Carla - Opens Carla who's patchbay can be used to make jack connections
+</li>
+<li>
+	Help - a small explanation of why a proper RT setting is helpful
+</li>
+<li>
+	Close - Closes Studio Controls. Will suggest applying the setting if any have been made since startup
+</li>
+</ul>
+<hr width="50">
+<p align="center">
+<a href="system-tweaks.html"><img src="img/left.png" width="24" height="24" alt="">
+Previous: System Teaks</a> --- <a href="scripts.html">Next: User Scripts
+<img src="img/right.png" width="24" height="24" alt=""></a>
+</p>
+<p align="center"><a href="index.html">Studio Controls Home</a></p>
+
 </body>
 </html>
