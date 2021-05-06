@@ -436,7 +436,7 @@ def reconfig():
             mtype = ""
             if conf_db['mnet']['type'] == 'jack':
                 mtype = "--alsa-midi=no --jack-midi=yes"
-            cmd = f"/usr/bin/qmidinet --num-ports={str(conf_db['mnet']['count'])} --no-gui {mtype}" 
+            cmd = f"/usr/bin/qmidinet --num-ports={str(conf_db['mnet']['count'])} --no-gui {mtype}"
             subprocess.Popen(shlex.split(cmd), shell=False).pid
 
 
@@ -596,7 +596,7 @@ def config_start():
         if conf_db['devices'][mdev.split(',')[0]]['firewire'] and conf_db['jack']['frame'] < 256:
             conf_db['jack']['frame'] = 256
             logging.info(f"Firewire device using ALSA drivers, JACK buffer set to: 256")
-            
+
     time.sleep(.2)
     configure_iface.SetParameterValue(['driver', 'rate'], dbus.UInt32(conf_db['jack']['rate']))
     time.sleep(.2)
@@ -682,7 +682,7 @@ def config_start():
         mtype = ""
         if conf_db['mnet']['type'] == 'jack':
             mtype = "--alsa-midi=no --jack-midi=yes"
-        cmd = f"/usr/bin/qmidinet --num-ports={str(conf_db['mnet']['count'])} --no-gui {mtype}" 
+        cmd = f"/usr/bin/qmidinet --num-ports={str(conf_db['mnet']['count'])} --no-gui {mtype}"
         subprocess.Popen(shlex.split(cmd), shell=False).pid
 
     fpath = expanduser('~/.config/autojack/postbridge')

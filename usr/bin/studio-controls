@@ -166,7 +166,7 @@ class DevDB:
             for dev in conf['devices']:
                 if usb and [ conf['devices'][dev]['id'], conf['devices'][dev]['bus'] ] == [ d_id, bus ]:
                     #this is the device... well maybe check if it already has a number
-                    #if 
+                    #if
                     #print(f"found usb id/bus match for {cname}")
                     conf['devices'][dev]['number'] = x
                     conf['devices'][dev]['raw'] = cname
@@ -262,7 +262,7 @@ class DevDB:
         elif os.path.exists(f"/proc/asound/card{str(x)}/firewire"):
             config['firewire'] = True
             config['min_latency'] = 256
-            
+
         config['hdmi'] = bool(cname in ['HDMI', 'NVidia'])
         if config['hdmi']:
             config['min_latency'] = 4096
@@ -573,7 +573,7 @@ class StudioControls:
             self.usb_single_ck.set_sensitive(True)
         #self.hp_action = builder.get_object('hp_action')
         #self.hp_switch = builder.get_object('hp_switch')
-        
+
         # pulse bridge defaults
         self.pj_direction.set_sensitive(False)
         self.pj_count.set_range(1, 99)
@@ -919,7 +919,7 @@ class StudioControls:
             if frame >= minlat:
                 self.combobox_late.append(str(frame), f"{str(frame)}{tplt}")
         self.combobox_late.set_active_id(str(self.jackdb['frame']))
-                
+
 
         self.jack_rate_combo.set_sensitive(True)
         self.combobox_late.set_sensitive(True)
@@ -1039,7 +1039,7 @@ class StudioControls:
         #self.cap_chan_spin.set_sensitive(False)
         #widget.set_active(False)
         if widget.get_label() == ' All ':
-            self.cap_chan_spin.set_value(100)            
+            self.cap_chan_spin.set_value(100)
             widget.set_label(' Off')
         else:
             widget.set_label(' All ')
@@ -1054,7 +1054,7 @@ class StudioControls:
         #self.play_chan_spin.set_sensitive(False)
         #widget.set_active(False)
         if widget.get_label() == ' All ':
-            self.play_chan_spin.set_value(100)            
+            self.play_chan_spin.set_value(100)
             widget.set_label(' Off')
         else:
             widget.set_label(' All ')
@@ -1187,7 +1187,7 @@ class StudioControls:
             if self.pj_bridge == "":
                 for br in in_db:
                    self.pj_bridge = br
-                   break 
+                   break
         self.pj_con.popdown()
         self.pj_con.get_model().clear()
         self.pj_con.append("none", "no connection")
@@ -1488,7 +1488,7 @@ class StudioControls:
             return
         self.znetbridge = self.znet_bridge.get_active_id()
         self.refresh_net(self.znetbridge)
-        
+
     def znet_changed_cb(self, widget):
         if not widget.get_sensitive():
             return
@@ -1672,7 +1672,7 @@ class StudioControls:
 
     def config_save(self):
         ''' Write audio setting to ~/.config/autojack/autojackrc'''
-        
+
         self.jackdb['chan-in'] = int(self.chan_in_spin.get_value_as_int())
         self.jackdb['chan-out'] = int(self.chan_out_spin.get_value_as_int())
         self.jackdb['rate'] = int(self.jack_rate_combo.get_active_id())
@@ -1765,7 +1765,7 @@ class StudioControls:
                 self.config_save()
                 self.not_applied = False
                 self.signal_autojack("config")
-    
+
             dialog.destroy()
 
         if os.path.isfile(lock_file):

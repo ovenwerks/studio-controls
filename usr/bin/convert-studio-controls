@@ -58,7 +58,7 @@ def read_old():
         'DEV': default_device,
         'USBAUTO': "True",
         'USB-SINGLE': "False",
-        'USBDEV': "",
+        'USBDEV': "none",
         "PULSE": "True",
         "LOG-LEVEL": "15",
         "BLACKLIST": "",
@@ -153,9 +153,11 @@ def make_db():
     global our_db
     global default_device
     print(f"version: {version}")
-    
+
     our_db = {'version': version}
     our_db['log-level'] = int(def_config['log-level'])
+    if def_config['usbdev'] == '':
+        def_config['usbdev'] = 'none'
     jack_db = {'on': bool(def_config['jack'] in ['True']), 'driver': def_config['driver'],
                 'chan-in': int(def_config['chan-in']), 'chan-out': int(def_config['chan-out']),
                 'rate': int(def_config['rate']), 'frame': int(def_config['frame']),
@@ -213,7 +215,7 @@ def make_db():
     devicelist = [default_device]
     if def_config['DEV'] not in devicelist:
         devicelist.append( def_config['DEV'])
-    if def_config['USBDEV'] not in devicelist and def_config['USBDEV'] != '':
+    if def_config['USBDEV'] not in devicelist and def_config['USBDEV'] != 'none':
         devicelist.append( def_config['USBDEV'])
     if def_config['PHONE-DEVICE'] not in devicelist:
         devicelist.append( def_config['PHONE-DEVICE'])
@@ -232,7 +234,12 @@ def make_db():
             if dev == default_device.split(',')[0]:
                 dev_db['internal'] = True
             if dev == def_config['USBDEV'].split(',')[0]:
+                devices_db['USB1'] = devices_db.pop(dev)
+                dev_db = devices_db['USB1']
+                extra_db['usbnext'] = 2
                 dev_db['usb'] = True
+                un, ud, us = def_config['USBDEV'].split(',')
+                jack_db['usbdev'] = f"USB1,{ud},{us}"
             if sub not in dev_db['sub']:
                 dev_db['sub'][sub] = make_sub_temp()
             sub_db = dev_db['sub'][sub]
@@ -242,7 +249,8 @@ def make_db():
                 sub_db['cap-chan'] = 100
             if rdev in def_config['BLACKLIST'].split():
                 sub_db['hide'] = True
-
+    our_db['znet'] = {}
+    our_db['mnet'] = {"type": "jack", "count": 0}
     return
 
 def make_dev_temp():
@@ -251,11 +259,11 @@ def make_dev_temp():
                 'rates': ['32000', '44100', '48000', '88200', '96000', '192000'],
                 'min_latency': 16, 'id':'none', 'bus': 'none', 'sub': {}}
     return dev_temp
-    
+
 def make_sub_temp():
     ''' make a template for a sub device '''
     global def_config
-    sub_temp = {'name': 'none', 'playback': True, 'capture': True, 
+    sub_temp = {'name': 'none', 'playback': True, 'capture': True,
                 'play-chan': 0, 'cap-chan': 0,
                 'rate': int(def_config['RATE']), 'frame': int(def_config['FRAME']),
                 'nperiods': int(def_config['PERIOD']), 'hide': False,
@@ -351,6 +359,9 @@ def check_new(use_bk):
                             our_db['extra']['usbnext'] = our_db['extra']['usbnext'] + 1
                             our_db['devices'][new_dev] = our_db['devices'].pop(device)
                             dev_db = our_db['devices'][new_dev]
+                            un, ud, us = our_db['jack']['usbdev'].split(',')
+                            if un == device:
+                                our_db['jack']['usbdev'] = f"{new_dev},{ud},{us}"
                     else:
                         dev_db['min_latency'] = 16
                     for sub in dev_db['sub']:
