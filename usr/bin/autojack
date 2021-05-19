@@ -448,7 +448,7 @@ def reconfig():
         cp = subprocess.run(["/usr/bin/killall", "-9", "a2jmidid"],
                             universal_newlines=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=False)
         logging.debug(f"kill old a2j: {cp.stdout.strip()}")
-        if conf_db['extra']['A2J']:
+        if conf_db['extra']['a2j']:
             # Can't add logging for background processes. Will show up in syslog
             subprocess.Popen(["/usr/bin/a2jmidid", "-e"], shell=False).pid
 
