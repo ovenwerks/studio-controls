@@ -1426,55 +1426,59 @@ class StudioControls:
         self.znet_bits.set_sensitive(False)
         self.znet_name.set_sensitive(False)
         self.znet_late.set_sensitive(False)
-
-        self.znet_bridge.get_model().clear()
-        our_ip = "0.0.0.0"
-        if znet_db == {}:
-            # no bridges
-            self.znet_bridge.set_active(0)
-            self.znet_direction.set_active_id('out')
-            self.znet_count.set_value(1)
-            self.znet_ip.set_text(our_ip)
-            self.znet_port.set_value(8300)
-            self.znet_bits.set_active_id('none')
-            self.znet_late.set_value(0)
-            self.znet_name.set_text("")
-            self.znetbridge = ""
-            return
-        else:
-            for bridge in znet_db:
-                self.znet_bridge.append(bridge, bridge)
-                if not new_bridge:
-                    new_bridge = bridge
-            self.znet_direction.set_active_id(znet_db[new_bridge]['direction'])
-            self.znet_bridge.set_active_id(new_bridge)
-            self.znet_name.set_text(new_bridge)
-            self.znet_count.set_value(znet_db[new_bridge]['count'])
-            self.znet_ip.set_text(znet_db[new_bridge]['ip'])
-            self.znet_port.set_value(znet_db[new_bridge]['port'])
-            if znet_db[new_bridge]['direction'] == 'out':
-                self.znet_bits.set_active_id(znet_db[new_bridge]['bits'])
-                self.znet_late.set_value(0)
-            else:
-                self.znet_bits.set_active_id('none')
-                self.znet_late.set_value(znet_db[new_bridge]['latency'])
-            self.znetbridge = new_bridge
-
-        if shutil.which("zita-n2j") == None:
-            self.znet_warn.set_text("Please install zita-njbridge")
+        if not (os.path.isfile("/usr/bin/zita-n2j") and os.access("/usr/bin/zita-n2j", os.X_OK)):
+            self.znet_warn.set_text("Please Install zita-njbridge First")
         else:
             self.znet_warn.set_text("")
 
-            if znet_db[new_bridge]['direction'] == 'in':
-                self.znet_late.set_sensitive(True)
-            if znet_db[new_bridge]['direction'] == 'out':
-                self.znet_bits.set_sensitive(True)
-            self.znet_bridge.set_sensitive(True)
-            #self.znet_direction.set_sensitive(True) # should never be true
-            self.znet_count.set_sensitive(True)
-            self.znet_ip.set_sensitive(True)
-            self.znet_port.set_sensitive(True)
-            self.znet_name.set_sensitive(True)
+            self.znet_bridge.get_model().clear()
+            our_ip = "0.0.0.0"
+            if znet_db == {}:
+                # no bridges
+                self.znet_bridge.set_active(0)
+                self.znet_direction.set_active_id('out')
+                self.znet_count.set_value(1)
+                self.znet_ip.set_text(our_ip)
+                self.znet_port.set_value(8300)
+                self.znet_bits.set_active_id('none')
+                self.znet_late.set_value(0)
+                self.znet_name.set_text("")
+                self.znetbridge = ""
+                return
+            else:
+                for bridge in znet_db:
+                    self.znet_bridge.append(bridge, bridge)
+                    if not new_bridge:
+                        new_bridge = bridge
+                self.znet_direction.set_active_id(znet_db[new_bridge]['direction'])
+                self.znet_bridge.set_active_id(new_bridge)
+                self.znet_name.set_text(new_bridge)
+                self.znet_count.set_value(znet_db[new_bridge]['count'])
+                self.znet_ip.set_text(znet_db[new_bridge]['ip'])
+                self.znet_port.set_value(znet_db[new_bridge]['port'])
+                if znet_db[new_bridge]['direction'] == 'out':
+                    self.znet_bits.set_active_id(znet_db[new_bridge]['bits'])
+                    self.znet_late.set_value(0)
+                else:
+                    self.znet_bits.set_active_id('none')
+                    self.znet_late.set_value(znet_db[new_bridge]['latency'])
+                self.znetbridge = new_bridge
+
+            if shutil.which("zita-n2j") == None:
+                self.znet_warn.set_text("Please install zita-njbridge")
+            else:
+                self.znet_warn.set_text("")
+
+                if znet_db[new_bridge]['direction'] == 'in':
+                    self.znet_late.set_sensitive(True)
+                if znet_db[new_bridge]['direction'] == 'out':
+                    self.znet_bits.set_sensitive(True)
+                self.znet_bridge.set_sensitive(True)
+                #self.znet_direction.set_sensitive(True) # should never be true
+                self.znet_count.set_sensitive(True)
+                self.znet_ip.set_sensitive(True)
+                self.znet_port.set_sensitive(True)
+                self.znet_name.set_sensitive(True)
 
 
     '''audio'''

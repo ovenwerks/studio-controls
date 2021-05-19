@@ -359,9 +359,10 @@ def check_new(use_bk):
                             our_db['extra']['usbnext'] = our_db['extra']['usbnext'] + 1
                             our_db['devices'][new_dev] = our_db['devices'].pop(device)
                             dev_db = our_db['devices'][new_dev]
-                            un, ud, us = our_db['jack']['usbdev'].split(',')
-                            if un == device:
-                                our_db['jack']['usbdev'] = f"{new_dev},{ud},{us}"
+                            if our_db['jack']['usbdev'] != 'none':
+                                un, ud, us = our_db['jack']['usbdev'].split(',')
+                                if un == device:
+                                    our_db['jack']['usbdev'] = f"{new_dev},{ud},{us}"
                     else:
                         dev_db['min_latency'] = 16
                     for sub in dev_db['sub']:

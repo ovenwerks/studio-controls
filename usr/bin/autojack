@@ -226,6 +226,28 @@ def import_device_array():
         get_dev_info(x)
 
 
+def get_raw(device):
+    ''' given a USB*,*,* device name return a
+    true (raw) dev,*,* string'''
+    global conf_db
+    un, ud, us = device.split(',')
+    rn = conf_db['devices'][un]['raw']
+    return f"{rn},{ud},{us}"
+
+
+def get_db(device):
+    ''' give a device string (raw or db nameed)
+    return the data base for that device'''
+    global conf_db
+    name = device.split(',')[0]
+    if name in conf_db['devices']:
+        return conf_db['devices'][name]
+    else:
+        for dev in conf_db['devices']:
+            if conf_db['devices'][dev]['raw'] == name:
+                return conf_db['devices'][dev]
+
+
 def extra_devices():
     ''' set up all extra device as per configuration '''
     global conf_db
@@ -244,12 +266,13 @@ def extra_devices():
             usb = bool(conf_db['devices'][dev]['usb'] and conf_db['extra']['usbauto'])
             for sub in conf_db['devices'][dev]['sub']:
                 fullname = f"{rawdev},{sub},0"
+                fullusb = f"{dev},{sub},0"
                 sub_db = conf_db['devices'][dev]['sub'][sub]
                 if sub_db['hide']:
                     if sub_db['cap-pid'] or sub_db['play-pid']:
                         kill_slave(fullname)
                     break
-                if fullname == conf_db['jack']['dev'] or fullname == conf_db['jack']['usbdev']:
+                if fullname == conf_db['jack']['dev'] or fullusb == conf_db['jack']['usbdev']:
                     break
                 if usb and not (sub_db['play-chan'] or sub_db['cap-chan']):
                     if not sub_db['cap-pid'] or not sub_db['play-pid']:
@@ -353,6 +376,9 @@ def import_config(caller):
         if conf_db['pulse']['outputs'][pout]['connection'] == "monitor":
             conf_db['pulse']['outputs'][pout]['connection'] = conf_db['extra']['monitor']
 
+    if conf_db['jack']['driver'] == 'firewire':
+        #we don't save this, but treat usbdev as none
+        conf_db['jack']['usbdev'] = 'none'
     logger = logging.getLogger()
     logger.setLevel(int(conf_db['log-level']))
     logging.log(7, f"log level: {str(conf_db['log-level'])}")
@@ -478,7 +504,7 @@ def config_start():
     logging.info("Running: config_start()")
 
     import_config("config_start")
-
+    print("config_start")
     # if at session start we should wait a few seconds for pulse
     # to be fully running
     time.sleep(2)
@@ -497,8 +523,10 @@ def config_start():
     try:
         control_iface.StopServer()
     except:
-        print("")
+        print("stop failed")
     time.sleep(2)
+
+    print("do killall")
     # Stop jack if running
     cp = subprocess.run(["/usr/bin/killall", "-q", "-9", "jackdbus", "jackd", "a2jmidid"],
                         universal_newlines=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=False)
@@ -511,6 +539,7 @@ def config_start():
                     universal_newlines=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=True)
         logging.debug(f"Running script: {fpath}")
 
+    print("do fw reset")
     if (conf_db['jack']['driver'] == "firewire") or fw_exists:
         time.sleep(3)
         # this is a firewire device, A busreset makes for stability
@@ -522,7 +551,7 @@ def config_start():
                         universal_newlines=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=False)
         logging.debug(f"Kill ffado mixer because busreset needed: {cp.stdout.strip()}")
 
-
+    print("check jack on")
     if not conf_db['jack']['on']:
         # restart Pulse
         cp = subprocess.run(["/usr/bin/pulseaudio", "-k"],
@@ -550,13 +579,18 @@ def config_start():
                     universal_newlines=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=True)
         logging.debug(f"Running script: {fpath}")
 
-    if os.path.exists(f"/proc/asound/{conf_db['jack']['usbdev'].split(',')[0]}") and conf_db['jack']['usbdev'] != "":
-        mdev = conf_db['jack']['usbdev']
+    rn = 'none'
+    if conf_db['jack']['usbdev'] != "none":
+        #mdev = conf_db['jack']['usbdev']
+        rn = get_db(conf_db['jack']['usbdev'])['raw']
+    if os.path.exists(f"/proc/asound/{rn}"):
+        mdev = get_raw(conf_db['jack']['usbdev'])
     else:
         mdev = conf_db['jack']['dev']
         if mdev.split(',')[0] == "HDMI" or mdev.split(',')[0] == "NVidia":
             logging.info("HDMI device, setting buffer to 4096")
             conf_db['jack']['frame'] = "4096"
+    mdev_db = get_db(mdev)
 
     if os.path.isfile(expanduser('~/.config/jack/conf.xml')):
         logging.debug("Found previous jack config removing")
@@ -588,12 +622,13 @@ def config_start():
     print(f"jack driver: {conf_db['jack']['driver']}")
     configure_iface.SetParameterValue(['engine', 'driver'], str(conf_db['jack']['driver']))
     logging.debug(f"JACK driver set to: {conf_db['jack']['driver']}")
-    time.sleep(.2)
+    time.sleep(.4)
     if conf_db['jack']['driver'] == "alsa":
         # we use default device for FW right now
         configure_iface.SetParameterValue(['driver', 'device'], f"hw:{mdev}")
         logging.debug(f"JACK device set to: {mdev}")
-        if conf_db['devices'][mdev.split(',')[0]]['firewire'] and conf_db['jack']['frame'] < 256:
+        #if conf_db['devices'][mdev.split(',')[0]]['firewire'] and conf_db['jack']['frame'] < 256:
+        if mdev_db['firewire'] and conf_db['jack']['frame'] < 256:
             conf_db['jack']['frame'] = 256
             logging.info(f"Firewire device using ALSA drivers, JACK buffer set to: 256")
 
@@ -637,6 +672,8 @@ def config_start():
         logging.debug(f"Running script: {fpath}")
 
     start_jack_client()
+    time.sleep(1)
+    print("returned from start_jack_client")
 
     for bridge in conf_db['pulse']['inputs']:
         this_count = str(conf_db['pulse']['inputs'][bridge]['count'])
@@ -973,7 +1010,7 @@ def msg_cb_new(*args, **kwargs):
         return
 
     # let things settle
-    time.sleep(2)
+    time.sleep(3)
 
     if args[0].find("sound-card") >= 0:
         # remake database
@@ -991,8 +1028,6 @@ def msg_cb_new(*args, **kwargs):
                     subprocess.run(["/usr/bin/dbus-send", "--type=signal", "/", "org.studio.control.event.usb_signal"],
                                    shell=False)
                     logging.debug(f"USB device {dev_name} has been plugged in")
-                    # why are we importing config again?
-                    #import_config("msg_cb_new")
 
                     for subn in dev_db['sub']:
                         subname = f"{dev_name},{str(subn)},0"
@@ -1053,7 +1088,7 @@ def msg_cb_removed(*args, **kwargs):
                     if conf_db['jack']['usbdev'] == subname:
                         # must get rid of our jack client
                         #jack_died = True
-                        if last_master == conf_db['jack']['usbdev']:
+                        if last_master == get_raw(conf_db['jack']['usbdev']):
                             kill_slave(conf_db['jack']['dev'])
                             time.sleep(1)
                             config_start()

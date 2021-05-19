@@ -1,3 +1,10 @@
+studio-controls version 2.1.63
+
+ [ Len Ovens ]
+ - Fix autojack hang
+ - Fix various usbdev bugs
+ - Fix zita-njbridge install warning
+
 studio-controls version 2.1.62
 
  [ Len Ovens ]
