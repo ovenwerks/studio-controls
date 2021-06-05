@@ -377,6 +377,8 @@ class StudioControls:
         self.logging_comb = builder.get_object('logging_comb')
         self.combo_fw = builder.get_object('combo_fw')
         '''audio tab stuff'''
+        ''' right side menu '''
+        self.mixer_start = builder.get_object('mixer_start')
         '''master tab'''
         self.jack_device_combo = builder.get_object('jack_device_combo')
         self.jack_usb_dev_combo = builder.get_object('jack_usb_dev_combo')
@@ -808,18 +810,25 @@ class StudioControls:
         self.combo_periods.set_sensitive(False)
         self.jack_rate_combo.set_sensitive(False)
         self.xdev_select.set_sensitive(False)
+        self.mixer_start.set_sensitive(False)
         ### popdown any combo boxes before changing
         self.jack_device_combo.popdown()
         self.xdev_select.popdown()
         self.jack_usb_dev_combo.popdown()
         self.jack_rate_combo.popdown()
         self.combobox_late.popdown()
+        self.mixer_start.popdown()
 
         self.jack_device_combo.get_model().clear()
         self.xdev_select.get_model().clear()
         self.jack_usb_dev_combo.get_model().clear()
         self.jack_rate_combo.get_model().clear()
         self.combobox_late.get_model().clear()
+        self.mixer_start.get_model().clear()
+        self.mixer_start.append("none", "Open Device Mixer")
+        self.mixer_start.set_active_id("none")
+        if self.combo_fw.get_active_id() == "ffado":
+            self.mixer_start.append("ffado", "FFADO Device Mixer")
         rates =[]
         def_rates = ['32000', '44100', '48000', '88200', '96000', '192000']
         frames = [16, 32, 64, 128, 256, 512, 1024, 2048, 4096]
@@ -835,6 +844,12 @@ class StudioControls:
 
         for this_dev in self.conf_db['devices']:
             dev_db = self.conf_db['devices'][this_dev]
+            if dev_db['firewire']:
+                self.mixer_start.append("ffado", "FFADO Device Mixer")
+            if dev_db['number'] != -1:
+                # we only want plugged devices
+                self.mixer_start.append(dev_db['raw'], dev_db['raw'])
+            
             for this_sub in dev_db['sub']:
                 sub_db = dev_db['sub'][this_sub]
                 d_type = ""
@@ -921,6 +936,7 @@ class StudioControls:
         self.combobox_late.set_active_id(str(self.jackdb['frame']))
 
 
+        self.mixer_start.set_sensitive(True)
         self.jack_rate_combo.set_sensitive(True)
         self.combobox_late.set_sensitive(True)
         if self.jackdb['driver'] == "alsa":
@@ -1604,15 +1620,27 @@ class StudioControls:
 
     ''' External applications calls '''
 
-    def mixer_cb(self, button):
+    def mixer_cb(self, widget):
         '''callback for mixer button. This starts QASMixer
         with the device set to whatever is jack master'''
-        if self.conf_db['jack']['usbdev'] != "":
-            # must be hw:device not hw:device,0,0
-            mixdevice = self.conf_db['jack']['usbdev'].split(',', 1)[0]
+        widget.set_sensitive(False)
+        widget.popdown()
+        if widget.get_active == -1:
+            widget.set_active_id("none")
+            return
+        if widget.get_active_id() == "none":
+            return
+        if widget.get_active_id() == "ffado":
+            try:
+                subprocess.Popen(["/usr/bin/ffado-mixer"], shell=False).pid
+            except:
+                print("ffado-mixer errors are normal :P")
         else:
-            mixdevice = self.conf_db['jack']['dev'].split(',', 1)[0]
-        subprocess.Popen(["/usr/bin/qasmixer", "-n", f"--device=hw:{str(mixdevice)}"], shell=False).pid
+            mixdevice = widget.get_active_id()
+            subprocess.Popen(["/usr/bin/qasmixer", "-n", f"--device=hw:{str(mixdevice)}"], shell=False).pid
+        widget.set_active_id("none")
+        widget.set_sensitive(True)
+
 
     def pavucontrol_cb(self, button):
         '''callback for pulse control button, opens pavucontrol'''

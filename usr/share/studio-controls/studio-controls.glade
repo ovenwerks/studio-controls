@@ -464,13 +464,14 @@
                   </packing>
                 </child>
                 <child>
-                  <object class="GtkButton" id="start_mixer">
-                    <property name="label" translatable="yes">Open QASMixer</property>
+                  <object class="GtkComboBoxText" id="mixer_start">
                     <property name="visible">True</property>
-                    <property name="can_focus">True</property>
-                    <property name="receives_default">True</property>
-                    <property name="tooltip_text" translatable="yes">Opens QASMixer pointed at the device that is currently JACK's Master device, assuming that the driver is alsa.</property>
-                    <signal name="clicked" handler="mixer_cb" swapped="no"/>
+                    <property name="can_focus">False</property>
+                    <property name="active">0</property>
+                    <items>
+                      <item id="none" translatable="yes">Open Device Mixer</item>
+                    </items>
+                    <signal name="changed" handler="mixer_cb" swapped="no"/>
                   </object>
                   <packing>
                     <property name="expand">False</property>
