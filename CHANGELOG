@@ -2,6 +2,8 @@ studio-controls version 2.1.65
 
  [ Len Ovens ]
  - Change qasmixer button to drop down fixes no device
+ - Convert checks each value for sanity
+ - Convert checks for duplicate devices
 
 studio-controls version 2.1.64
 

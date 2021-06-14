@@ -15,7 +15,6 @@ Fixes:
 TODO: (part way done)
 	[GUI]
 	- find false possitive for session changed
-	- Convert should vet each config option and fix
 
 Future Features:
 	- make help work with current tab
