@@ -119,6 +119,8 @@ class DevDB:
         # first reset device number to -1
         for dev in conf['devices']:
             conf['devices'][dev]['number'] = -1
+            if not 'raw' in conf['devices'][dev]:
+                conf['devices'][dev]['raw'] = dev
 
         # now find the real number
         if os.path.exists("/proc/asound/cards"):
@@ -203,7 +205,7 @@ class DevDB:
                     'raw': cname, 'id': 'none', 'bus': 'none', 'sub': {}}
 
             #print(f"{cname}")
-            self.get_dev_info(conf['devices'][found_name], conf['jack'])
+            self.get_dev_info(conf['devices'][found_name])
         #print(json.dumps(conf['devices'], indent = 4))
         dev_list = list(conf['devices'])
         '''for device in dev_list:
@@ -211,12 +213,17 @@ class DevDB:
 
 
 
-    def  get_dev_info(self, config, jack):
+    def  get_dev_info(self, config):
         ''' get device info from system files '''
         cname = ""
         config['usb'] = False
         config['internal'] = False
         config['firewire'] = False
+        config['min_latency'] = 16
+        if not 'id' in config:
+            config['id'] = 'none'
+        if not 'bus' in config:
+            config['bus'] = 'none'
         sub = 0
         rates = ['32000', '44100', '48000', '88200', '96000', '192000']
         x = int(config['number'])
@@ -271,30 +278,46 @@ class DevDB:
 
         for y in range(0, 20):
             cap = False
-            #cap_pid = 0
             play = False
-            #play_pid = 0
             if os.path.exists(f"/proc/asound/card{str(x)}/pcm{str(y)}p"):
                 play = True
 
             if os.path.exists(f"/proc/asound/card{str(x)}/pcm{str(y)}c"):
                 cap = True
 
-            if play or cap:
-                #print(f"sub num: {str(y)} play: {str(play)} cap: {str(cap)}")
-                if not str(y) in config['sub']:
-                    config['sub'][str(y)] = {'playback': play, 'capture': cap,
-                    'play-chan': 0, 'cap-chan': 0,
-                    'rate': int(jack['rate']), 'frame': int(jack['frame']),
-                    'nperiods': int(jack['period']), 'hide': False}
-                else:
-                    sub_db = config['sub'][str(y)]
-                    sub_db['playback'] = play
-                    sub_db['capture'] = cap
+            if not str(y) in config['sub']:
+                config['sub'][str(y)] = {'playback': play, 'capture': cap}
+
+            sub_db = config['sub'][str(y)]
+            if not 'playback' in sub_db:
+                sub_db['playback'] = play
+            if not 'capture' in sub_db:
+                sub_db['capture'] = cap
+            if not "play-chan" in sub_db:
+                sub_db['play-chan'] = 0
+            if not 'cap-chan' in sub_db:
+                sub_db['cap-chan'] = 0
+            if not "rate" in sub_db:
+                sub_db['rate'] = 48000
+                if not '48000' in rates:
+                    sub_db['rate'] = int(rates[0]))
+            if not 'frame' in sub_db:
+                sub_db['frame'] = 1024
+                if 1024 < config['min_latency']:
+                    sub_db['frame'] = config['min_latency']
+            if not 'nperiods' in sub_db:
+                sub_db['nperiods'] = 2
+            if not 'hide' in sub_db:
+                sub_db['hide'] = False
+            if not 'name' in sub_db:
+                sub_db['name'] = 'none'
+            if not "cap-latency" in sub_db:
+                sub_db['cap-latency'] = 0
+            if not "play-latency" in sun_db:
+                sun_db['play-latency'] = 0
 
         #print(f"Device list: {str(config)}")
         #print(json.dumps(config, indent = 4))
-
 
 
 class StudioControls:
@@ -849,7 +872,7 @@ class StudioControls:
             if dev_db['number'] != -1:
                 # we only want plugged devices
                 self.mixer_start.append(dev_db['raw'], dev_db['raw'])
-            
+
             for this_sub in dev_db['sub']:
                 sub_db = dev_db['sub'][this_sub]
                 d_type = ""
@@ -1623,6 +1646,8 @@ class StudioControls:
     def mixer_cb(self, widget):
         '''callback for mixer button. This starts QASMixer
         with the device set to whatever is jack master'''
+        if not widget.get_sensitive():
+            return
         widget.set_sensitive(False)
         widget.popdown()
         if widget.get_active == -1:

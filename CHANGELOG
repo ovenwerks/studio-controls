@@ -1,3 +1,9 @@
+studio-controls version 2.1.66
+
+ [ Len Ovens ]
+ - Fix extra mixers opening
+ - Make sure all devices are fully populated
+
 studio-controls version 2.1.65
 
  [ Len Ovens ]
