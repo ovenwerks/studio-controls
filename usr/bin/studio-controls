@@ -285,36 +285,37 @@ class DevDB:
             if os.path.exists(f"/proc/asound/card{str(x)}/pcm{str(y)}c"):
                 cap = True
 
-            if not str(y) in config['sub']:
-                config['sub'][str(y)] = {'playback': play, 'capture': cap}
+            if cap or play:
+                if not str(y) in config['sub']:
+                    config['sub'][str(y)] = {'playback': play, 'capture': cap}
 
-            sub_db = config['sub'][str(y)]
-            if not 'playback' in sub_db:
-                sub_db['playback'] = play
-            if not 'capture' in sub_db:
-                sub_db['capture'] = cap
-            if not "play-chan" in sub_db:
-                sub_db['play-chan'] = 0
-            if not 'cap-chan' in sub_db:
-                sub_db['cap-chan'] = 0
-            if not "rate" in sub_db:
-                sub_db['rate'] = 48000
-                if not '48000' in rates:
-                    sub_db['rate'] = int(rates[0]))
-            if not 'frame' in sub_db:
-                sub_db['frame'] = 1024
-                if 1024 < config['min_latency']:
-                    sub_db['frame'] = config['min_latency']
-            if not 'nperiods' in sub_db:
-                sub_db['nperiods'] = 2
-            if not 'hide' in sub_db:
-                sub_db['hide'] = False
-            if not 'name' in sub_db:
-                sub_db['name'] = 'none'
-            if not "cap-latency" in sub_db:
-                sub_db['cap-latency'] = 0
-            if not "play-latency" in sun_db:
-                sun_db['play-latency'] = 0
+                sub_db = config['sub'][str(y)]
+                if not 'playback' in sub_db:
+                    sub_db['playback'] = play
+                if not 'capture' in sub_db:
+                    sub_db['capture'] = cap
+                if not "play-chan" in sub_db:
+                    sub_db['play-chan'] = 0
+                if not 'cap-chan' in sub_db:
+                    sub_db['cap-chan'] = 0
+                if not "rate" in sub_db:
+                    sub_db['rate'] = 48000
+                    if not '48000' in rates:
+                        sub_db['rate'] = int(rates[0])
+                if not 'frame' in sub_db:
+                    sub_db['frame'] = 1024
+                    if 1024 < config['min_latency']:
+                        sub_db['frame'] = config['min_latency']
+                if not 'nperiods' in sub_db:
+                    sub_db['nperiods'] = 2
+                if not 'hide' in sub_db:
+                    sub_db['hide'] = False
+                if not 'name' in sub_db:
+                    sub_db['name'] = 'none'
+                if not "cap-latency" in sub_db:
+                    sub_db['cap-latency'] = 0
+                if not "play-latency" in sub_db:
+                    sub_db['play-latency'] = 0
 
         #print(f"Device list: {str(config)}")
         #print(json.dumps(config, indent = 4))
