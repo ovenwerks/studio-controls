@@ -417,10 +417,10 @@ class StudioControls:
         signal.signal(signal.SIGALRM, self.sig_handler)
         signal.signal(signal.SIGTERM, self.sig_handler)
 
-        """Create the GUI"""
+        # Create the GUI
         builder = Gtk.Builder()
         builder.add_from_file(f"{install_path}/share/studio-controls/studio-controls.glade")
-        """Get windows"""
+        # Get windows
         self.window_main = builder.get_object("window_main")
         self.window_help = builder.get_object("window_help")
         self.message_dialog_changes_info = builder.get_object("message_dialog_changes_info")
@@ -430,17 +430,17 @@ class StudioControls:
         self.title_label = builder.get_object("label_main_top")
         self.button_msg_ok = builder.get_object("button_msg_ok")
         self.title_label.set_text(f"Studio Set Up Utility (version: {self.version})")
-        """Get buttons for system tab"""
+        # Get buttons for system tab
         self.rt_button = builder.get_object("rt_button")
         self.rt_warning = builder.get_object("rt_warning")
         self.combo_governor = builder.get_object("combo_governor")
         self.combo_boost = builder.get_object("combo_boost")
         self.logging_comb = builder.get_object("logging_comb")
         self.combo_fw = builder.get_object("combo_fw")
-        """audio tab stuff"""
-        """ right side menu """
+        # audio tab stuff
+        # right side menu
         self.mixer_start = builder.get_object("mixer_start")
-        """master tab"""
+        # master tab
         self.jack_device_combo = builder.get_object("jack_device_combo")
         self.jack_usb_dev_combo = builder.get_object("jack_usb_dev_combo")
         self.chan_in_spin = builder.get_object("chan_in_spin")
@@ -458,7 +458,7 @@ class StudioControls:
         self.dsp_label = builder.get_object("dsp_label")
         self.xrun_lab = builder.get_object("xrun_lab")
 
-        """extra tab"""
+        # extra tab
         self.usb_plug_check = builder.get_object("usb_plug_check")
         self.usb_single_ck = builder.get_object("usb_single_ck")
         self.xdev_select = builder.get_object("xdev_select")
@@ -471,23 +471,23 @@ class StudioControls:
         self.xdev_nperiods_drop = builder.get_object("xdev_nperiods_drop")
         self.xdev_cap_lat = builder.get_object("xdev_cap_lat")
         self.xdev_play_lat = builder.get_object("xdev_play_lat")
-        """ phones """
+        # phones
         self.hp_action = builder.get_object("hp_action")
         self.hp_device = builder.get_object("hp_device")
         self.hp_switch = builder.get_object("hp_switch")
 
-        """pulse tab"""
+        # pulse tab
         self.pj_combo = builder.get_object("pj_combo")
         self.pj_direction = builder.get_object("pj_direction")
         self.pj_name = builder.get_object("pj_name")
         self.pj_count = builder.get_object("pj_count")
         self.pj_con = builder.get_object("pj_con")
 
-        """Session Manager"""
+        # Session Manager
         self.jk_connect_mode = builder.get_object("jk_connect_mode")
 
-        """network tab"""
-        """audio"""
+        # network tab
+        # audio
         self.znet_bridge = builder.get_object("znet_bridge")
         self.znet_direction = builder.get_object("znet_direction")
         self.znet_count = builder.get_object("znet_count")
@@ -497,12 +497,12 @@ class StudioControls:
         self.znet_bits = builder.get_object("znet_bits")
         self.znet_late = builder.get_object("znet_late")
         self.znet_warn = builder.get_object("znet_warn")
-        """midi"""
+        # midi
         self.mnet_warn = builder.get_object("mnet_warn")
         self.mnet_count = builder.get_object("mnet_count")
         self.mnet_type = builder.get_object("mnet_type")
 
-        """Dbus monitoring"""
+        # Dbus monitoring
         user_bus = dbus.SessionBus()
         user_bus.add_signal_receiver(
             self.db_ses_cb,
@@ -518,7 +518,7 @@ class StudioControls:
         # Set default window icon for window managers
         self.window_main.set_default_icon_name("studio-controls")
 
-        """Check if audio.conf and/or audio.conf.disabled exists, returns are true or false"""
+        # Check if audio.conf and/or audio.conf.disabled exists, returns are true or false
         self.jack_file_exists = self.sysinfo.check_pam_files()
         if self.jack_file_exists and self.sysinfo.user_audio():
             rtprio, memlock = self.sysinfo.check_rlimits()
@@ -559,7 +559,7 @@ class StudioControls:
             self.combo_fw.set_active_id("ffado")
             self.combo_backend.append("firewire", "firewire")
 
-        """ combo_fw and combo_backend """
+        # combo_fw and combo_backend
 
         # Audio stuff
 
@@ -1003,7 +1003,7 @@ class StudioControls:
 
         self.redraw_extra(xdev_current)
 
-    """Functions for all the gui controls"""
+    # Functions for all the gui controls
 
     def on_window_help_delete_event(self, window, event):
         self.window_help.hide_on_delete()
@@ -1230,7 +1230,7 @@ class StudioControls:
         a_id = widget.get_active()
         self.usb_single_ck.set_sensitive(a_id)
 
-    """ Pulse bridge calls """
+    # Pulse bridge calls
 
     def refresh_pulse_io(self):
         """the ports that can be connected to pulse ports varies
@@ -1453,11 +1453,11 @@ class StudioControls:
         self.pj_bridge = ""
         self.refresh_pulse_tab(self.pj_bridge)
 
-    """ network callbacks and refresh """
+    # network callbacks and refresh
 
     def refresh_net(self, new_bridge):
         """set up values for first bridge and midi"""
-        """midi"""
+        # midi
         self.mnet_count.set_sensitive(False)
         self.mnet_type.set_sensitive(False)
         if not (os.path.isfile("/usr/bin/qmidinet") and os.access("/usr/bin/qmidinet", os.X_OK)):
@@ -1470,7 +1470,7 @@ class StudioControls:
             self.mnet_count.set_sensitive(True)
             self.mnet_type.set_sensitive(True)
 
-        """zita-njbridge"""
+        # zita-njbridge
         znet_db = self.conf_db["znet"]
         self.znet_bridge.set_sensitive(False)
         self.znet_direction.set_sensitive(False)
@@ -1533,7 +1533,7 @@ class StudioControls:
                 self.znet_port.set_sensitive(True)
                 self.znet_name.set_sensitive(True)
 
-    """audio"""
+    # audio
 
     def znet_bridge_cb(self, widget):
         """callback to look at different znet bridge.
@@ -1639,7 +1639,7 @@ class StudioControls:
         self.znetbridge = ""
         self.refresh_net(self.znetbridge)
 
-    """midi"""
+    # midi
 
     def mnet_count_cb(self, widget):
         if not widget.get_sensitive():
@@ -1653,7 +1653,7 @@ class StudioControls:
         self.conf_db["mnet"]["type"] = widget.get_active_id()
         self.not_applied = True
 
-    """ External applications calls """
+    # External applications calls
 
     def mixer_cb(self, widget):
         """callback for mixer button. This starts QASMixer
@@ -1719,7 +1719,7 @@ class StudioControls:
             button.set_label("Please Install Agordejo First")
             button.set_sensitive(False)
 
-    """ Autojack signalling calls """
+    # Autojack signalling calls
 
     def cb_jack_start(self, button):
         """call back for Jack (re)start button"""
@@ -1811,7 +1811,7 @@ class StudioControls:
     def on_button_rt_info_ok_clicked(self, button):
         self.message_dialog_rt_info.hide()
 
-    """ All the ways we can die """
+    # All the ways we can die
 
     def on_button_msg_ok_clicked(self, button):
         self.we_die()
