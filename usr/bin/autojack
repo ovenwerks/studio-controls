@@ -201,8 +201,6 @@ def get_dev_info(x):
             device["sub"][str(y)]["play-pid"] = play_pid
             device["sub"][str(y)]["cap-pid"] = cap_pid
     logging.log(7, f"Device scan found: {str(cname)}")
-    # logging.log(7, json.dumps(device, indent = 4))
-    # logging.log(7, f"Device list: {str(device)}")
 
 
 def import_device_array():
@@ -216,7 +214,6 @@ def import_device_array():
     ndevs = 0
     for this_dev in devices:
         # we need these even for unplugged devices
-        # devices[this_dev]['firewire'] = False
         devices[this_dev]["number"] = -1
         for this_sub in devices[this_dev]["sub"]:
             devices[this_dev]["sub"][this_sub]["play-pid"] = 0
@@ -272,7 +269,6 @@ def extra_devices():
     import_device_array()
     # a few loops
     for dev in conf_db["devices"]:
-        # rawdev = conf_db['devices'][dev]['raw']
         rawdev = dev
         if int(conf_db["devices"][dev]["number"]) > -1:
             usb = bool(conf_db["devices"][dev]["usb"] and conf_db["extra"]["usbauto"])
@@ -395,8 +391,6 @@ def import_config(caller):
     # config file exists, read it in
     with open(c_file) as f:
         conf_db = json.load(f)
-    # logging.log(7, json.dumps(conf_db, indent = 4))
-    # print(json.dumps(conf_db, indent = 4))
 
     for pout in conf_db["pulse"]["outputs"]:
         if conf_db["pulse"]["outputs"][pout]["connection"] == "monitor":
@@ -540,7 +534,6 @@ def reconfig():
         conf_db["mnet"]["type"],
     ]:
         logging.debug("reconfiguring MIDI network")
-        # cp = subprocess.run(["/usr/bin/killall", "-9", "a2jmidid"],
         cp = subprocess.run(
             ["/usr/bin/killall", "qmidinet"],
             universal_newlines=True,
@@ -725,7 +718,6 @@ def config_start():
 
     rn = "none"
     if conf_db["jack"]["usbdev"] != "none":
-        # mdev = conf_db['jack']['usbdev']
         rn = get_db(conf_db["jack"]["usbdev"])["raw"]
     if os.path.exists(f"/proc/asound/{rn}"):
         mdev = get_raw(conf_db["jack"]["usbdev"])
@@ -783,7 +775,6 @@ def config_start():
         # we use default device for FW right now
         configure_iface.SetParameterValue(["driver", "device"], f"hw:{mdev}")
         logging.debug(f"JACK device set to: {mdev}")
-        # if conf_db['devices'][mdev.split(',')[0]]['firewire'] and conf_db['jack']['frame'] < 256:
         if mdev_db["firewire"] and conf_db["jack"]["frame"] < 256:
             conf_db["jack"]["frame"] = 256
             logging.info(f"Firewire device using ALSA drivers, JACK buffer set to: 256")
@@ -1221,7 +1212,6 @@ def msg_cb_new(*args, **kwargs):
         audio_if = a_if[1].split(".", 1)[0]
         dev_db = {}
         for dev_name in conf_db["devices"]:
-            # print(f"devdb number: {conf_db['devices'][dev_name]['number']} audioif: {audio_if}")
             if str(conf_db["devices"][dev_name]["number"]) == audio_if:
                 dev_db = conf_db["devices"][dev_name]
                 # make sure device is USB and is not midi only
@@ -1255,7 +1245,6 @@ def msg_cb_new(*args, **kwargs):
                         if (conf_db["jack"]["driver"] == "alsa") and (
                             conf_db["jack"]["usbdev"] == subname
                         ):
-                            # change_jack_master(cid, "sm")
                             logging.debug(f"Changing jack master to: {subname}")
                             config_start()
                             return
@@ -1309,7 +1298,6 @@ def msg_cb_removed(*args, **kwargs):
                     logging.debug(f"Subdevice {subname} unplugged")
                     if conf_db["jack"]["usbdev"] == subname:
                         # must get rid of our jack client
-                        # jack_died = True
                         if last_master == get_raw(conf_db["jack"]["usbdev"]):
                             kill_slave(conf_db["jack"]["dev"])
                             time.sleep(1)
@@ -1365,10 +1353,8 @@ def get_card_rate(rtdev):
         adev_h.close()
 
     if backup_rate:
-        # adev_h.close()
         return backup_rate
     logging.debug(f"Unable to confirm working rate, using: {desired_rate}")
-    # adev_h.close()
     return desired_rate
 
 
@@ -1836,7 +1822,6 @@ def main():
     if not os.path.isdir(config_path):
         os.makedirs(config_path)
     lock_file = f"{config_path}/autojack.lock"
-    # if os.path.isfile(lock_file): # this can be added in when 20.04 is EOL
     print("sending quit to any old autojack")
     subprocess.run(
         [
@@ -1899,7 +1884,6 @@ def main():
     signal.signal(signal.SIGABRT, handler)
     signal.signal(signal.SIGBUS, handler)
     signal.signal(signal.SIGFPE, handler)
-    # signal.signal(signal.SIGKILL, handler) unhandlable  :)
     signal.signal(signal.SIGUSR1, handler)
     signal.signal(signal.SIGSEGV, handler)
     signal.signal(signal.SIGUSR2, handler)

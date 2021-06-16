@@ -126,8 +126,6 @@ class RTSetup:
 class DevDB:
     """class for adding system devices to config data base:"""
 
-    # def __init__(self):
-
     def scan_dev(self, conf):
         """scan devices and create device db, scan config and add data"""
         ndevs = 0
@@ -148,8 +146,6 @@ class DevDB:
                     sub2 = sub.split(" ")
                     first_el = line.rstrip()[1:].split(" ")[0]
                     if first_el.isdigit():
-                        # if sub2[0].isdigit():
-                        # ndevs = int(sub2[0])
                         ndevs = int(first_el)
         ndevs += 1
         for x in range(0, ndevs):
@@ -167,7 +163,6 @@ class DevDB:
                             cname = line.rstrip()
                 else:
                     cname = str(x)
-            # print(f"cname: {cname} card: {str(x)}")
             # now check for USB device remembering to go by id/bus not raw name
             if os.path.exists(f"/proc/asound/card{str(x)}/usbbus"):
                 usb = True
@@ -190,8 +185,6 @@ class DevDB:
                     == [d_id, bus]
                 ):
                     # this is the device... well maybe check if it already has a number
-                    # if
-                    # print(f"found usb id/bus match for {cname}")
                     conf["devices"][dev]["number"] = x
                     conf["devices"][dev]["raw"] = cname
                     found_name = dev
@@ -204,9 +197,7 @@ class DevDB:
                     ]
                     == ["none", "none"]
                 ):
-                    # print(f"found usb with none/none {cname}")
                     if conf["devices"][dev]["raw"] == cname:
-                        # print(f"found usb none/none match for {cname} == {conf['devices'][dev]['raw']}")
                         found_name = dev
                         conf["devices"][dev]["number"] = x
                         conf["devices"][dev]["id"] = d_id
@@ -218,7 +209,6 @@ class DevDB:
                     found_name = dev
                     break
             if found_name == "":
-                # print ("device not found")
                 if usb:
                     found_name = f"USB{conf['extra']['usbnext']}"
                     conf["devices"][found_name] = {
@@ -265,12 +255,8 @@ class DevDB:
                         "sub": {},
                     }
 
-            # print(f"{cname}")
             self.get_dev_info(conf["devices"][found_name])
-        # print(json.dumps(conf['devices'], indent = 4))
         dev_list = list(conf["devices"])
-        """for device in dev_list:
-            if conf['devices'][device]"""
 
     def get_dev_info(self, config):
         """get device info from system files"""
@@ -286,7 +272,6 @@ class DevDB:
         sub = 0
         rates = ["32000", "44100", "48000", "88200", "96000", "192000"]
         x = int(config["number"])
-        # print(f"card: {str(x)}")
         if os.path.exists(f"/proc/asound/card{str(x)}/usbbus"):
             config["usb"] = True
             config["min_latency"] = 32
@@ -376,9 +361,6 @@ class DevDB:
                 if not "play-latency" in sub_db:
                     sub_db["play-latency"] = 0
 
-        # print(f"Device list: {str(config)}")
-        # print(json.dumps(config, indent = 4))
-
 
 class StudioControls:
     global lock_file
@@ -428,7 +410,6 @@ class StudioControls:
         signal.signal(signal.SIGABRT, self.sig_handler)
         signal.signal(signal.SIGBUS, self.sig_handler)
         signal.signal(signal.SIGFPE, self.sig_handler)
-        # signal.signal(signal.SIGKILL, self.sig_handler)
         signal.signal(signal.SIGUSR1, self.sig_handler)
         signal.signal(signal.SIGSEGV, self.sig_handler)
         signal.signal(signal.SIGUSR2, self.sig_handler)
@@ -538,7 +519,6 @@ class StudioControls:
         self.window_main.set_default_icon_name("studio-controls")
 
         """Check if audio.conf and/or audio.conf.disabled exists, returns are true or false"""
-        # self.rt_file = False
         self.jack_file_exists = self.sysinfo.check_pam_files()
         if self.jack_file_exists and self.sysinfo.user_audio():
             rtprio, memlock = self.sysinfo.check_rlimits()
@@ -606,11 +586,7 @@ class StudioControls:
 
         # read in autojack config file
         c_file = expanduser(self.config_file)
-        """if not os.path.isfile(c_file):
-            # no config file, make one
-            cp = subprocess.run([f"{install_path}/bin/convert-studio-controls"],
-            universal_newlines=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=False)
-        # config file exists, read it in"""
+        # config file exists, read it in
         cp = subprocess.run(
             ["/usr/bin/convert-studio-controls"],
             universal_newlines=True,
@@ -664,8 +640,6 @@ class StudioControls:
         self.usb_single_ck.set_active(self.extra["usb-single"])
         if self.extra["usbauto"]:
             self.usb_single_ck.set_sensitive(True)
-        # self.hp_action = builder.get_object('hp_action')
-        # self.hp_switch = builder.get_object('hp_switch')
 
         # pulse bridge defaults
         self.pj_direction.set_sensitive(False)
@@ -955,8 +929,6 @@ class StudioControls:
                 next_id = f"{this_dev},{this_sub},0"
                 desc_base = ""
                 if dev_db["usb"]:
-                    # print(f"usb dev: {this_dev} id: {dev_db['id']} bus: {dev_db['bus']}")
-                    # print(f"same device raw name: {dev_db['raw']}")
                     desc_base = (
                         f"{this_dev} {dev_db['id']} {dev_db['bus']} {dev_db['raw']},{this_sub},0"
                     )
@@ -964,7 +936,6 @@ class StudioControls:
                     desc_base = next_id
                 if dev_db["number"] == -1:
                     dname = "unplugged"
-                # next_d = f"{next_id} {d_type} ({dname})"
                 next_d = f"{desc_base} {d_type} ({dname})"
                 if "Loopback" in [this_dev]:
                     self.xdev_select.append(next_id, next_d)
@@ -1130,8 +1101,6 @@ class StudioControls:
         self.not_applied = True
 
         widget.set_sensitive(False)
-        # self.cap_chan_spin.set_sensitive(False)
-        # widget.set_active(False)
         if widget.get_label() == " All ":
             self.cap_chan_spin.set_value(100)
             widget.set_label(" Off")
@@ -1144,8 +1113,6 @@ class StudioControls:
     def xdev_play_all_cb(self, widget):
         self.not_applied = True
         widget.set_sensitive(False)
-        # self.play_chan_spin.set_sensitive(False)
-        # widget.set_active(False)
         if widget.get_label() == " All ":
             self.play_chan_spin.set_value(100)
             widget.set_label(" Off")
@@ -1178,7 +1145,6 @@ class StudioControls:
             for def_dev in self.conf_db["devices"]:
                 next_device = f"{def_dev},0,0"
                 break
-        # print(f"fixed Next device: {next_device}")
         self.xdev_select.set_active_id(next_device)
         dev_db = self.conf_db["devices"][next_device.split(",")[0]]
         sub_db = dev_db["sub"][str(next_device.split(",")[1])]
@@ -1391,11 +1357,9 @@ class StudioControls:
             if new_bridge in out_db:
                 our_db = out_db
                 self.pj_direction.set_active_id("out")
-                # self.pj_direct.set_text('Output (Pulse to JACK)')
             if new_bridge in in_db:
                 our_db = in_db
                 self.pj_direction.set_active_id("in")
-                # self.pj_direct.set_text('Input (JACK to Pulse)')
             self.pj_combo.set_active_id(new_bridge)
             self.pj_name.set_text(new_bridge)
             self.pj_count.set_value(our_db[new_bridge]["count"])
@@ -1403,7 +1367,6 @@ class StudioControls:
             self.pj_bridge = new_bridge
 
         self.pj_combo.set_sensitive(True)
-        # self.pj_direction.set_sensitive(True)
         self.pj_name.set_sensitive(True)
         self.pj_count.set_sensitive(True)
         self.pj_con.set_sensitive(True)
@@ -1565,7 +1528,6 @@ class StudioControls:
                 if znet_db[new_bridge]["direction"] == "out":
                     self.znet_bits.set_sensitive(True)
                 self.znet_bridge.set_sensitive(True)
-                # self.znet_direction.set_sensitive(True) # should never be true
                 self.znet_count.set_sensitive(True)
                 self.znet_ip.set_sensitive(True)
                 self.znet_port.set_sensitive(True)
@@ -1872,7 +1834,6 @@ class StudioControls:
         global lock_file
         if jack_alive:
             jack_client.close()
-        # self.window_main = builder.get_object('window_main')
         if self.not_applied:
             dialog = Gtk.MessageDialog(
                 transient_for=self.window_main,

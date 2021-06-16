@@ -99,8 +99,6 @@ def read_old():
     if not def_config["CONNECT-MODE"] in ["a", "A", "e", "E"]:
         def_config["CONNECT-MODE"] = "n"
 
-    # for key in config['DEFAULT']: print(f"{key}: {def_config[key]}")
-
 
 def make_db():
     """Stuff config into this db:
@@ -246,13 +244,10 @@ def make_db():
     if def_config["PHONE-DEVICE"] not in devicelist:
         devicelist.append(def_config["PHONE-DEVICE"])
     devicelist = devicelist + def_config["XDEV"].split() + def_config["BLACKLIST"].split()
-    # print(f"device list: {str(devicelist)}")
     for rdev in devicelist:
         rdev_l = rdev.split(",")
-        # print(f"found: {str(rdev_l)}")
         if len(rdev_l) == 3:
             dev, sub, ssub = rdev_l
-            # print(f"Device: {dev} sub: {sub} ssub: {ssub}")
             if dev not in devices_db:
                 devices_db[dev] = make_dev_temp()
             dev_db = devices_db[dev]
@@ -320,9 +315,6 @@ def write_new():
     """write new config file"""
     print("write new config file")
     global our_db
-    # print(f"our-db {str(our_db)}")
-    # print(json.dumps(our_db, indent = 4))
-    # print(f" test access our_db['jack']['rate'] {str(our_db['jack']['rate'])}")
     c_file = expanduser(new_name)
     if not os.path.isfile(c_file):
         # either first run or old version
