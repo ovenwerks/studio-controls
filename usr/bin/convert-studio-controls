@@ -1,5 +1,15 @@
 #!/usr/bin/python3 -u
 
+import configparser
+import getopt
+import glob
+import json
+import os
+import sys
+
+from os.path import expanduser
+
+
 global version
 global config_path
 global new_name
@@ -7,13 +17,6 @@ global old_name
 config_path = "~/.config/autojack/"
 new_name = f"{config_path}autojack.json"
 old_name = f"{config_path}/autojackrc"
-
-import os
-from os.path import expanduser
-import glob
-import configparser
-import json
-import sys, getopt
 
 
 def get_default_dev():

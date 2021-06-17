@@ -14,6 +14,25 @@
 # - remove a USB device as jack master to allow safe device removal
 # - reread ~/.config/autojackrc and apply any changes
 
+import alsaaudio
+import copy
+import dbus
+import dbus.mainloop.glib
+import glob
+import jack
+import json
+import logging
+import os
+import re
+import shlex
+import signal
+import subprocess
+import time
+import sys
+
+from gi.repository import GLib
+from os.path import expanduser
+
 global name_base
 global control_interface_name
 global configure_interface_name
@@ -22,26 +41,6 @@ name_base = "org.jackaudio"
 control_interface_name = name_base + ".JackControl"
 configure_interface_name = name_base + ".Configure"
 service_name = name_base + ".service"
-
-import os
-from os.path import expanduser
-import re
-import time
-from gi.repository import GLib
-import dbus
-import dbus.mainloop.glib
-import subprocess
-import glob
-import shlex
-import signal
-
-# import configparser
-import logging
-import jack
-import alsaaudio
-import json
-import copy
-import sys
 
 
 def get_dev_info(x):
