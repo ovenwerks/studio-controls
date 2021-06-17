@@ -40,18 +40,11 @@ class SysInfo:
         audio_users = []
         audio_users = grp.getgrnam("audio")[3]
         user = getpass.getuser()
-        audio_group = False
-        if user in audio_users:
-            audio_group = True
-
-        return audio_group
+        return user in audio_users
 
     def check_pam_files(self):
         """Checks for the existence of two files"""
-        jack_file_exists = False
-        if os.path.isfile("/etc/security/limits.d/audio.conf"):
-            jack_file_exists = True
-        return jack_file_exists
+        return os.path.isfile("/etc/security/limits.d/audio.conf")
 
     def check_rlimits(self):
         """returns hard rlimit values for RTPRIO and MEMLOCK"""
@@ -63,26 +56,24 @@ class SysInfo:
     # System tweaks
     def get_performance(self):
         """Checks for current cpu governor"""
-        in_performance = False
         if os.path.isfile("/sys/devices/system/cpu/cpufreq/policy0/scaling_governor"):
             with open(
                 "/sys/devices/system/cpu/cpufreq/policy0/scaling_governor", "r"
             ) as perform_file_test:
                 for line in perform_file_test:
                     if re.match("performance", line.rstrip()):
-                        in_performance = True
-        return in_performance
+                        return True
+        return False
 
     def get_boosted(self):
         """Checks for Intel boost state"""
-        boosted = False
         boost_path = "/sys/devices/system/cpu/intel_pstate/no_turbo"
         if os.path.exists(boost_path):
             with open(boost_path, "r") as boost_test:
                 for line in boost_test:
                     if re.match("0", line.rstrip()):
-                        boosted = True
-        return boosted
+                        return True
+        return False
 
     # Audio stuff
 
@@ -95,7 +86,7 @@ class RTSetup:
         self.backup_file = f"{install_path}/share/studio-controls/audio.conf"
 
     def set_governor(self, enable):
-        if enable == True:
+        if enable:
             gov = "performance"
         else:
             if os.path.exists("/sys/devices/system/cpu/intel_pstate"):
@@ -321,13 +312,8 @@ class DevDB:
         config["rates"] = rates
 
         for y in range(0, 20):
-            cap = False
-            play = False
-            if os.path.exists(f"/proc/asound/card{str(x)}/pcm{str(y)}p"):
-                play = True
-
-            if os.path.exists(f"/proc/asound/card{str(x)}/pcm{str(y)}c"):
-                cap = True
+            play = os.path.exists(f"/proc/asound/card{str(x)}/pcm{str(y)}p")
+            cap = os.path.exists(f"/proc/asound/card{str(x)}/pcm{str(y)}c")
 
             if cap or play:
                 if not str(y) in config["sub"]:
