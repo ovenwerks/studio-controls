@@ -218,13 +218,12 @@ def make_db():
         temp_db = {'connection': this_con, 'count': int(this_cnt)}
         pulse_out_db[bridge] = temp_db
 
-    ''' Now devices we just want to add devices in the config file
-        studio-controls will add all devices it finds and autojack will
-        make it's own DB as well. We don't check if the rate, buffer,etc
-        makes sense, the other two programs will correct that and the old
-        style config file assumed jack master numbers anyway so we use
-        those.
-    '''
+    # Now devices we just want to add devices in the config file
+    # studio-controls will add all devices it finds and autojack will
+    # make it's own DB as well. We don't check if the rate, buffer,etc
+    # makes sense, the other two programs will correct that and the old
+    # style config file assumed jack master numbers anyway so we use
+    # those.
     devices_db = {}
     our_db['devices'] = devices_db
     devicelist = [default_device]
@@ -631,11 +630,11 @@ def main(argv):
         check_new(use_bk)
     else:
         print("Config file not found, Create one")
-        ''' no usable config file found.
-            - search for pre json config and convert
-            - or use defaults and create one
-            - if force is True then use .bak on file name
-        '''
+        # no usable config file found.
+        # - search for pre json config and convert
+        # - or use defaults and create one
+        # - if force is True then use .bak on file name
+
         read_old()
         make_db()
         write_new()

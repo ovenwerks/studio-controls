@@ -877,9 +877,9 @@ def get_next_port(left_port_ask):
         return ""
 
     right = False
-    ''' For firewire backend, the ports are labeled firewire_pcm:something<num>_in or _out
-        but have an alias of system:<direction>_<num>. We have to find the real port name
-        for left_port '''
+    # For firewire backend, the ports are labeled firewire_pcm:something<num>_in or _out
+    # but have an alias of system:<direction>_<num>. We have to find the real port name
+    # for left_port
     left_port = jack_client.get_port_by_name(left_port_ask)
     logging.debug(f"Real left port name: {str(left_port.name)}")
     right_port = left_port.name
@@ -1333,8 +1333,8 @@ def ses_cb_tablet(*args, **kwargs):
     ''' dbus call back when tablet signal caught
         This reads the config file and sets the tablet
         buttons, pen and size/position'''
-    ''' not sure what we will do with this, if anything
-        tablet plans changed/on hold for now; '''
+    # not sure what we will do with this, if anything
+    # tablet plans changed/on hold for now;
     logging.info("Got tablet signal.")
 
 
