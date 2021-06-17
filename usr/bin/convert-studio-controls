@@ -490,7 +490,7 @@ def check_new(use_bk):
             jack_db['on'] = bool(str(jack_db['on']) in ['True', 'true'])
 
         if not 'driver' in jack_db:
-            jack_db['driver']: "alsa"
+            jack_db['driver'] = "alsa"
 
         if not 'chan-in' in jack_db:
             jack_db['chan-in'] = 1
