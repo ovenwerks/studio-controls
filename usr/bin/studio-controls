@@ -35,7 +35,7 @@ class SysInfo:
     """Get information about the system"""
 
     # get info about if rtaccess is setup right
-    def user_audio(self):
+    def user_in_audio_group(self):
         """Checks if current user is in the audio group, or not"""
         audio_users = []
         audio_users = grp.getgrnam("audio")[3]
@@ -506,7 +506,7 @@ class StudioControls:
 
         # Check if audio.conf and/or audio.conf.disabled exists, returns are true or false
         self.jack_file_exists = self.sysinfo.check_pam_files()
-        if self.jack_file_exists and self.sysinfo.user_audio():
+        if self.jack_file_exists and self.sysinfo.user_in_audio_group():
             rtprio, memlock = self.sysinfo.check_rlimits()
             if rtprio == 0:
                 self.rt_button.set_label("Reboot required")
