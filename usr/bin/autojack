@@ -14,8 +14,6 @@
 # - remove a USB device as jack master to allow safe device removal
 # - reread ~/.config/autojackrc and apply any changes
 
-
-#import configparser
 import alsaaudio
 import copy
 import dbus

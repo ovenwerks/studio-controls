@@ -3,14 +3,11 @@
 import gi
 
 import os
-import copy
 import dbus
 import getpass
-import glob
 import grp
 import jack
 import json
-import pwd
 import re
 import resource
 import shlex
@@ -24,7 +21,7 @@ import time
 
 from dbus.mainloop.glib import DBusGMainLoop
 gi.require_version('Gtk', '3.0')
-from gi.repository import Gtk, GLib, Gdk
+from gi.repository import Gtk, GLib
 from os.path import expanduser
 
 DBusGMainLoop(set_as_default=True)
