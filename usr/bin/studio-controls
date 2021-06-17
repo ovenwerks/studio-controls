@@ -355,8 +355,8 @@ class StudioControls:
             if new_pid != old_pid:
                 try:
                     os.kill(int(old_pid), 9)
-                except:
-                    print("")
+                except Exception:
+                    pass
                 time.sleep(1)
         with open(lock_file, "w") as lk_file:
             lk_file.write(new_pid)
