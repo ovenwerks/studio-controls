@@ -159,7 +159,7 @@ class DevDB:
                 with open(f"/proc/asound/card{str(x)}/usbbus", "r") as bus_file:
                     for line in bus_file:
                         bus = line.strip().split('/')[0]
-                        print(f"found usb bus: {bus}")
+                        #print(f"found usb bus: {bus}")
                 if os.path.isfile(f"/proc/asound/card{str(x)}/usbid"):
                     with open(f"/proc/asound/card{str(x)}/usbid", "r") as id_file:
                         for line in id_file:
@@ -227,7 +227,6 @@ class DevDB:
         sub = 0
         rates = ['32000', '44100', '48000', '88200', '96000', '192000']
         x = int(config['number'])
-        #print(f"card: {str(x)}")
         if os.path.exists(f"/proc/asound/card{str(x)}/usbbus"):
             config['usb'] = True
             config['min_latency'] = 32
@@ -295,9 +294,15 @@ class DevDB:
                 if not 'capture' in sub_db:
                     sub_db['capture'] = cap
                 if not "play-chan" in sub_db:
-                    sub_db['play-chan'] = 0
+                    if config['usb']:
+                        sub_db['play-chan'] = 100
+                    else:
+                        sub_db['play-chan'] = 0
                 if not 'cap-chan' in sub_db:
-                    sub_db['cap-chan'] = 0
+                    if config['usb']:
+                        sub_db['cap-chan'] = 100
+                    else:
+                        sub_db['cap-chan'] = 0
                 if not "rate" in sub_db:
                     sub_db['rate'] = 48000
                     if not '48000' in rates:
@@ -423,7 +428,6 @@ class StudioControls:
 
         '''extra tab'''
         self.usb_plug_check = builder.get_object('usb_plug_check')
-        self.usb_single_ck = builder.get_object('usb_single_ck')
         self.xdev_select = builder.get_object('xdev_select')
         self.cap_chan_spin = builder.get_object('cap_chan_spin')
         self.play_chan_spin = builder.get_object('play_chan_spin')
@@ -517,8 +521,6 @@ class StudioControls:
             self.combo_fw.set_active_id("ffado")
             self.combo_backend.append("firewire", "firewire")
 
-        ''' combo_fw and combo_backend '''
-
         # Audio stuff
 
         global autojack
@@ -528,6 +530,10 @@ class StudioControls:
         global xrun_count
         global jack_ports_changed
         global jack_time
+        global jackstate
+        global jackstring
+        jackstring = "unknown"
+        jackstate = False
         jack_time = 3
         xrun_count = 0
         autojack = True
@@ -544,12 +550,7 @@ class StudioControls:
 
         # read in autojack config file
         c_file = expanduser(self.config_file)
-        '''if not os.path.isfile(c_file):
-            # no config file, make one
-            cp = subprocess.run([f"{install_path}/bin/convert-studio-controls"],
-            universal_newlines=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=False)
-        # config file exists, read it in'''
-        cp = subprocess.run(["/usr/bin/convert-studio-controls"],
+        cp = subprocess.run([f"{install_path}/bin/convert-studio-controls"],
         universal_newlines=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=False)
         print(f"Config file: {c_file}")
         with open(c_file) as f:
@@ -559,14 +560,6 @@ class StudioControls:
         self.devdb.scan_dev(self.conf_db)
         self.jackdb = self.conf_db['jack']
         self.extra = self.conf_db['extra']
-
-        # Find out if jack is running
-        try:
-            client = jack.Client('controls', use_exact_name=False, no_start_server=True)
-            self.jackdb['on'] = True
-            client.close()
-        except jack.JackError:
-            self.jackdb['on'] = False
 
         self.logging_comb.set_active_id(str(self.conf_db['log-level']))
         # fill in Jack master widgets
@@ -578,7 +571,6 @@ class StudioControls:
         self.play_lat_spin.set_sensitive(False)
         self.jack_midi_check.set_sensitive(False)
         self.usb_plug_check.set_sensitive(False)
-        self.usb_single_ck.set_sensitive(False)
         self.jk_connect_mode.set_sensitive(False)
 
         self.combo_periods.set_active_id(str(self.jackdb['period']))
@@ -594,11 +586,6 @@ class StudioControls:
         self.jack_midi_check.set_active(self.extra['a2j'])
         # Fill Extra devices widgets
         self.usb_plug_check.set_active(self.extra['usbauto'])
-        self.usb_single_ck.set_active(self.extra['usb-single'])
-        if self.extra['usbauto']:
-            self.usb_single_ck.set_sensitive(True)
-        #self.hp_action = builder.get_object('hp_action')
-        #self.hp_switch = builder.get_object('hp_switch')
 
         # pulse bridge defaults
         self.pj_direction.set_sensitive(False)
@@ -616,7 +603,6 @@ class StudioControls:
         self.play_lat_spin.set_sensitive(True)
         self.jack_midi_check.set_sensitive(True)
         self.usb_plug_check.set_sensitive(True)
-        self.usb_single_ck.set_sensitive(True)
         self.jk_connect_mode.set_sensitive(True)
 
         self.refresh_dropdowns()
@@ -701,8 +687,11 @@ class StudioControls:
     def db_ses_cb(*args, **kwargs):
         ''' this means we got a responce from autojack, Good'''
         global autojack
-        autojack = True
-        print("autojack is running")
+        global jackstate
+        if not autojack:
+            autojack = True
+            print("autojack is running")
+        jackstate = True
 
     def db_new_usb(*args, **kwargs):
         ''' Autojack tells us a USB audio device has been plugged in or
@@ -726,6 +715,19 @@ class StudioControls:
         global xrun_count
         global jack_ports_changed
         global jack_time
+        global jackstate
+        global jackstring
+
+        if jackstate:
+            stat_file = expanduser(f"{self.config_path}/autojack.state")
+            with open(stat_file, "r") as st_file:
+                for line in st_file:
+                    jackstring = line.rstrip()
+                    self.jack_state.set_text(f" {jackstring}")
+            if jack_alive:
+                if jackstring in ["Stopping...", "Stopped", "Config Pulse", "Configuring...", "Starting...", "Start Failed"]:
+                    jack_died = True
+            jackstate = False
 
         # sent by jackdied() callback
         if jack_died:
@@ -751,33 +753,27 @@ class StudioControls:
             self.dsp_label.set_text(f"DSP: {str(load)[0:4]}%")
             self.xrun_lab.set_text(f" {str(xrun_count)}")
         else:
-            if jack_time > 0:
-                jack_time = jack_time - 1
-                return True
-            else:
-                jack_time = 4
             self.dsp_label.set_text("DSP: 0%")
             self.xrun_lab.set_text(" 0")
             xrun_count = 0
-            try:
-                jack_client = jack.Client('controls', use_exact_name=False, no_start_server=True)
-            except jack.JackError:
-                self.jack_state.set_text(" Stopped")
-                self.xrun_lab.set_text(" 0")
-                xrun_count = 0
-                return True
-            self.jack_state.set_text(" Running")
-            #self.jack_ind.set_from_icon_name("gtk-apply", 0)
-            # if jack is shutting down we need to know
-            jack_client.set_shutdown_callback(self.jackdied)
-            # count xruns
-            jack_client.set_xrun_callback(self.jackxrun)
-            # get notified if a new port is created
-            jack_client.set_port_registration_callback(self.new_jack_port)
-            jack_client.activate()
-            jack_alive = True
-            jack_ports_changed = True
-            self.refresh_pulse_tab(self.pj_bridge)
+            if jackstring in ["Running", "Poststart", "Adding Bridges", "Postbridge"]:
+                try:
+                    jack_client = jack.Client('controls', use_exact_name=False, no_start_server=True)
+                except jack.JackError:
+                    #self.jack_state.set_text(" Stopped")
+                    self.xrun_lab.set_text(" 0")
+                    xrun_count = 0
+                    return True
+                # if jack is shutting down we need to know
+                jack_client.set_shutdown_callback(self.jackdied)
+                # count xruns
+                jack_client.set_xrun_callback(self.jackxrun)
+                # get notified if a new port is created
+                jack_client.set_port_registration_callback(self.new_jack_port)
+                jack_client.activate()
+                jack_alive = True
+                jack_ports_changed = True
+                self.refresh_pulse_tab(self.pj_bridge)
         return True
 
 
@@ -901,8 +897,6 @@ class StudioControls:
                 next_id = f"{this_dev},{this_sub},0"
                 desc_base = ""
                 if dev_db['usb']:
-                    #print(f"usb dev: {this_dev} id: {dev_db['id']} bus: {dev_db['bus']}")
-                    #print(f"same device raw name: {dev_db['raw']}")
                     desc_base = f"{this_dev} {dev_db['id']} {dev_db['bus']} {dev_db['raw']},{this_sub},0"
                 else:
                     desc_base = next_id
@@ -1126,7 +1120,6 @@ class StudioControls:
             for def_dev in self.conf_db['devices']:
                 next_device = f"{def_dev},0,0"
                 break
-        #print(f"fixed Next device: {next_device}")
         self.xdev_select.set_active_id(next_device)
         dev_db = self.conf_db['devices'][next_device.split(',')[0]]
         sub_db = dev_db['sub'][str(next_device.split(',')[1])]
@@ -1204,7 +1197,6 @@ class StudioControls:
     def usb_plug_cb(self, widget):
         self.not_applied = True
         a_id = widget.get_active()
-        self.usb_single_ck.set_sensitive(a_id)
 
 
     ''' Pulse bridge calls '''
@@ -1742,7 +1734,6 @@ class StudioControls:
 
         self.extra['a2j'] = self.jack_midi_check.get_active()
         self.extra['usbauto'] = self.usb_plug_check.get_active()
-        self.extra['usb-single'] = self.usb_single_ck.get_active()
         self.extra['monitor'] = str(self.monitor_combo.get_active_id())
         self.extra['phone-action'] = str(self.hp_action.get_active_id())
         self.extra['phone-device'] = str(self.hp_device.get_active_id())

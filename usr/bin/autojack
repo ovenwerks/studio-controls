@@ -97,6 +97,7 @@ def get_dev_info(x):
         conf_db['devices'][dname] = {'number': x, 'id': usbid, 'bus': usbbus}
 
     device = conf_db['devices'][dname]
+    device['min_latency'] = 16
     device['raw'] = cname
     device['usb'] = usb
     device['internal'] = os.path.exists(f"/proc/asound/card{str(x)}/codec#0")
@@ -177,20 +178,28 @@ def get_dev_info(x):
                 thisframe = conf_db['jack']['frame']
                 if thisframe < device['min_latency']:
                     thisframe = device['min_latency']
-                device['sub'][str(y)] = {'playback': True, 'capture': True,
-                        'play-chan': 0, 'cap-chan': 0,
-                        'rate': thisrate, 'frame': thisframe,
-                        'nperiods': conf_db['jack']['period'], 'hide': False,
-                        'name': f"{device['raw']},{str(y)},0", 'cap-latency': 0,
-                        'play-latency': 0}
+                if device['usb']:
+                    device['sub'][str(y)] = {'playback': True, 'capture': True,
+                            'play-chan': 100, 'cap-chan': 100,
+                            'rate': thisrate, 'frame': thisframe,
+                            'nperiods': conf_db['jack']['period'], 'hide': False,
+                            'name': f"{device['raw']},{str(y)},0", 'cap-latency': 0,
+                            'play-latency': 0}
+                else:
+                    device['sub'][str(y)] = {'playback': True, 'capture': True,
+                            'play-chan': 0, 'cap-chan': 0,
+                            'rate': thisrate, 'frame': thisframe,
+                            'nperiods': conf_db['jack']['period'], 'hide': False,
+                            'name': f"{device['raw']},{str(y)},0", 'cap-latency': 0,
+                            'play-latency': 0}
 
             device['sub'][str(y)]['playback'] = play
             device['sub'][str(y)]['capture'] = cap
             device['sub'][str(y)]['play-pid'] = play_pid
             device['sub'][str(y)]['cap-pid'] = cap_pid
     logging.log(7, f"Device scan found: {str(cname)}")
-    #logging.log(7, json.dumps(device, indent = 4))
     #logging.log(7, f"Device list: {str(device)}")
+    #logging.log(7, json.dumps(device, indent = 4))
 
 
 def import_device_array():
@@ -206,9 +215,11 @@ def import_device_array():
         # we need these even for unplugged devices
         # devices[this_dev]['firewire'] = False
         devices[this_dev]['number'] = -1
-        for this_sub in devices[this_dev]['sub']:
-            devices[this_dev]['sub'][this_sub]['play-pid'] = 0
-            devices[this_dev]['sub'][this_sub]['cap-pid'] = 0
+        for sub in devices[this_dev]['sub']:
+            if not 'play-pid' in devices[this_dev]['sub'][sub]:
+                devices[this_dev]['sub'][sub]['play-pid'] = 0
+            if not 'cap-pid' in devices[this_dev]['sub'][sub]:
+                devices[this_dev]['sub'][sub]['cap-pid'] = 0
 
     if os.path.exists("/proc/asound/cards"):
         with open("/proc/asound/cards", "r") as cards_file:
@@ -230,9 +241,14 @@ def get_raw(device):
     ''' given a USB*,*,* device name return a
     true (raw) dev,*,* string'''
     global conf_db
+    if device == 'none':
+        return 'none'
     un, ud, us = device.split(',')
-    rn = conf_db['devices'][un]['raw']
-    return f"{rn},{ud},{us}"
+    if un in conf_db['devices']:
+        rn = conf_db['devices'][un]['raw']
+        return f"{rn},{ud},{us}"
+    else:
+        return 'none'
 
 
 def get_db(device):
@@ -260,36 +276,31 @@ def extra_devices():
     import_device_array()
     # a few loops
     for dev in conf_db['devices']:
-        #rawdev = conf_db['devices'][dev]['raw']
-        rawdev = dev
-        if int(conf_db['devices'][dev]['number']) > -1:
-            usb = bool(conf_db['devices'][dev]['usb'] and conf_db['extra']['usbauto'])
-            for sub in conf_db['devices'][dev]['sub']:
-                fullname = f"{rawdev},{sub},0"
-                fullusb = f"{dev},{sub},0"
-                sub_db = conf_db['devices'][dev]['sub'][sub]
-                if sub_db['hide']:
-                    if sub_db['cap-pid'] or sub_db['play-pid']:
-                        kill_slave(fullname)
-                    break
-                if fullname == conf_db['jack']['dev'] or fullusb == conf_db['jack']['usbdev']:
-                    break
-                if usb and not (sub_db['play-chan'] or sub_db['cap-chan']):
-                    if not sub_db['cap-pid'] or not sub_db['play-pid']:
-                        start_slave(fullname)
-                    break
-                if fullname == conf_db['extra']['phone-device']:
-                    if phones:
-                        if not sub_db['play-pid']:
-                            start_slave(fullname)
-                            break
-                if sub_db['play-chan'] or sub_db['cap-chan']:
-                    if not sub_db['cap-pid'] or not sub_db['play-pid']:
+        rawdev = conf_db['devices'][dev]['raw']
+        numst = conf_db['devices'][dev]['number']
+        usb = bool(conf_db['devices'][dev]['usb'] and conf_db['extra']['usbauto'])
+        for sub in conf_db['devices'][dev]['sub']:
+            fullname = f"{dev},{sub},0"
+            sub_db = conf_db['devices'][dev]['sub'][sub]
+            logging.debug(f"checking: {fullname} channel counts: {sub_db['play-chan']} {sub_db['cap-chan']} card: {numst}")
+            if sub_db['hide'] or int(conf_db['devices'][dev]['number']) == -1:
+                if sub_db['cap-pid'] or sub_db['play-pid']:
+                    kill_slave(fullname)
+                break
+            if fullname == conf_db['jack']['dev'] or fullname == conf_db['jack']['usbdev']:
+                break
+            if fullname == conf_db['extra']['phone-device']:
+                if phones:
+                    if not sub_db['play-pid']:
                         start_slave(fullname)
                         break
-                else:
-                    if sub_db['cap-pid'] or sub_db['play-pid']:
-                        kill_slave(fullname)
+            if sub_db['play-chan'] or sub_db['cap-chan']:
+                if not sub_db['cap-pid'] or not sub_db['play-pid']:
+                    start_slave(fullname)
+                    break
+            else:
+                if sub_db['cap-pid'] or sub_db['play-pid']:
+                    kill_slave(fullname)
     logging.debug("updating extra devices complete")
 
 
@@ -328,7 +339,6 @@ def net_bridge():
             continue
 
         cmd = f"{cmd} --jname {bridge} {cnt_str} {late_bits} {br_db['ip']} {str(br_db['port'])}"
-        print(cmd)
         subprocess.Popen(shlex.split(cmd), shell=False).pid
 
 
@@ -392,6 +402,7 @@ def reconfig():
     global phones
     global conf_db
     global last_master
+    global midiproc
     logging.debug("reconfigure autojack")
 
     old_conf_db = copy.deepcopy(conf_db)
@@ -445,16 +456,24 @@ def reconfig():
 
     if old_conf_db['extra']['a2j'] != conf_db['extra']['a2j']:
         logging.debug("reconfiguring MIDI bridge")
-        cp = subprocess.run(["/usr/bin/killall", "-9", "a2jmidid"],
-                            universal_newlines=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=False)
-        logging.debug(f"kill old a2j: {cp.stdout.strip()}")
+        if 'midiproc' in globals():
+            midiproc.send_signal(signal.SIGINT)
+            try:
+                rt = midiproc.wait(timeout=15)
+            except subprocess.TimeoutExpired:
+                logging.debug(f"kill a2jmidid failed")
+                try:
+                    os.kill(int(sub_db['cap-pid']), 9)
+                except:
+                    print("")
+
         if conf_db['extra']['a2j']:
             # Can't add logging for background processes. Will show up in syslog
-            subprocess.Popen(["/usr/bin/a2jmidid", "-e"], shell=False).pid
+            cmd = "/usr/bin/a2jmidid -e"
+            midiproc = subprocess.Popen(shlex.split(cmd), shell=False)
 
     if [old_conf_db['mnet']['count'], old_conf_db['mnet']['type']] != [conf_db['mnet']['count'], conf_db['mnet']['type']]:
         logging.debug("reconfiguring MIDI network")
-        #cp = subprocess.run(["/usr/bin/killall", "-9", "a2jmidid"],
         cp = subprocess.run(["/usr/bin/killall", "qmidinet"],
                             universal_newlines=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=False)
         logging.debug(f"kill old qmidinet: {cp.stdout.strip()}")
@@ -498,22 +517,37 @@ def config_start():
     global configure_interface_name
     global service_name
     global jack_died
+    global jack_alive
+    global midiproc
 
-    jack_died = True
+    if jack_alive:
+        kill_jack_client()
 
     logging.info("Running: config_start()")
 
     import_config("config_start")
-    print("config_start")
     # if at session start we should wait a few seconds for pulse
     # to be fully running
     time.sleep(2)
+    logging.debug("Running: config_start jack stat")
+    jack_stat("Stopping...")
+    logging.info("Running: config_start after jack_stat")
     fpath = expanduser('~/.config/autojack/prestop')
     if os.path.isfile(fpath) and os.access(fpath, os.X_OK):
         logging.debug("Found prestop script")
         cp = subprocess.run([fpath],
                     universal_newlines=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=True)
         logging.debug(f"Running script: {fpath}")
+    if 'midiproc' in globals():
+        midiproc.send_signal(signal.SIGINT)
+        try:
+            rt = midiproc.wait(timeout=15)
+        except subprocess.TimeoutExpired:
+            logging.debug(f"kill a2jmidid failed")
+            try:
+                os.kill(int(sub_db['cap-pid']), 9)
+            except:
+                print("")
 
     bus = dbus.SessionBus()
     controller = bus.get_object(service_name, "/org/jackaudio/Controller")
@@ -526,11 +560,11 @@ def config_start():
         print("stop failed")
     time.sleep(2)
 
-    print("do killall")
     # Stop jack if running
     cp = subprocess.run(["/usr/bin/killall", "-q", "-9", "jackdbus", "jackd", "a2jmidid"],
                         universal_newlines=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=False)
     logging.debug(f"Kill old Procs: {cp.stdout.strip()}")
+    jack_stat("Stopped")
 
     fpath = expanduser('~/.config/autojack/poststop')
     if os.path.isfile(fpath) and os.access(fpath, os.X_OK):
@@ -539,7 +573,6 @@ def config_start():
                     universal_newlines=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=True)
         logging.debug(f"Running script: {fpath}")
 
-    print("do fw reset")
     if (conf_db['jack']['driver'] == "firewire") or fw_exists:
         time.sleep(3)
         # this is a firewire device, A busreset makes for stability
@@ -551,7 +584,6 @@ def config_start():
                         universal_newlines=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=False)
         logging.debug(f"Kill ffado mixer because busreset needed: {cp.stdout.strip()}")
 
-    print("check jack on")
     if not conf_db['jack']['on']:
         # restart Pulse
         cp = subprocess.run(["/usr/bin/pulseaudio", "-k"],
@@ -559,6 +591,7 @@ def config_start():
         logging.debug(f"JACK is {str(conf_db['jack']['on'])} restart pulse: {cp.stdout.strip()}")
         return
     logging.debug(f"JACK is {str(conf_db['jack']['on'])} start up jack")
+    jack_stat("Config Pulse")
 
     # Assume start of session where pulse may be fully loaded
     # get rid of anything that can automatically interfere
@@ -575,10 +608,12 @@ def config_start():
     fpath = expanduser('~/.config/autojack/prestart')
     if os.path.isfile(fpath) and os.access(fpath, os.X_OK):
         logging.debug("Found prestart script")
+        jack_stat("Prestart running")
         cp = subprocess.run([fpath],
                     universal_newlines=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=True)
         logging.debug(f"Running script: {fpath}")
 
+    jack_stat("Configuring...")
     rn = 'none'
     if conf_db['jack']['usbdev'] != "none":
         #mdev = conf_db['jack']['usbdev']
@@ -619,7 +654,6 @@ def config_start():
     control_iface = dbus.Interface(controller, control_interface_name)
     configure_iface = dbus.Interface(controller, configure_interface_name)
 
-    print(f"jack driver: {conf_db['jack']['driver']}")
     configure_iface.SetParameterValue(['engine', 'driver'], str(conf_db['jack']['driver']))
     logging.debug(f"JACK driver set to: {conf_db['jack']['driver']}")
     time.sleep(.4)
@@ -627,7 +661,6 @@ def config_start():
         # we use default device for FW right now
         configure_iface.SetParameterValue(['driver', 'device'], f"hw:{mdev}")
         logging.debug(f"JACK device set to: {mdev}")
-        #if conf_db['devices'][mdev.split(',')[0]]['firewire'] and conf_db['jack']['frame'] < 256:
         if mdev_db['firewire'] and conf_db['jack']['frame'] < 256:
             conf_db['jack']['frame'] = 256
             logging.info(f"Firewire device using ALSA drivers, JACK buffer set to: 256")
@@ -636,27 +669,34 @@ def config_start():
     configure_iface.SetParameterValue(['driver', 'rate'], dbus.UInt32(conf_db['jack']['rate']))
     time.sleep(.2)
     configure_iface.SetParameterValue(['driver', 'period'], dbus.UInt32(conf_db['jack']['frame']))
+    time.sleep(.2)
     if conf_db['jack']['driver'] != "dummy":
         configure_iface.SetParameterValue(['driver', 'nperiods'],
             dbus.UInt32(conf_db['jack']['period']))
+        time.sleep(.2)
         configure_iface.SetParameterValue(['driver', 'input-latency'],
             dbus.UInt32(conf_db['jack']['cap-latency']))
+        time.sleep(.2)
         configure_iface.SetParameterValue(['driver', 'output-latency'],
             dbus.UInt32(conf_db['jack']['play-latency']))
 
     else:
         configure_iface.SetParameterValue(['driver', 'capture'],
             dbus.UInt32(conf_db['jack']['chan-in']))
+        time.sleep(.2)
         configure_iface.SetParameterValue(['driver', 'playback'],
             dbus.UInt32(conf_db['jack']['chan_out']))
+        time.sleep(.2)
         configure_iface.SetParameterValue(['driver', 'monitor'], True)
     logging.debug(f"JACK rate/period/nperiods set to: {conf_db['jack']['rate']}/{conf_db['jack']['frame']}/{conf_db['jack']['period']}")
     time.sleep(3)
+    jack_stat("Starting...")
 
     try:
         control_iface.StartServer()
     except:
         logging.debug("JACK start failed")
+        jack_stat("Start Failed")
         return
     logging.debug("JACK started")
 
@@ -664,6 +704,7 @@ def config_start():
     # maybe check for jack up (need function?)
     time.sleep(3)
 
+    jack_stat("Poststart")
     fpath = expanduser('~/.config/autojack/poststart')
     if os.path.isfile(fpath) and os.access(fpath, os.X_OK):
         logging.debug("Found poststart script")
@@ -673,8 +714,8 @@ def config_start():
 
     start_jack_client()
     time.sleep(1)
-    print("returned from start_jack_client")
 
+    jack_stat("Adding Bridges")
     for bridge in conf_db['pulse']['inputs']:
         this_count = str(conf_db['pulse']['inputs'][bridge]['count'])
         cp = subprocess.run(["/usr/bin/pactl", "load-module", "module-jack-source",
@@ -713,7 +754,7 @@ def config_start():
     if conf_db['extra']['a2j']:
         # Can't set up logging
         cmd = "/usr/bin/a2jmidid -e"
-        subprocess.Popen(shlex.split(cmd), shell=False).pid
+        midiproc = subprocess.Popen(shlex.split(cmd), shell=False)
 
     if conf_db['mnet']['count']:
         mtype = ""
@@ -722,12 +763,14 @@ def config_start():
         cmd = f"/usr/bin/qmidinet --num-ports={str(conf_db['mnet']['count'])} --no-gui {mtype}"
         subprocess.Popen(shlex.split(cmd), shell=False).pid
 
+    jack_stat("Postbridge")
     fpath = expanduser('~/.config/autojack/postbridge')
     if os.path.isfile(fpath) and os.access(fpath, os.X_OK):
         logging.debug("Found poststart script")
         cp = subprocess.run([fpath],
                     universal_newlines=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=True)
         logging.debug(f"Running script: {fpath}")
+    jack_stat("Running")
 
 
 def start_jack_client():
@@ -755,13 +798,39 @@ def start_jack_client():
     logging.debug("jack client created")
 
 
+def kill_jack_client():
+    global jack_client
+    global jack_alive
+    global jack_died
+
+    if jack_client:
+        jack_client.deactivate()
+        jack_client.close()
+    jack.set_error_function()
+    jack.set_info_function()
+    jack_died = False
+    jack_alive = False
+    jack_stat("Stopped")
+    logging.debug("jack client closed and cleaned up")
+
+
 def jackdied(state, why):
     '''gets called by jack if it is exiting, we can't clean up
     here... so tell the world jack died with a flag instead'''
     global jack_died
     jack_died = True
+    jack_stat("Stopping")
     logging.debug("jack died callback")
 
+
+def jack_stat(status):
+    global config_path
+    global ping_string
+    statfile =  expanduser(f"{config_path}/autojack.state")
+    with open(statfile, "w") as st_file:
+        st_file.write(status)
+    subprocess.run(["/usr/bin/dbus-send", "--type=signal", "/",
+                    f"org.studio.control.event.{ping_string}"], shell=False)
 
 def jack_con_det(a, b, connect):
     ''' a port has had a connection check if one of the ports is monitor L/R
@@ -781,6 +850,11 @@ def check_jack_status(user_data):
     global jack_count
     global con_dirty
     global phone_port
+
+    # sent by jackdied() callback
+    if jack_died:
+        kill_jack_client()
+
     jack_count = jack_count + 1
     if jack_count == 200:
         logging.log(7, f"Jack_status: {str(jack_alive)}")
@@ -820,14 +894,6 @@ def check_jack_status(user_data):
         switch_outputs("system:playback_1", new_l)
         con_dirty = False
 
-    # sent by jackdied() callback
-    if jack_died:
-        if jack_client:
-            jack_client.deactivate()
-            jack_client.close()
-        jack_died = False
-        jack_alive = False
-        logging.debug("jack client closed and cleaned up")
     return True
 
 
@@ -1005,46 +1071,43 @@ def msg_cb_new(*args, **kwargs):
     if not conf_db['jack']['on']:
         # then we don't care
         return
-    if not conf_db['extra']['usbauto']:
-        #do nothing
-        return
 
     # let things settle
     time.sleep(3)
+    old_devs_db = copy.deepcopy(conf_db['devices'])
 
     if args[0].find("sound-card") >= 0:
         # remake database
         import_device_array()
-        a_if = args[0].split("sound-card", 1)
-        audio_if = a_if[1].split(".", 1)[0]
         dev_db = {}
         for dev_name in conf_db['devices']:
-            #print(f"devdb number: {conf_db['devices'][dev_name]['number']} audioif: {audio_if}")
-            if str(conf_db['devices'][dev_name]['number']) == audio_if:
-                dev_db = conf_db['devices'][dev_name]
-                # make sure device is USB and is not midi only
-                if dev_db['usb'] and len(dev_db['sub']):
+            dev_db = conf_db['devices'][dev_name]
+            # we only care about usb devices that are plugged in and have audio
+            if dev_db['usb'] and dev_db['number'] != -1 and len(dev_db['sub']):
+                # check if it was not in db before or "card number" has changed
+                if not dev_name in old_devs_db or dev_db['number'] != old_devs_db[dev_name]['number']:
                     # tell gui devicelist has changed so it can up date device dropdowns
                     subprocess.run(["/usr/bin/dbus-send", "--type=signal", "/", "org.studio.control.event.usb_signal"],
                                    shell=False)
                     logging.debug(f"USB device {dev_name} has been plugged in")
-
+    
                     for subn in dev_db['sub']:
                         subname = f"{dev_name},{str(subn)},0"
                         if subname == last_master:
-                            # spurious indication, ignore
-                            logging.debug(f" We already have that device - spurious signal, ignoring")
-                            return
+                            #this device is current master maybe jack did a reset?
+                            continue
                         sub_db = dev_db['sub'][subn]
-                        logging.debug(f" device = {subname} play:{str(sub_db['playback'])}"
-                                    f" capture:{str(sub_db['capture'])}")
-
+                        #logging.debug(f" device = {subname} play:{str(sub_db['playback'])}"
+                        #            f" capture:{str(sub_db['capture'])}")
                         if (conf_db['jack']['driver'] == "alsa") and (conf_db['jack']['usbdev'] == subname):
-                            # change_jack_master(cid, "sm")
                             logging.debug(f"Changing jack master to: {subname}")
                             config_start()
                             return
-                        elif conf_db['extra']['usbauto']:
+                        if sub_db['play-pid'] or sub_db['cap-pid']:
+                            # device in use already
+                            continue
+                        if conf_db['extra']['usbauto']:
+                            #extra_devices()
                             start_slave(subname)
                             if subname == conf_db['extra']['phone-device']:
                                 phones_switch(True)
@@ -1062,41 +1125,35 @@ def msg_cb_removed(*args, **kwargs):
 
     # let things settle
     time.sleep(.5)
-
+    old_devs_db = copy.deepcopy(conf_db['devices'])
     if args[0].find("sound-card") >= 0:
-        # tell gui devicelist has changed
-        subprocess.run(["/usr/bin/dbus-send", "--type=signal", "/", "org.studio.control.event.usb_signal"],
-                       shell=False)
-
-        a_if = args[0].split("sound-card", 1)
-        audio_if = a_if[1].split(".", 1)[0]
-        logging.info(f"sound card: hw:{audio_if} removed")
-        if os.path.exists(f"/proc/asound/card{str(audio_if)}"):
-            # Hmm, I guess it hasn't really gone, false alarm
-            logging.debug(f"Device is still here - signal ignored")
-            return
+        # remake database
+        import_device_array()
         dev_db = {}
         for dev_name in conf_db['devices']:
-            if str(conf_db['devices'][dev_name]['number']) == str(audio_if):
-                dev_db = conf_db['devices'][dev_name]
-                if not dev_db['usb']:
-                    # not a usb device
-                    return
-                for subn in dev_db['sub']:
-                    subname = f"{dev_name},{str(subn)},0"
-                    logging.debug(f"Subdevice {subname} unplugged")
-                    if conf_db['jack']['usbdev'] == subname:
-                        # must get rid of our jack client
-                        #jack_died = True
-                        if last_master == get_raw(conf_db['jack']['usbdev']):
-                            kill_slave(conf_db['jack']['dev'])
-                            time.sleep(1)
-                            config_start()
-                    elif conf_db['extra']['usbauto']:
-                        if subname == conf_db['extra']['phone-device']:
-                            phones_switch(False)
-                        kill_slave(subname)
-        import_device_array()
+            dev_db = conf_db['devices'][dev_name]
+            # we only care about usb devices that are unplugged and have audio
+            if dev_db['usb'] and dev_db['number'] == -1 and len(dev_db['sub']):
+                # check if it was not in db before or "card number" has changed
+                if dev_name in old_devs_db or dev_db['number'] != old_devs_db[dev_name]['number']:
+                    # tell gui devicelist has changed so it can up date device dropdowns
+                    subprocess.run(["/usr/bin/dbus-send", "--type=signal", "/", "org.studio.control.event.usb_signal"],
+                                   shell=False)
+                    logging.debug(f"USB device {dev_name} has been unplugged")
+
+                    for subn in dev_db['sub']:
+                        subname = f"{dev_name},{str(subn)},0"
+                        if conf_db['jack']['usbdev'] == subname:
+                            # must get rid of our jack client
+                            #jack_died = True
+                            if last_master == get_raw(conf_db['jack']['usbdev']):
+                                kill_slave(conf_db['jack']['dev'])
+                                time.sleep(1)
+                                config_start()
+                        elif conf_db['extra']['usbauto']:
+                            if subname == conf_db['extra']['phone-device']:
+                                phones_switch(False)
+                            kill_slave(subname)
 
 
 def get_card_rate(rtdev):
@@ -1288,18 +1345,24 @@ def handler(signum, frame):
 def ses_cb_stop(*args, **kwargs):
     ''' dbus call back when stop signal caught. This stops jack. '''
     logging.info("Got stop signal.")
-    cp = subprocess.run(["/usr/bin/killall", "-9", "jackdbus", "jackd", "a2jmidid"],
-                        universal_newlines=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=False)
-    logging.debug(f"Kill jack and friends: {cp.stdout.strip()}")
-    cp = subprocess.run(["/usr/bin/pulseaudio", "-k"],
-                        universal_newlines=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=False)
-    logging.debug(f"Restart PA: {cp.stdout.strip()}")
-
+    config_start()
 
 def we_die():
     global lock_file
+    global midiproc
+    if 'midiproc' in globals():
+        midiproc.send_signal(signal.SIGINT)
+        try:
+            rt = midiproc.wait(timeout=15)
+        except subprocess.TimeoutExpired:
+            logging.debug(f"kill a2jmidid failed")
+            try:
+                os.kill(int(sub_db['cap-pid']), 9)
+            except:
+                print("")
     cp = subprocess.run(["/usr/bin/killall", "-9", "jackdbus", "jackd", "a2jmidid"],
                         universal_newlines=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=False)
+    jack_stat("Stopped")
     logging.debug(f"Kill jack and friends: {cp.stdout.strip()}")
     cp = subprocess.run(["/usr/bin/pulseaudio", "-k"],
                         universal_newlines=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=False)
@@ -1328,20 +1391,12 @@ def ses_cb_config(*args, **kwargs):
     reconfig()
 
 
-def ses_cb_tablet(*args, **kwargs):
-    ''' dbus call back when tablet signal caught
-        This reads the config file and sets the tablet
-        buttons, pen and size/position'''
-    ''' not sure what we will do with this, if anything
-        tablet plans changed/on hold for now; '''
-    logging.info("Got tablet signal.")
-
-
 def ses_cb_ping(*args, **kwargs):
     ''' dbus call back when config signal caught '''
+    global ping_string
     logging.info("Got ping signal.")
     time.sleep(3)
-    subprocess.run(["/usr/bin/dbus-send", "--type=signal", "/", "org.studio.control.event.V3_5_signal"],
+    subprocess.run(["/usr/bin/dbus-send", "--type=signal", "/", f"org.studio.control.event.{ping_string}"],
                    shell=False)
 
 
@@ -1538,6 +1593,9 @@ def main():
     global phones
     global con_dirty
     global lock_file
+    global config_path
+    global ping_string
+    ping_string = "V3_5_signal"
     phones = False
     jack_count = 0
     jack_client = 0
@@ -1618,7 +1676,6 @@ def main():
                                 signal_name='plug_signal')
     system_bus.add_signal_receiver(phones_unplug, dbus_interface='org.studio.control.event',
                                 signal_name='unplug_signal')
-
     user_bus = dbus.SessionBus()
     user_bus.add_signal_receiver(ses_cb_start, dbus_interface='org.studio.control.event',
                                  signal_name='start_signal')
@@ -1628,8 +1685,6 @@ def main():
                                  signal_name='config_signal')
     user_bus.add_signal_receiver(ses_cb_ping, dbus_interface='org.studio.control.event',
                                  signal_name='ping_signal')
-    user_bus.add_signal_receiver(ses_cb_tablet, dbus_interface='org.studio.control.event',
-                                 signal_name='tablet_signal')
     user_bus.add_signal_receiver(ses_cb_quit, dbus_interface='org.studio.control.event',
                                  signal_name='quit_signal')
     user_bus.add_signal_receiver(ses_cb_phones, dbus_interface='org.studio.control.event',
@@ -1637,8 +1692,7 @@ def main():
 
     subprocess.run(["/usr/bin/dbus-send", "--type=signal", "/",
                     "org.studio.control.event.start_signal"], shell=False)
-    subprocess.run(["/usr/bin/dbus-send", "--type=signal", "/",
-                    "org.studio.control.event.V3_5_signal"], shell=False)
+    jack_stat("undetermined")
 
     timeout_id = GLib.timeout_add(500, check_jack_status, None)
 

@@ -359,6 +359,7 @@
                             <property name="can_focus">False</property>
                             <property name="halign">end</property>
                             <property name="label" translatable="yes"> unknown</property>
+                            <property name="width_chars">17</property>
                             <attributes>
                               <attribute name="weight" value="semibold"/>
                             </attributes>
@@ -1574,22 +1575,6 @@ Many FireWire devices will work with the ALSA Modules but using the FFADO module
                           </packing>
                         </child>
                         <child>
-                          <object class="GtkCheckButton" id="usb_single_ck">
-                            <property name="label" translatable="yes">USB device bridge is input only</property>
-                            <property name="visible">True</property>
-                            <property name="can_focus">True</property>
-                            <property name="receives_default">False</property>
-                            <property name="tooltip_text" translatable="yes">Some input only devices are noisy without this</property>
-                            <property name="halign">center</property>
-                            <property name="draw_indicator">True</property>
-                            <signal name="toggled" handler="generic_cb" swapped="no"/>
-                          </object>
-                          <packing>
-                            <property name="left_attach">1</property>
-                            <property name="top_attach">5</property>
-                          </packing>
-                        </child>
-                        <child>
                           <object class="GtkCheckButton" id="usb_plug_check">
                             <property name="label" translatable="yes">Bridge USB Devices to JACK When Plugged In</property>
                             <property name="visible">True</property>
@@ -1617,6 +1602,9 @@ Many FireWire devices will work with the ALSA Modules but using the FFADO module
                             <property name="top_attach">4</property>
                             <property name="width">3</property>
                           </packing>
+                        </child>
+                        <child>
+                          <placeholder/>
                         </child>
                         <child>
                           <placeholder/>

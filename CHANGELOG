@@ -1,3 +1,15 @@
+studio-controls version 2.1.68
+
+ [ Len Ovens ]
+ - Fix USB plug in/out detection (dbus changed)
+ - Change convert to match
+ - Make studio-controls use convert from correct path
+ - fix window size change from jack status
+ - Use correct version when checking if our version config exists
+ - Fix JACK status to show more info
+ - Fix USB devices not connected at jack startup
+ - Shutdown a2jmidid properly for less error messages
+
 studio-controls version 2.1.67
 
  [ Len Ovens ]

@@ -14,6 +14,7 @@ import glob
 import configparser
 import json
 import sys, getopt
+import shutil
 
 
 def get_default_dev():
@@ -32,6 +33,8 @@ def get_default_dev():
 def get_dev_name(testname):
     # convert from raw to devname
     global our_db
+    if testname == 'none':
+        return 'none'
     name, dev, sub = testname.split(',')
     for device in our_db['devices']:
         if our_db['devices'][device]['raw'] == name:
@@ -98,8 +101,6 @@ def read_old():
         def_config['DEV'] = default_device
     if not def_config['CONNECT-MODE'] in ['a', 'A', 'e', 'E']:
         def_config['CONNECT-MODE'] = "n"
-
-    #for key in config['DEFAULT']: print(f"{key}: {def_config[key]}")
 
 
 def make_db():
@@ -234,13 +235,10 @@ def make_db():
     if def_config['PHONE-DEVICE'] not in devicelist:
         devicelist.append( def_config['PHONE-DEVICE'])
     devicelist = devicelist + def_config['XDEV'].split() + def_config['BLACKLIST'].split()
-    #print(f"device list: {str(devicelist)}")
     for rdev in devicelist:
         rdev_l = rdev.split(',')
-        #print(f"found: {str(rdev_l)}")
         if len(rdev_l) == 3:
             dev, sub, ssub = rdev_l
-            #print(f"Device: {dev} sub: {sub} ssub: {ssub}")
             if dev not in devices_db:
                 devices_db[dev] = make_dev_temp()
             dev_db = devices_db[dev]
@@ -384,11 +382,17 @@ def check_devices():
             else:
                 sub_db['capture'] = bool(str(sub_db['capture']) in ['True', 'true'])
             if not 'play-chan' in sub_db:
-                sub_db['play-chan'] = 0
+                if dev_db['usb'] and (not our_db['extra']['usb-single']):
+                    sub_db['play-chan'] = 100
+                else:
+                    sub_db['play-chan'] = 0
             else:
                 sub_db['play-chan'] = int(sub_db['play-chan'])
             if not 'cap-chan' in sub_db:
-                sub_db['cap-chan'] = 0
+                if dev_db['usb']:
+                    sub_db['cap-chan'] = 100
+                else:
+                    sub_db['cap-chan'] = 0
             else:
                 sub_db['cap-chan'] = int(sub_db['cap-chan'])
             if not 'rate' in sub_db:
@@ -408,11 +412,15 @@ def check_devices():
             else:
                 sub_db['hide'] = bool(str(sub_db['hide']) in ['True', 'true'])
             if not 'name' in sub_db:
-                sub_db['name'] = f"{sub_db['raw']},{sub},0"
+                sub_db['name'] = f"{dev_db['raw']},{sub},0"
             if not 'cap-latency' in sub_db:
                 sub_db['cap-latency'] = 0
             if not 'play-latency' in sub_db:
                 sub_db['play-latency'] = 0
+            if not 'play-pid' in sub_db:
+                sub_db['play-pid'] = 0
+            if not 'cap-pid' in sub_db:
+                sub_db['cap-pid'] = 0
 
 
 def check_new(use_bk):
@@ -437,13 +445,13 @@ def check_new(use_bk):
         print(f"same version {version}, no fix needed")
     else:
         # see if saved file with our version exists
-        if os.path.isfile(f"{c_file}.{our_db['version']}"):
-            os.replace(f"{c_file}.{our_db['version']}", c_file)
+        if os.path.isfile(f"{c_file}.{version}"):
+            print(f"A config file for this version exists: {c_file}.{version} Using it")
+            shutil.copyfile(f"{c_file}.{version}", c_file)
             return
-
         print(f"config file is version: {our_db['version']} updating")
         print(f"saving old config file to: {c_file}.{our_db['version']}")
-        os.replace(c_file, f"{c_file}.{our_db['version']}")
+        shutil.copyfile(c_file, f"{c_file}.{our_db['version']}")
 
         # new start - just check all parameters for sanity
         our_db['version'] = version
@@ -517,7 +525,7 @@ def check_new(use_bk):
         if not 'dev' in jack_db:
             jack_db['dev'] = get_default_dev()
 
-        if (not 'usbdev' in jack_db) or (jack_db['usbdev'] == ""):
+        if (not 'usbdev' in jack_db) or (jack_db['usbdev'] == "") or jack_db['usbdev'] == 'none':
             jack_db['usbdev'] = 'none'
         else:
             jack_db['usbdev'] = get_dev_name(jack_db['usbdev'])
