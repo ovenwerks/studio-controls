@@ -268,6 +268,7 @@ def get_db(device):
 def extra_devices():
     ''' set up all extra device as per configuration '''
     global conf_db
+    global last_master
     global phones
     logging.debug("updating extra devices")
 
@@ -288,7 +289,7 @@ def extra_devices():
                 if sub_db['cap-pid'] or sub_db['play-pid']:
                     kill_slave(fullname)
                 break
-            if fullname == conf_db['jack']['dev'] or fullname == conf_db['jack']['usbdev']:
+            if get_raw(fullname) == last_master:
                 break
             if fullname == conf_db['extra']['phone-device']:
                 if phones:
@@ -509,17 +510,17 @@ def reconfig():
 
 def config_start():
     ''' Pulls configuration and force restarts the world '''
-    global last_master
     global conf_db
-    global fw_exists
-    global phones
-    global name_base
-    global control_interface_name
     global configure_interface_name
-    global service_name
-    global jack_died
+    global control_interface_name
+    global fw_exists
     global jack_alive
+    global jack_died
+    global last_master
     global midiproc
+    global name_base
+    global phones
+    global service_name
 
     if jack_alive:
         kill_jack_client()
@@ -566,6 +567,7 @@ def config_start():
                         universal_newlines=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=False)
     logging.debug(f"Kill old Procs: {cp.stdout.strip()}")
     jack_stat("Stopped")
+    last_master = 'none'
 
     fpath = expanduser('~/.config/autojack/poststop')
     if os.path.isfile(fpath) and os.access(fpath, os.X_OK):
@@ -701,7 +703,8 @@ def config_start():
         return
     logging.debug("JACK started")
 
-    last_master = mdev
+    if conf_db['jack']['driver'] == "alsa":
+        last_master = mdev
     # maybe check for jack up (need function?)
     time.sleep(3)
 

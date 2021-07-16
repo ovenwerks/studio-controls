@@ -298,7 +298,7 @@ class DevDB:
                         sub_db['cap-chan'] = 0
                 if not "rate" in sub_db:
                     sub_db['rate'] = 48000
-                    if not '48000' in rates:
+                    if (not '48000' in rates) and len(rates):
                         sub_db['rate'] = int(rates[0])
                 if not 'frame' in sub_db:
                     sub_db['frame'] = 1024

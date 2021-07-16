@@ -8,7 +8,7 @@ Fixes:
 
 TODO: (part way done)
 	[GUI]
-	- find false possitive for session changed
+	- find false positive for session changed
 
 Future Features:
 	- make help work with current tab

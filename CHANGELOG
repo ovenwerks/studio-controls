@@ -1,3 +1,12 @@
+studio-controls version 2.1.69
+
+ [ Len Ovens ]
+ - First run default device if no internal device fix
+ - Fix bug if no rates in list (issue #59)
+ - Code cleanup
+ - Default device should bridge by default
+ - Unused Jack Master should be a usable extra device
+
 studio-controls version 2.1.68
 
  [ Len Ovens ]
