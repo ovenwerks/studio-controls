@@ -341,6 +341,7 @@ class StudioControls:
         lock_file = expanduser(f"{self.config_path}/studio-controls.lock")
         new_pid = str(os.getpid())
         if os.path.isfile(lock_file):
+            old_pid = new_pid
             with open(lock_file, "r") as lk_file:
                 for line in lk_file:
                     # only need one line
