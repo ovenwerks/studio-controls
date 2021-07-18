@@ -7,35 +7,24 @@
 Fixes:
 
 TODO: (part way done)
-	[GUI]
-	- find false positive for session changed
 
 Future Features:
 	- make help work with current tab
 	- remove warning dialogs and create on the fly as needed
 	- add JACK freeze detect and correct
-	- better JACK status showing
-		- detect xruns in autojack so number is for full jack run
-		- keep xrun reason (log it?)
+        partially fixed... found at least one reason for freeze
 
 	- Add jackmixer  or jack-mix-box? auto start and connect
+        too easy to break things with this, let user set this up with
+        auto run scripts (postjack or postbridge)
 	- Add packagers file describing depends/conflicts
 	- Add multiple devices for firewire
 	- bluetooth via pulse. use: pacmd load-module module-loopback latency_msec=5
 		and: pacmd unload-module module-loopback
 		need to figue out how to auto route jack->pulse bridge to loop
 		and loop to bt device.
-	- add drawing tablet support
-		- start listing xsetwacom and xsetpointer devices and allowing
-		user to take pointers and add them to wacom devices (if possiblle)
-		- add module that allows setting of display settings in tablets that
-		have displays.
-		- Then see if we can match plasma utility for setting size and 
-		setting buttons etc.
+        Note: not worth doing. Pipewire will do this for us.
 
-	- add use of internals (net manager, audio and net adapters)
-		option to use audioadapter instead of zita bridge?
-		that may only work for one device, zita can do many.
 	- remove Cadence from autostart and Cadences pulseaudio config
 		Cadence will reinsert these if the user decides to use it again
 		but at least if controls is used PA should get set to stock.

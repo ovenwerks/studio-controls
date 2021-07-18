@@ -2,6 +2,8 @@ studio-controls version 2.1.70
 
  [ Len Ovens ]
  - Fix issue #56 init variable
+ - Fix false not applied trigger
+ - Xrun count done in autojack so count remains through controls restart
 
 studio-controls version 2.1.69
 

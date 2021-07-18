@@ -521,7 +521,6 @@ class StudioControls:
         global newusb
         global jack_alive
         global jack_died
-        global xrun_count
         global jack_ports_changed
         global jack_time
         global jackstate
@@ -529,7 +528,6 @@ class StudioControls:
         jackstring = "unknown"
         jackstate = False
         jack_time = 3
-        xrun_count = 0
         autojack = True
         newusb = False
         jack_alive = False
@@ -706,7 +704,6 @@ class StudioControls:
         global jack_client
         global jack_alive
         global jack_died
-        global xrun_count
         global jack_ports_changed
         global jack_time
         global jackstate
@@ -715,9 +712,12 @@ class StudioControls:
         if jackstate:
             stat_file = expanduser(f"{self.config_path}/autojack.state")
             with open(stat_file, "r") as st_file:
-                for line in st_file:
-                    jackstring = line.rstrip()
-                    self.jack_state.set_text(f" {jackstring}")
+                jackstring = st_file.readline().rstrip()
+                self.jack_state.set_text(f" {jackstring}")
+                xstring = st_file.readline()
+                if xstring != "":
+                    xstring = xstring.rstrip()
+                    self.xrun_lab.set_text(f" {xstring}")
             if jack_alive:
                 if jackstring in ["Stopping...", "Stopped", "Config Pulse", "Configuring...", "Starting...", "Start Failed"]:
                     jack_died = True
@@ -745,23 +745,17 @@ class StudioControls:
         if jack_alive:
             load = jack_client.cpu_load()
             self.dsp_label.set_text(f"DSP: {str(load)[0:4]}%")
-            self.xrun_lab.set_text(f" {str(xrun_count)}")
         else:
             self.dsp_label.set_text("DSP: 0%")
             self.xrun_lab.set_text(" 0")
-            xrun_count = 0
             if jackstring in ["Running", "Poststart", "Adding Bridges", "Postbridge"]:
                 try:
                     jack_client = jack.Client('controls', use_exact_name=False, no_start_server=True)
                 except jack.JackError:
-                    #self.jack_state.set_text(" Stopped")
                     self.xrun_lab.set_text(" 0")
-                    xrun_count = 0
                     return True
                 # if jack is shutting down we need to know
                 jack_client.set_shutdown_callback(self.jackdied)
-                # count xruns
-                jack_client.set_xrun_callback(self.jackxrun)
                 # get notified if a new port is created
                 jack_client.set_port_registration_callback(self.new_jack_port)
                 jack_client.activate()
@@ -780,13 +774,6 @@ class StudioControls:
         jack_alive = False
 
 
-    def jackxrun(xruntime, extra):
-        ''' Got an xrun, count it '''
-        global xrun_count
-        xrun_count = xrun_count + 1
-        print(f"Jack xrun callback extra info: {str(extra)}")
-
-
     def new_jack_port(port_id, new, extra):
         ''' jack has added a port tell someone '''
         global jack_ports_changed
@@ -795,9 +782,7 @@ class StudioControls:
 
     def xrun_reset(self, button):
         ''' user asked for an xrun reset so do it '''
-        global xrun_count
-        xrun_count = 0
-
+        self.signal_autojack("xreset")
 
     def refresh_dropdowns(self):
         '''this call refreshes the device lists for all drop downs
@@ -1026,7 +1011,6 @@ class StudioControls:
         #self.xdev_select.set_sensitive(False)
         if not self.xdev_select.get_sensitive():
             return
-        self.not_applied = True
         self.cap_chan_spin.set_sensitive(False)
         self.play_chan_spin.set_sensitive(False)
         self.hide_check.set_sensitive(False)
@@ -1061,6 +1045,8 @@ class StudioControls:
 
 
     def xdev_cap_all_cb(self, widget):
+        if not widget.get_sensitive():
+            return
         self.not_applied = True
 
         widget.set_sensitive(False)
@@ -1077,6 +1063,8 @@ class StudioControls:
 
 
     def xdev_play_all_cb(self, widget):
+        if not widget.get_sensitive():
+            return
         self.not_applied = True
         widget.set_sensitive(False)
         #self.play_chan_spin.set_sensitive(False)
@@ -1154,6 +1142,8 @@ class StudioControls:
 
 
     def hp_action_cb(self, widget):
+        if not widget.get_sensitive():
+            return
         self.not_applied = True
         a_id = str(widget.get_active_id())
         if a_id == "script":
@@ -1164,6 +1154,8 @@ class StudioControls:
         self.signal_autojack("phones")
 
     def jack_device_changed(self, button):
+        if not button.get_sensitive():
+            return
         self.not_applied = True
         a_id = str(button.get_active_id())
         a_desc = str(button.get_active_text())
@@ -1174,6 +1166,8 @@ class StudioControls:
                 self.dirty = True
 
     def jack_driver_changed(self, button):
+        if not button.get_sensitive():
+            return
         self.not_applied = True
         a_driver = str(button.get_active_text())
         self.conf_db['jack']['driver'] = a_driver
@@ -1181,6 +1175,8 @@ class StudioControls:
             self.dirty = True
 
     def usb_master_changed(self, button):
+        if not button.get_sensitive():
+            return
         self.not_applied = True
         a_id = str(button.get_active_id())
         if a_id != "None":
@@ -1189,6 +1185,8 @@ class StudioControls:
             self.dirty = True
 
     def usb_plug_cb(self, widget):
+        if not widget.get_sensitive():
+            return
         self.not_applied = True
         a_id = widget.get_active()
 
@@ -1416,6 +1414,8 @@ class StudioControls:
         ''' get index of current bridge
         remove name from list by index
         remove connection from list by index '''
+        if not widget.get_sensitive():
+            return
         self.not_applied = True
         name = self.pj_combo.get_active_id()
         if name in self.conf_db['pulse']['inputs']:
@@ -1605,6 +1605,8 @@ class StudioControls:
     def znet_rem_cb(self, widget):
         ''' Remove the currently displayed bridge
         and refresh display (which defaults to the first in the list)'''
+        if not widget.get_sensitive():
+            return
         self.not_applied = True
         name = self.znet_bridge.get_active_id()
         if name in self.conf_db['znet']:
