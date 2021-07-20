@@ -1,3 +1,8 @@
+studio-controls version 2.1.71
+
+ [ Len Ovens ]
+ - If device name is already converted use the converted name.
+
 studio-controls version 2.1.70
 
  [ Len Ovens ]

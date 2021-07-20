@@ -15,6 +15,7 @@ global config_path
 global new_name
 global old_name
 config_path = "~/.config/autojack/"
+#config_path = "~/software/Studio/controls-debug/"
 new_name = f"{config_path}autojack.json"
 old_name = f"{config_path}/autojackrc"
 
@@ -73,6 +74,8 @@ def get_dev_name(testname):
     for device in our_db['devices']:
         if our_db['devices'][device]['raw'] == name:
             return f"{device},{dev},{sub}"
+        elif device == name:
+            return testname
     return 'none'
 
 
