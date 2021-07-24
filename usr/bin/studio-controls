@@ -714,10 +714,6 @@ class StudioControls:
             with open(stat_file, "r") as st_file:
                 jackstring = st_file.readline().rstrip()
                 self.jack_state.set_text(f" {jackstring}")
-                xstring = st_file.readline()
-                if xstring != "":
-                    xstring = xstring.rstrip()
-                    self.xrun_lab.set_text(f" {xstring}")
             if jack_alive:
                 if jackstring in ["Stopping...", "Stopped", "Config Pulse", "Configuring...", "Starting...", "Start Failed"]:
                     jack_died = True
@@ -745,6 +741,11 @@ class StudioControls:
         if jack_alive:
             load = jack_client.cpu_load()
             self.dsp_label.set_text(f"DSP: {str(load)[0:4]}%")
+            bus = dbus.SessionBus()
+            controller = bus.get_object("org.jackaudio.service", "/org/jackaudio/Controller")
+            control_iface = dbus.Interface(controller, "org.jackaudio.JackControl")
+            xrun_count = control_iface.GetXruns()
+            self.xrun_lab.set_text(f" {str(xrun_count)}")
         else:
             self.dsp_label.set_text("DSP: 0%")
             self.xrun_lab.set_text(" 0")
@@ -782,7 +783,10 @@ class StudioControls:
 
     def xrun_reset(self, button):
         ''' user asked for an xrun reset so do it '''
-        self.signal_autojack("xreset")
+        bus = dbus.SessionBus()
+        controller = bus.get_object("org.jackaudio.service", "/org/jackaudio/Controller")
+        control_iface = dbus.Interface(controller, "org.jackaudio.JackControl")
+        control_iface.ResetXruns()
 
     def refresh_dropdowns(self):
         '''this call refreshes the device lists for all drop downs

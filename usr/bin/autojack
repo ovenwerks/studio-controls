@@ -521,8 +521,6 @@ def config_start():
     global name_base
     global phones
     global service_name
-    global xrun_count
-    xrun_count = 0
 
     if jack_alive:
         kill_jack_client()
@@ -556,7 +554,7 @@ def config_start():
     bus = dbus.SessionBus()
     controller = bus.get_object(service_name, "/org/jackaudio/Controller")
     control_iface = dbus.Interface(controller, control_interface_name)
-    configure_iface = dbus.Interface(controller, configure_interface_name)
+    #configure_iface = dbus.Interface(controller, configure_interface_name)
 
     try:
         control_iface.StopServer()
@@ -640,7 +638,7 @@ def config_start():
     if conf_db['jack']['connect-mode'] != 'n':
         bus = dbus.SessionBus()
         controller = bus.get_object(service_name, "/org/jackaudio/Controller")
-        control_iface = dbus.Interface(controller, control_interface_name)
+        #control_iface = dbus.Interface(controller, control_interface_name)
         configure_iface = dbus.Interface(controller, configure_interface_name)
         configure_iface.SetParameterValue(['engine', 'self-connect-mode'],
             dbus.Byte(ord(conf_db['jack']['connect-mode'])))
@@ -785,8 +783,6 @@ def start_jack_client():
     global jack_died
     global jack_alive
     global con_dirty
-    global xrun_count
-    xrun_count = 0
     logging.debug("create jack client")
     jack.set_error_function(callback=jack_error)
     jack.set_info_function(callback=jack_info)
@@ -797,7 +793,6 @@ def start_jack_client():
         jack_died = True
         return
     jack_client.set_shutdown_callback(jackdied)
-    jack_client.set_xrun_callback(jackxrun)
     jack_client.set_port_connect_callback(jack_con_det)
     jack_client.activate()
 
@@ -832,23 +827,14 @@ def jackdied(state, why):
     logging.debug("jack died callback")
 
 
-def jackxrun (xruntime):
-    """ An xrun was detected """
-    global xrun_count
-    global xr_detect
-    xrun_count += 1
-    xr_detect = True
-
-
 def jack_stat(status):
     global config_path
     global last_status
     global ping_string
-    global xrun_count
     last_status = status
     statfile =  expanduser(f"{config_path}/autojack.state")
     with open(statfile, "w") as st_file:
-        st_file.write(f"{status}\n{str(xrun_count)}\n")
+        st_file.write(f"{status}\n")
     subprocess.run(["/usr/bin/dbus-send", "--type=signal", "/",
                     f"org.studio.control.event.{ping_string}"], shell=False)
 
@@ -871,7 +857,6 @@ def check_jack_status(user_data):
     global jack_count
     global last_status
     global phone_port
-    global xr_detect
 
     # sent by jackdied() callback
     if jack_died:
@@ -915,11 +900,6 @@ def check_jack_status(user_data):
             new_l = conf_db['extra']['monitor']
         switch_outputs("system:playback_1", new_l)
         con_dirty = False
-
-    if xr_detect and jack_alive:
-        jack_stat(last_status)
-        xr_detect = False
-
 
     return True
 
@@ -1566,14 +1546,6 @@ def ses_cb_phones(*args, **kwargs):
     logging.debug(f"Manual phones switch to: {str(phones)}")
 
 
-def ses_cb_xreset(*args, **kwargs):
-    global xrun_count
-    global xr_detect
-    xrun_count = 0
-    xr_detect = True
-
-
-
 def phones_plug(*args, **kwargs):
     ''' callback means headphones have been plugged in lets make sure
         phones are unmuted and have a level higher than -inf.
@@ -1630,10 +1602,6 @@ def main():
     global lock_file
     global config_path
     global ping_string
-    global xrun_count
-    global xr_detect
-    xr_detect = False
-    xrun_count = 0
     ping_string = "V3_5_signal"
     phones = False
     jack_count = 0
@@ -1728,8 +1696,6 @@ def main():
                                  signal_name='quit_signal')
     user_bus.add_signal_receiver(ses_cb_phones, dbus_interface='org.studio.control.event',
                                  signal_name='phones_signal')
-    user_bus.add_signal_receiver(ses_cb_xreset, dbus_interface='org.studio.control.event',
-                                 signal_name='xreset_signal')
 
     subprocess.run(["/usr/bin/dbus-send", "--type=signal", "/",
                     "org.studio.control.event.start_signal"], shell=False)
