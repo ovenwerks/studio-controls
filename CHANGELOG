@@ -1,7 +1,13 @@
+studio-controls version 2.2.0
+
+ [ Len Ovens ]
+ -Release 2.2.0
+
 studio-controls version 2.1.72
 
  [ Len Ovens ]
  - Use dbus to query jack for xruns (issue #62)
+ - Use dbus to query jack for DSP value
 
 studio-controls version 2.1.71
 
