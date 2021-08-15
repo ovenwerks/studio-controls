@@ -114,6 +114,8 @@ class DevDB:
             conf['devices'][dev]['number'] = -1
             if not 'raw' in conf['devices'][dev]:
                 conf['devices'][dev]['raw'] = dev
+            if not 'firewire' in conf['devices'][dev]:
+                conf['devices'][dev]['firewire'] = False
 
         # now find the real number
         if os.path.exists("/proc/asound/cards"):
@@ -797,6 +799,7 @@ class StudioControls:
         self.devdb.scan_dev(self.conf_db)
         xdev_current = self.xdev_select.get_active_id()
         self.current_ex_dev = xdev_current
+        fw_mixer = False
 
         # driver is probably ok to leave above
         self.combo_backend.set_active_id(self.jackdb['driver'])
@@ -832,6 +835,7 @@ class StudioControls:
         self.mixer_start.set_active_id("none")
         if self.combo_fw.get_active_id() == "ffado":
             self.mixer_start.append("ffado", "FFADO Device Mixer")
+            fw_mixer = True
         rates =[]
         def_rates = ['32000', '44100', '48000', '88200', '96000', '192000']
         frames = [16, 32, 64, 128, 256, 512, 1024, 2048, 4096]
@@ -847,8 +851,9 @@ class StudioControls:
 
         for this_dev in self.conf_db['devices']:
             dev_db = self.conf_db['devices'][this_dev]
-            if dev_db['firewire']:
+            if 'firewire' in dev_db and dev_db['firewire'] and not fw_mixer:
                 self.mixer_start.append("ffado", "FFADO Device Mixer")
+                fw_mixer = True
             if dev_db['number'] != -1:
                 # we only want plugged devices
                 self.mixer_start.append(dev_db['raw'], dev_db['raw'])
