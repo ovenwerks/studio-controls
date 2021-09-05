@@ -6,9 +6,10 @@ Description=Studio autojack session daemon
 # changing various settings.
 BindsTo=default.target
 Before=default.target
+After=pulseaudio.service
 
 [Service]
-ExecStart=/usr/bin/autojack
+ExecStart=/usr/bin/autojack-start
 
 
 [Install]
