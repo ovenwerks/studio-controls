@@ -1,0 +1,7 @@
+#!/bin/bash
+# Pulseaudio is starting as a systemd user service in newer versions of OS's.
+# Restarting this systemd service prior to autojack start fixes
+# a problem where pulseaudio bridges cannot start.
+
+/usr/bin/systemctl --user restart pulseaudio || true
+/usr/bin/autojack
