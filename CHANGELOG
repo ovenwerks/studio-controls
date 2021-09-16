@@ -1,3 +1,13 @@
+studio-controls version 2.2.2
+
+ [ Erich Eickmeyer ]
+ - Wrap autojack startup
+ - Update studio.service
+ - Change scalable icon to plain svg (was inkscape)
+ - Add additional icon sizes
+ [ Len Ovens ]
+ - add debug messages
+
 studio-controls version 2.2.1
 
  [ Len Ovens ]

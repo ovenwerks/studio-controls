@@ -527,7 +527,7 @@ def check_db():
         extra_db['usbnext'] = int(extra_db['usbnext'])
 
     check_devices()
-    print("continue data base check")
+    print(" Devices checked, continue data base check")
 
     jack_db = our_db['jack']
     if not 'on' in jack_db:
