@@ -269,7 +269,8 @@ def make_db():
     devicelist = [default_device]
     if def_config['DEV'] not in devicelist:
         devicelist.append( def_config['DEV'])
-    if def_config['USBDEV'] not in devicelist and def_config['USBDEV'] != 'none':
+    #if def_config['USBDEV'] not in devicelist and def_config['USBDEV'] != 'none':
+    if (def_config['USBDEV'] != 'none') and (def_config['USBDEV'] not in devicelist):
         devicelist.append( def_config['USBDEV'])
     if def_config['PHONE-DEVICE'] not in devicelist:
         devicelist.append( def_config['PHONE-DEVICE'])
