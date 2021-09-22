@@ -3,6 +3,7 @@ studio-controls version 2.2.3
  [ Len Ovens ]
  - Run convert at session start to ensure config exists (lp #1944607)
  - Convert should not add a none device to device db
+ - Fix default device selection (lp #1944607)
 
 studio-controls version 2.2.2
 
