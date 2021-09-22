@@ -266,13 +266,15 @@ def make_db():
     # those.
     devices_db = {}
     our_db['devices'] = devices_db
-    devicelist = [default_device]
-    if def_config['DEV'] not in devicelist:
+    devicelist = []
+    if default_device != 'none':
+        devicelist.append(default_device)
+    if def_config['DEV'] != 'none' and def_config['DEV'] not in devicelist:
         devicelist.append( def_config['DEV'])
     #if def_config['USBDEV'] not in devicelist and def_config['USBDEV'] != 'none':
     if (def_config['USBDEV'] != 'none') and (def_config['USBDEV'] not in devicelist):
         devicelist.append( def_config['USBDEV'])
-    if def_config['PHONE-DEVICE'] not in devicelist:
+    if def_config['PHONE-DEVICE'] != 'none' and def_config['PHONE-DEVICE'] not in devicelist:
         devicelist.append( def_config['PHONE-DEVICE'])
     devicelist = devicelist + def_config['XDEV'].split() + def_config['BLACKLIST'].split()
     for rdev in devicelist:
