@@ -3,5 +3,6 @@
 # Restarting this systemd service prior to autojack start fixes
 # a problem where pulseaudio bridges cannot start.
 
+/usr/bin/convert-studio-controls
 /usr/bin/systemctl --user restart pulseaudio || true
 /usr/bin/autojack
