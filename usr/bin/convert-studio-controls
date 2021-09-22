@@ -39,10 +39,18 @@ def get_default_dev():
     HDMI = 'none'
     print("Try to figure out a good default device")
     for adir in glob.glob("/proc/asound/card*/"):
-        if os.path.isfile(f"{adir}/codec#0"):
+        tmpname = 'none'
+        if os.path.isfile(f"{adir}/id"):
             with open(f"{adir}/id", "r") as card_file:
                 for line in card_file:
+                    print(f"file line: {str(line)}")
                     tmpname = line.rstrip()
+                    print(f"tmpname: {tmpname}")
+                print(f"outside for tmpname: {tmpname}")
+        else:
+            tmpname = "no-id"
+        print(f"final tmpname: {tmpname}")
+        if os.path.isfile(f"{adir}/codec#0"):
                 if tmpname != "HDMI" and tmpname != "NVidia":
                     internal = f"{tmpname},0,0"
                 elif HDMI == 'none':
@@ -294,7 +302,7 @@ def make_db():
             dev_db['raw'] = dev
             if dev == default_device.split(',')[0]:
                 dev_db['internal'] = True
-            if dev == def_config['USBDEV'].split(',')[0]:
+            if def_config['USBDEV'] != 'none' and dev == def_config['USBDEV'].split(',')[0]:
                 devices_db['USB1'] = devices_db.pop(dev)
                 dev_db = devices_db['USB1']
                 extra_db['usbnext'] = 2
