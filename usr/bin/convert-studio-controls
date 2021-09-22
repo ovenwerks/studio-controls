@@ -267,18 +267,25 @@ def make_db():
     devices_db = {}
     our_db['devices'] = devices_db
     devicelist = []
+    print("adding devices to devicelist")
     if default_device != 'none':
+        print(f"adding default device: {default_device}")
         devicelist.append(default_device)
     if def_config['DEV'] != 'none' and def_config['DEV'] not in devicelist:
+        print(f"adding master device: {def_config['DEV']}")
         devicelist.append( def_config['DEV'])
     #if def_config['USBDEV'] not in devicelist and def_config['USBDEV'] != 'none':
     if (def_config['USBDEV'] != 'none') and (def_config['USBDEV'] not in devicelist):
+        print(f"adding usb device: {def_config['USBDEV']}")
         devicelist.append( def_config['USBDEV'])
     if def_config['PHONE-DEVICE'] != 'none' and def_config['PHONE-DEVICE'] not in devicelist:
+        print(f"adding headphone device: {def_config['PHONE-DEVICE']}")
         devicelist.append( def_config['PHONE-DEVICE'])
+    print(f"adding devices from xdev: {str(def_config['XDEV'].split())} and blacklist: {str(def_config['BLACKLIST'].split())}")
     devicelist = devicelist + def_config['XDEV'].split() + def_config['BLACKLIST'].split()
     for rdev in devicelist:
         rdev_l = rdev.split(',')
+        print(f"fleshing out device: {str(rdev_l)}")
         if len(rdev_l) == 3:
             dev, sub, ssub = rdev_l
             if dev not in devices_db:

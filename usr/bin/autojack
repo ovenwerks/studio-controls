@@ -376,7 +376,7 @@ def import_config(caller):
         # no config file, make one
         cp = subprocess.run([f"{install_path}/bin/convert-studio-controls"],
             universal_newlines=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=False)
-        logging.debug(f"convert config file: {cp.stdout.strip()}")
+        logging.debug(f"convert config file: {cp.stdout.strip()} error: {cp.stderr.strip()}")
 
     # config file exists, read it in
     with open(c_file) as f:
