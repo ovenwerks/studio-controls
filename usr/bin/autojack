@@ -107,11 +107,11 @@ def get_dev_info(x):
     if cname == "HDMI" or cname == "NVidia":
         device['hdmi'] = True
     rates = ['32000', '44100', '48000', '88200', '96000', '192000']
+    drates = []
     if device['internal']:
         device['min_latency'] = 128
         with open(f"/proc/asound/card{str(x)}/codec#0", "r") as card_file:
             node = False
-            drates = []
             for line in card_file:
                 if 'Node' in line:
                     node = True
@@ -127,7 +127,6 @@ def get_dev_info(x):
         device['min_latency'] = 32
         if os.path.exists(f"/proc/asound/card{str(x)}/stream0"):
             with open(f"/proc/asound/card{str(x)}/stream0", "r") as card_file:
-                drates = []
                 for line in card_file:
                     if 'Rates:' in line:
                         fnd_rates = line.split()[1:]

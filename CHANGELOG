@@ -1,12 +1,17 @@
+studio-controls version 2.2.6
+
+ [ Len Ovens ]
+ - Initialize variable (lp #1946268)
+
 studio-controls version 2.2.5
 
  [ Len Ovens ]
- fix no rates found for card (lp #1938075)
+ - fix no rates found for card (lp #1938075)
 
 studio-controls version 2.2.4
 
  [ David Marzal ]
- autojack-start should be executable
+ - autojack-start should be executable
 
 studio-controls version 2.2.3
 
