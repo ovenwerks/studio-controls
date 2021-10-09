@@ -210,17 +210,18 @@ class DevDB:
 
     def  get_dev_info(self, config):
         ''' get device info from system files '''
-        cname = ""
         config['usb'] = False
         config['internal'] = False
         config['firewire'] = False
         config['min_latency'] = 16
+        config['hdmi'] = bool(config['raw'] in ['HDMI', 'NVidia'])
         if not 'id' in config:
             config['id'] = 'none'
         if not 'bus' in config:
             config['bus'] = 'none'
         sub = 0
         rates = ['32000', '44100', '48000', '88200', '96000', '192000']
+        drates = []
         x = int(config['number'])
         if os.path.exists(f"/proc/asound/card{str(x)}/usbbus"):
             config['usb'] = True
@@ -235,36 +236,36 @@ class DevDB:
             # can get supported rates from /proc/asound/card{str(x)}/stream0
             if os.path.exists(f"/proc/asound/card{str(x)}/stream0"):
                 with open(f"/proc/asound/card{str(x)}/stream0", "r") as card_file:
-                    rates = []
                     for line in card_file:
                         if 'Rates:' in line:
                             fnd_rates = line.split()[1:]
                             for rate in fnd_rates:
                                 rate = rate.split(',')[0]
-                                if not rate in rates:
-                                    rates.append(rate)
+                                if not rate in drates:
+                                    drates.append(rate)
         elif os.path.exists(f"/proc/asound/card{str(x)}/codec#0"):
             config['internal'] = True
             config['min_latency'] = 128
             # can get supported rates from file above
             with open(f"/proc/asound/card{str(x)}/codec#0", "r") as card_file:
                 node = False
-                rates = []
                 for line in card_file:
                     if 'Node' in line:
                         node = True
-                        if 'Digital' in line:
+                        if 'Digital' in line and not config['hdmi']:
                             node = False
                     if node and 'rates' in line:
                         fnd_rates = line.split()[2:]
                         for rate in fnd_rates:
-                            if not rate in rates:
-                                rates.append(rate)
+                            if not rate in drates:
+                                drates.append(rate)
+        if len(drates):
+            rates = drates
+
         elif os.path.exists(f"/proc/asound/card{str(x)}/firewire"):
             config['firewire'] = True
             config['min_latency'] = 256
 
-        config['hdmi'] = bool(cname in ['HDMI', 'NVidia'])
         if config['hdmi']:
             config['min_latency'] = 4096
 

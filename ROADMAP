@@ -6,7 +6,8 @@
 
 Fixes:
 
-TODO: (part way done)
+TODO:
+    - change logging name from root to autojack-{version}
 
 Future Features:
 	- make help work with current tab
@@ -14,9 +15,6 @@ Future Features:
 	- add JACK freeze detect and correct
         partially fixed... found at least one reason for freeze
 
-	- Add jackmixer  or jack-mix-box? auto start and connect
-        too easy to break things with this, let user set this up with
-        auto run scripts (postjack or postbridge)
 	- Add packagers file describing depends/conflicts
 	- Add multiple devices for firewire
 	- bluetooth via pulse. use: pacmd load-module module-loopback latency_msec=5

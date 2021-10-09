@@ -1,3 +1,8 @@
+studio-controls version 2.2.7
+
+ [ Len Ovens ]
+ - Device rates not getting set in studio-controls (lp #1946572)
+
 studio-controls version 2.2.6
 
  [ Len Ovens ]
