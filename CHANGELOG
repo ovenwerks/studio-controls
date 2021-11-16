@@ -1,3 +1,9 @@
+studio-controls version 2.2.8
+
+ [ Len Ovens ]
+ - USB devices may be less than 3 char
+ - Convert old style int to name (issue #70)
+
 studio-controls version 2.2.7
 
  [ Len Ovens ]

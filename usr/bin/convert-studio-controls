@@ -352,7 +352,7 @@ def usb_duplicate(device):
     global our_db
     check_db = our_db['devices'][device]
     for good_dev in our_db['devices']:
-        if good_dev[0:3] == 'USB' and good_dev[3].isdigit():
+        if len(good_dev) > 3 and good_dev[0:3] == 'USB' and good_dev[3].isdigit():
             good_db = our_db['devices'][good_dev]
             if good_db['raw'] == check_db['raw']:
                 if check_db['id'] == 'none':
@@ -402,7 +402,7 @@ def check_devices():
             dev_db['min_latency'] = 256
         elif dev_db['usb']:
             dev_db['min_latency'] = 32
-            if not (device[0:3] == 'USB' and device[3].isdigit()):
+            if len(device) < 4 or not (device[0:3] == 'USB' and device[3].isdigit()):
                 # check for duplicate
                 # dup means raw, id and bus match
                 if  not usb_duplicate(device) == 'none':
@@ -630,6 +630,8 @@ def check_db():
         for bridge in pulse_db['inputs']:
             if not "connection" in pulse_db['inputs'][bridge]:
                 pulse_db['inputs'][bridge]['connection'] = 'none'
+            elif pulse_db['inputs'][bridge]['connection'].isdigit():
+                pulse_db['inputs'][bridge]['connection'] = f"system:capture_{pulse_db['inputs'][bridge]['connection']}"
             if not 'count' in pulse_db['inputs'][bridge]:
                 pulse_db['inputs'][bridge]['count'] = 2
             else:
@@ -641,6 +643,8 @@ def check_db():
         for bridge in pulse_db['outputs']:
             if not "connection" in pulse_db['outputs'][bridge]:
                 pulse_db['outputs'][bridge]['connection'] = 'none'
+            elif pulse_db['outputs'][bridge]['connection'].isdigit():
+                pulse_db['outputs'][bridge]['connection'] = f"system:playback_{pulse_db['outputs'][bridge]['connection']}"
             if not 'count' in pulse_db['outputs'][bridge]:
                 pulse_db['outputs'][bridge]['count'] = 2
             else:
