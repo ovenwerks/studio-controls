@@ -474,7 +474,7 @@ class StudioControls:
                                      signal_name='usb_signal')
 
         # Set default window icon for window managers
-        self.window_main.set_default_icon_name('studio-controls')
+        self.window_main.set_default_icon_name('com.github.ovenwerks.studio-controls')
 
         # Check if audio.conf and/or audio.conf.disabled exists, returns are true or false
         #self.rt_file = False
