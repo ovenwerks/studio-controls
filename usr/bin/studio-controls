@@ -1312,7 +1312,7 @@ class StudioControls:
             self.pj_count.set_value(1)
             self.pj_con.set_active_id('none')
             self.pj_direction.set_active_id('out')
-            self.pj_direct.set_text('none')
+            #self.pj_direction.set_active_id('none')
             self.pj_bridge = ''
         else:
             for bridge in out_db:

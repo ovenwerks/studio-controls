@@ -1,3 +1,12 @@
+studio-controls version 2.2.9
+
+ [ Len Ovens ]
+ - Remove reference to zdev
+ - make sure empty lock file works
+ - Don't kill Pulse alsa if no bridges
+ - Fix spelling mistake (issue #72)
+ - Change logging name to AutoJack instead of root
+
 studio-controls version 2.2.8
 
  [ Len Ovens ]

@@ -430,32 +430,44 @@ def reconfig():
         # no use checking anything else
 
     pulse_dirty = False
-    if old_conf_db['pulse']['inputs'] != conf_db['pulse']['inputs']:
-        logging.debug("reconfiguring pulse bridges")
+    if [old_conf_db['pulse']['inputs'], old_conf_db['pulse']['outputs']] != [conf_db['pulse']['inputs'], conf_db['pulse']['outputs']]:
         pulse_dirty = True
-        cp = subprocess.run(["/usr/bin/pactl", "unload-module", "module-jack-source"],
-                            universal_newlines=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=False)
-        logging.debug(f"remove jackd_source: {cp.stdout.strip()}")
-        for bridge in conf_db['pulse']['inputs']:
-            this_count = str(conf_db['pulse']['inputs'][bridge]['count'])
-            cp = subprocess.run(["/usr/bin/pactl", "load-module", "module-jack-source", f"client_name={bridge}",
-                                f"channels={this_count}", "connect=no"],
-                                universal_newlines=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=False)
-            logging.debug(f"Load jackd_source: {cp.stdout.strip()}")
-
-    if old_conf_db['pulse']['outputs'] != conf_db['pulse']['outputs']:
         logging.debug("reconfiguring pulse bridges")
-        if not pulse_dirty:
-            pulse_dirty = True
-        cp = subprocess.run(["/usr/bin/pactl", "unload-module", "module-jack-sink"],
-                            universal_newlines=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=False)
-        logging.debug(f"PA unload jack-sink: {cp.stdout.strip()}")
-        for bridge in conf_db['pulse']['outputs']:
-            this_count = str(conf_db['pulse']['outputs'][bridge]['count'])
-            cp = subprocess.run(["/usr/bin/pactl", "load-module", "module-jack-sink", f"client_name={bridge}",
-                            f"channels={this_count}", "connect=no"], universal_newlines=True, stdout=subprocess.PIPE,
-                            stderr=subprocess.STDOUT, shell=False)
-            logging.debug(f"PA load jack-sink: {cp.stdout.strip()}")
+
+        if len(conf_db['pulse']['inputs']) or len(conf_db['pulse']['outputs']):
+            cp = subprocess.run(["/usr/bin/pactl", "unload-module", "module-udev-detect"],
+                                universal_newlines=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=False)
+            logging.debug(f"remove module-udev-detect: {cp.stdout.strip()}")
+            cp = subprocess.run(["/usr/bin/pactl", "unload-module", "module-alsa-card"],
+                                universal_newlines=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=False)
+            logging.debug(f"remove module-alsa-card: {cp.stdout.strip()}")
+        else:
+            cp = subprocess.run(["/usr/bin/pactl", "load-module", "module-udev-detect"],
+                                universal_newlines=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=False)
+            logging.debug(f"load module-udev-detect: {cp.stdout.strip()}")
+
+        if old_conf_db['pulse']['inputs'] != conf_db['pulse']['inputs']:
+            cp = subprocess.run(["/usr/bin/pactl", "unload-module", "module-jack-source"],
+                                universal_newlines=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=False)
+            logging.debug(f"remove jackd_source: {cp.stdout.strip()}")
+            for bridge in conf_db['pulse']['inputs']:
+                this_count = str(conf_db['pulse']['inputs'][bridge]['count'])
+                cp = subprocess.run(["/usr/bin/pactl", "load-module", "module-jack-source", f"client_name={bridge}",
+                                    f"channels={this_count}", "connect=no"],
+                                    universal_newlines=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=False)
+                logging.debug(f"Load jackd_source: {cp.stdout.strip()}")
+    
+        if old_conf_db['pulse']['outputs'] != conf_db['pulse']['outputs']:
+            logging.debug("reconfiguring pulse bridges")
+            cp = subprocess.run(["/usr/bin/pactl", "unload-module", "module-jack-sink"],
+                                universal_newlines=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=False)
+            logging.debug(f"PA unload jack-sink: {cp.stdout.strip()}")
+            for bridge in conf_db['pulse']['outputs']:
+                this_count = str(conf_db['pulse']['outputs'][bridge]['count'])
+                cp = subprocess.run(["/usr/bin/pactl", "load-module", "module-jack-sink", f"client_name={bridge}",
+                                f"channels={this_count}", "connect=no"], universal_newlines=True, stdout=subprocess.PIPE,
+                                stderr=subprocess.STDOUT, shell=False)
+                logging.debug(f"PA load jack-sink: {cp.stdout.strip()}")
 
     if old_conf_db['extra']['a2j'] != conf_db['extra']['a2j']:
         logging.debug("reconfiguring MIDI bridge")
@@ -602,12 +614,15 @@ def config_start():
     cp = subprocess.run(["/usr/bin/pactl", "unload-module", "module-jackdbus-detect"],
                         universal_newlines=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=False)
     logging.debug(f"remove jackdbus_detect: {cp.stdout.strip()}")
-    cp = subprocess.run(["/usr/bin/pactl", "unload-module", "module-udev-detect"],
-                        universal_newlines=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=False)
-    logging.debug(f"remove module-udev-detect: {cp.stdout.strip()}")
-    cp = subprocess.run(["/usr/bin/pactl", "unload-module", "module-alsa-card"],
-                        universal_newlines=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=False)
-    logging.debug(f"remove module-alsa-card: {cp.stdout.strip()}")
+    # these should be moved
+    if 0:
+        # this effectively commented out for testing
+        cp = subprocess.run(["/usr/bin/pactl", "unload-module", "module-udev-detect"],
+                            universal_newlines=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=False)
+        logging.debug(f"remove module-udev-detect: {cp.stdout.strip()}")
+        cp = subprocess.run(["/usr/bin/pactl", "unload-module", "module-alsa-card"],
+                            universal_newlines=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=False)
+        logging.debug(f"remove module-alsa-card: {cp.stdout.strip()}")
 
     fpath = expanduser('~/.config/autojack/prestart')
     if os.path.isfile(fpath) and os.access(fpath, os.X_OK):
@@ -721,6 +736,14 @@ def config_start():
     time.sleep(1)
 
     jack_stat("Adding Bridges")
+    if len(conf_db['pulse']['inputs']) or len(conf_db['pulse']['outputs']):
+        cp = subprocess.run(["/usr/bin/pactl", "unload-module", "module-udev-detect"],
+                            universal_newlines=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=False)
+        logging.debug(f"remove module-udev-detect: {cp.stdout.strip()}")
+        cp = subprocess.run(["/usr/bin/pactl", "unload-module", "module-alsa-card"],
+                            universal_newlines=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=False)
+        logging.debug(f"remove module-alsa-card: {cp.stdout.strip()}")
+        
     for bridge in conf_db['pulse']['inputs']:
         this_count = str(conf_db['pulse']['inputs'][bridge]['count'])
         cp = subprocess.run(["/usr/bin/pactl", "load-module", "module-jack-source",
@@ -747,9 +770,8 @@ def config_start():
             con_dirty = True
     elif conf_db['extra']['monitor'] != "system:playback_1":
         mon_dev = conf_db['extra']['monitor'].split('-')[0]
-        if not mon_dev in zdev and (conf_db['jack']['driver'] != "alsa" or mon_dev != last_master):
-            start_slave(mon_dev)
-            con_dirty = True
+        start_slave(mon_dev)
+        con_dirty = True
 
     # not sure all these delays need to be here. Was checking with old pulse.
     # this has to be last after all audio bridges are created
@@ -1627,6 +1649,7 @@ def main():
                 "org.studio.control.event.quit_signal"], shell=False)
     time.sleep(3)
     new_pid = str(os.getpid())
+    old_pid = new_pid
     if os.path.isfile(lock_file):
         # other instance still hasn't gone maybe hung
         with open(lock_file, "r") as lk_file:
@@ -1650,7 +1673,7 @@ def main():
     if not os.path.exists(logpath):
         os.makedirs(logpath)
     logfile = expanduser("~/.log/autojack.log")
-    logging.basicConfig(filename=logfile, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s', level=logging.DEBUG)
+    logging.basicConfig(filename=logfile, format='%(asctime)s - AutoJack - %(levelname)s - %(message)s', level=logging.DEBUG)
     logging.info('Autojack started: logging started')
     print("logging started")
 

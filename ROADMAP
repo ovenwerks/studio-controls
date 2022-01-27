@@ -7,14 +7,14 @@
 Fixes:
 
 TODO:
-    - change logging name from root to autojack-{version}
+    - detect if pulse is pw
+    - Check where programs we run are located, they may not be in /usr/bin/ issue 74
+        (use shutil.which("python") where python is replaced by the search term)
+    - 
 
 Future Features:
 	- make help work with current tab
 	- remove warning dialogs and create on the fly as needed
-	- add JACK freeze detect and correct
-        partially fixed... found at least one reason for freeze
-
 	- Add packagers file describing depends/conflicts
 	- Add multiple devices for firewire
 	- bluetooth via pulse. use: pacmd load-module module-loopback latency_msec=5
