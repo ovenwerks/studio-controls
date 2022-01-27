@@ -6,6 +6,11 @@ studio-controls version 2.2.9
  - Don't kill Pulse alsa if no bridges
  - Fix spelling mistake (issue #72)
  - Change logging name to AutoJack instead of root
+ 
+ [ Erich Eickmeyer ]
+ - Change icon and .desktop filenames to avoid confusion with Android Studio
+   - Also complies with latest XDG standards
+ - Update to use new icon filename in application titlebar
 
 studio-controls version 2.2.8
 
