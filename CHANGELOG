@@ -6,6 +6,8 @@ studio-controls version 2.2.9
  - Don't kill Pulse alsa if no bridges
  - Fix spelling mistake (issue #72)
  - Change logging name to AutoJack instead of root
+ - Allow setting -u for a2jmidid (issue #63)
+ - use path for spawning subprocesses
  
  [ Erich Eickmeyer ]
  - Change icon and .desktop filenames to avoid confusion with Android Studio

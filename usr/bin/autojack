@@ -25,6 +25,7 @@ import logging
 import os
 import re
 import shlex
+import shutil
 import signal
 import subprocess
 import sys
@@ -315,11 +316,16 @@ def net_bridge():
     if not conf_db['jack']['on']:
         return
         # no use checking anything else
-    cp = subprocess.run(["/usr/bin/killall", "zita-n2j"],
-                        universal_newlines=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=False)
-    cp1 = subprocess.run(["/usr/bin/killall", "zita-j2n"],
-                        universal_newlines=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=False)
-    logging.debug(f"kill old zita-njbridge: {cp.stdout.strip()}{cp1.stdout.strip()}")
+    kla = shutil.which("killall")
+    if kla:
+        cp = subprocess.run([kla, "zita-n2j"],
+                            universal_newlines=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=False)
+        cp1 = subprocess.run([kla, "zita-j2n"],
+                            universal_newlines=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=False)
+        logging.debug(f"kill old zita-njbridge: {cp.stdout.strip()}{cp1.stdout.strip()}")
+    else:
+        logging.warning("unable to kill old bridges missing killall")
+
     for bridge in conf_db['znet']:
         br_db = conf_db['znet'][bridge]
         cmd = ""
@@ -340,8 +346,11 @@ def net_bridge():
         else:
             logging.warning(f"audio network bridge {bridge} invalid")
             continue
-
-        cmd = f"{cmd} --jname {bridge} {cnt_str} {late_bits} {br_db['ip']} {str(br_db['port'])}"
+        fcmd = shutil.which(cmd)
+        if not fcmd:
+            logging.warning(f"command {cmd} not found, bridge: {bridge} can not be started")
+            continue
+        cmd = f"{fcmd} --jname {bridge} {cnt_str} {late_bits} {br_db['ip']} {str(br_db['port'])}"
         subprocess.Popen(shlex.split(cmd), shell=False).pid
 
 
@@ -431,6 +440,11 @@ def reconfig():
 
     pulse_dirty = False
     if [old_conf_db['pulse']['inputs'], old_conf_db['pulse']['outputs']] != [conf_db['pulse']['inputs'], conf_db['pulse']['outputs']]:
+        pc = shutil.which("pactl")
+        if not pc:
+            logging.warning("pactl is missing... unable to control pulseaudio\n reconfigure failed")
+            return
+
         pulse_dirty = True
         logging.debug("reconfiguring pulse bridges")
 
@@ -456,7 +470,7 @@ def reconfig():
                                     f"channels={this_count}", "connect=no"],
                                     universal_newlines=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=False)
                 logging.debug(f"Load jackd_source: {cp.stdout.strip()}")
-    
+
         if old_conf_db['pulse']['outputs'] != conf_db['pulse']['outputs']:
             logging.debug("reconfiguring pulse bridges")
             cp = subprocess.run(["/usr/bin/pactl", "unload-module", "module-jack-sink"],
@@ -484,8 +498,16 @@ def reconfig():
 
         if conf_db['extra']['a2j']:
             # Can't add logging for background processes. Will show up in syslog
-            cmd = "/usr/bin/a2jmidid -e"
-            midiproc = subprocess.Popen(shlex.split(cmd), shell=False)
+            ajc = shutil.which("a2jmidid")
+            if ajc:
+                up = ""
+                if 'a2j_u' in conf_db['extra']:
+                    if conf_db['extra']['a2j_u']:
+                        up = "-u"
+                    cmd = f"{ajc} -e {up}"
+                    midiproc = subprocess.Popen(shlex.split(cmd), shell=False)
+            else:
+                logging.Warning("a2jmidid not found, is it installed? Starting MIDI-JACK bridge failed.")
 
     if [old_conf_db['mnet']['count'], old_conf_db['mnet']['type']] != [conf_db['mnet']['count'], conf_db['mnet']['type']]:
         logging.debug("reconfiguring MIDI network")
@@ -493,11 +515,15 @@ def reconfig():
                             universal_newlines=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=False)
         logging.debug(f"kill old qmidinet: {cp.stdout.strip()}")
         if conf_db['mnet']['count']:
-            mtype = ""
-            if conf_db['mnet']['type'] == 'jack':
-                mtype = "--alsa-midi=no --jack-midi=yes"
-            cmd = f"/usr/bin/qmidinet --num-ports={str(conf_db['mnet']['count'])} --no-gui {mtype}"
-            subprocess.Popen(shlex.split(cmd), shell=False).pid
+            mint = shutil.which("qmidinet")
+            if mint:
+                mtype = ""
+                if conf_db['mnet']['type'] == 'jack':
+                    mtype = "--alsa-midi=no --jack-midi=yes"
+                cmd = f"{mint} --num-ports={str(conf_db['mnet']['count'])} --no-gui {mtype}"
+                subprocess.Popen(shlex.split(cmd), shell=False).pid
+            else:
+                logging.Warning("qmidinet not found, is it installed? Starting networked midi failed.")
 
 
     # extra devices compares what is to config and fixes things
@@ -576,9 +602,14 @@ def config_start():
     time.sleep(2)
 
     # Stop jack if running
-    cp = subprocess.run(["/usr/bin/killall", "-q", "-9", "jackdbus", "jackd", "a2jmidid"],
-                        universal_newlines=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=False)
-    logging.debug(f"Kill old Procs: {cp.stdout.strip()}")
+    kla = shutil.which("killall")
+    if kla:
+        cp = subprocess.run([kla, "-q", "-9", "jackdbus", "jackd", "a2jmidid"],
+                            universal_newlines=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=False)
+        logging.debug(f"Kill old Procs: {cp.stdout.strip()}")
+    else:
+        logging.warning("killall not found, audio controls may fail to work")
+
     jack_stat("Stopped")
     last_master = 'none'
 
@@ -592,19 +623,31 @@ def config_start():
     if (conf_db['jack']['driver'] == "firewire") or fw_exists:
         time.sleep(3)
         # this is a firewire device, A busreset makes for stability
-        cp = subprocess.run(["/usr/bin/ffado-test", "BusReset"],
-                        universal_newlines=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=False)
-        logging.debug(f"reset firewire bus: {cp.stdout.strip()}")
-        time.sleep(3)
-        cp = subprocess.run(["/usr/bin/killall", "-q", "ffado-dbus-server", "ffado-mixer"],
-                        universal_newlines=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=False)
-        logging.debug(f"Kill ffado mixer because busreset needed: {cp.stdout.strip()}")
+        ftst = shutil.which("killall")
+        if ftst:
+            cp = subprocess.run([ftst, "BusReset"],
+                            universal_newlines=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=False)
+            logging.debug(f"reset firewire bus: {cp.stdout.strip()}")
+            time.sleep(3)
+        else:
+            logging.warning("ffado-test not found, fire wire device may lock up. ffado-tools not installed?")
+
+        if kla:
+            cp = subprocess.run([kla, "-q", "ffado-dbus-server", "ffado-mixer"],
+                            universal_newlines=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=False)
+            logging.debug(f"Kill ffado mixer because busreset needed: {cp.stdout.strip()}")
+        else:
+            logging.warning("killall not found, audio controls may fail to work")
 
     if not conf_db['jack']['on']:
+        pa = shutil.which("pulseaudio")
         # restart Pulse
-        cp = subprocess.run(["/usr/bin/pulseaudio", "-k"],
-                    universal_newlines=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=False)
-        logging.debug(f"JACK is {str(conf_db['jack']['on'])} restart pulse: {cp.stdout.strip()}")
+        if pa:
+            cp = subprocess.run([pa, "-k"],
+                        universal_newlines=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=False)
+            logging.debug(f"JACK is {str(conf_db['jack']['on'])} restart pulse: {cp.stdout.strip()}")
+        else:
+            logging.warning("pulseaudio not found, audio controls may fail to work")
         return
     logging.debug(f"JACK is {str(conf_db['jack']['on'])} start up jack")
     jack_stat("Config Pulse")
@@ -736,26 +779,30 @@ def config_start():
     time.sleep(1)
 
     jack_stat("Adding Bridges")
-    if len(conf_db['pulse']['inputs']) or len(conf_db['pulse']['outputs']):
-        cp = subprocess.run(["/usr/bin/pactl", "unload-module", "module-udev-detect"],
-                            universal_newlines=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=False)
-        logging.debug(f"remove module-udev-detect: {cp.stdout.strip()}")
-        cp = subprocess.run(["/usr/bin/pactl", "unload-module", "module-alsa-card"],
-                            universal_newlines=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=False)
-        logging.debug(f"remove module-alsa-card: {cp.stdout.strip()}")
-        
-    for bridge in conf_db['pulse']['inputs']:
-        this_count = str(conf_db['pulse']['inputs'][bridge]['count'])
-        cp = subprocess.run(["/usr/bin/pactl", "load-module", "module-jack-source",
-                f"client_name={bridge}", f"channels={this_count}", "connect=no"],
-                universal_newlines=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=False)
-        logging.debug(f"Pulseaudio: {cp.stdout.strip()}")
-    for bridge in conf_db['pulse']['outputs']:
-        this_count = str(conf_db['pulse']['outputs'][bridge]['count'])
-        cp = subprocess.run(["/usr/bin/pactl", "load-module", "module-jack-sink",
-                f"client_name={bridge}", f"channels={this_count}", "connect=no"],
-                universal_newlines=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=False)
-        logging.debug(f"Pulseaudio: {cp.stdout.strip()}")
+    pc = shutil.which("pactl")
+    if pc:
+        if len(conf_db['pulse']['inputs']) or len(conf_db['pulse']['outputs']):
+            cp = subprocess.run(["/usr/bin/pactl", "unload-module", "module-udev-detect"],
+                                universal_newlines=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=False)
+            logging.debug(f"remove module-udev-detect: {cp.stdout.strip()}")
+            cp = subprocess.run(["/usr/bin/pactl", "unload-module", "module-alsa-card"],
+                                universal_newlines=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=False)
+            logging.debug(f"remove module-alsa-card: {cp.stdout.strip()}")
+
+        for bridge in conf_db['pulse']['inputs']:
+            this_count = str(conf_db['pulse']['inputs'][bridge]['count'])
+            cp = subprocess.run(["/usr/bin/pactl", "load-module", "module-jack-source",
+                    f"client_name={bridge}", f"channels={this_count}", "connect=no"],
+                    universal_newlines=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=False)
+            logging.debug(f"Pulseaudio: {cp.stdout.strip()}")
+        for bridge in conf_db['pulse']['outputs']:
+            this_count = str(conf_db['pulse']['outputs'][bridge]['count'])
+            cp = subprocess.run(["/usr/bin/pactl", "load-module", "module-jack-sink",
+                    f"client_name={bridge}", f"channels={this_count}", "connect=no"],
+                    universal_newlines=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=False)
+            logging.debug(f"Pulseaudio: {cp.stdout.strip()}")
+    else:
+        logging.warning("pactl is missing... unable to control pulseaudio\n configure failed")
 
     extra_devices()
     net_bridge()
@@ -779,16 +826,28 @@ def config_start():
     connect_pa()
 
     if conf_db['extra']['a2j']:
-        # Can't set up logging
-        cmd = "/usr/bin/a2jmidid -e"
-        midiproc = subprocess.Popen(shlex.split(cmd), shell=False)
+        ajc = shutil.which("a2jmidid")
+        if ajc:
+            up = ""
+            if 'a2j_u' in conf_db['extra']:
+                if conf_db['extra']['a2j_u']:
+                    up = "-u"
+                cmd = f"{ajc} -e {up}"
+                midiproc = subprocess.Popen(shlex.split(cmd), shell=False)
+                #logging not possible without extra thread
+        else:
+            logging.Warning("a2jmidid not found, is it installed? Starting MIDI-JACK bridge failed.")
 
     if conf_db['mnet']['count']:
-        mtype = ""
-        if conf_db['mnet']['type'] == 'jack':
-            mtype = "--alsa-midi=no --jack-midi=yes"
-        cmd = f"/usr/bin/qmidinet --num-ports={str(conf_db['mnet']['count'])} --no-gui {mtype}"
-        subprocess.Popen(shlex.split(cmd), shell=False).pid
+        mint = shutil.which("qmidinet")
+        if mint:
+            mtype = ""
+            if conf_db['mnet']['type'] == 'jack':
+                mtype = "--alsa-midi=no --jack-midi=yes"
+            cmd = f"{mint} --num-ports={str(conf_db['mnet']['count'])} --no-gui {mtype}"
+            subprocess.Popen(shlex.split(cmd), shell=False).pid
+        else:
+            logging.Warning("qmidinet not found, is it installed? Starting networked midi failed.")
 
     jack_stat("Postbridge")
     fpath = expanduser('~/.config/autojack/postbridge')
@@ -1120,7 +1179,7 @@ def msg_cb_new(*args, **kwargs):
                     subprocess.run(["/usr/bin/dbus-send", "--type=signal", "/", "org.studio.control.event.usb_signal"],
                                    shell=False)
                     logging.debug(f"USB device {dev_name} has been plugged in")
-    
+
                     for subn in dev_db['sub']:
                         subname = f"{dev_name},{str(subn)},0"
                         if subname == last_master:

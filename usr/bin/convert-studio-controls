@@ -165,6 +165,7 @@ def make_db():
             USBdev: string (blank)
         extra: # Stuff that can be changed without restart
             A2J: bool (True)
+            A2J_U: bool (False)
             USBAUTO: bool (True)
             USBSingle: bool (False)
             Monitor: string (system:playback_1)
@@ -603,6 +604,11 @@ def check_db():
         extra_db['a2j'] = True
     else:
         extra_db['a2j'] = bool(str(extra_db['a2j']) in ['True', 'true'])
+
+    if not 'a2j_u' in extra_db:
+        extra_db['a2j_u'] = False
+    else:
+        extra_db['a2j_u'] = bool(str(extra_db['a2j_u']) in ['True', 'true'])
 
     if not 'usbauto' in extra_db:
         extra_db['usbauto'] = True

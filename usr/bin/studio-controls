@@ -79,7 +79,9 @@ class RTSetup:
         self.enabled_path = "/etc/security/limits.d/audio.conf"
         self.disabled_path = "/etc/security/limits.d/audio.conf.disabled"
         self.backup_file = f"{install_path}/share/studio-controls/audio.conf"
-
+        self.pke = shutil.which("pkexec")
+        if not self.pke:
+            print ("no pkexec, Fail")
     def set_governor(self, enable):
         if enable:
             gov = "performance"
@@ -88,15 +90,15 @@ class RTSetup:
                 gov = "powersave"
             else:
                 gov = "ondemand"
-        subprocess.run(["/usr/bin/pkexec", f"{install_path}/sbin/studio-system", gov], shell=False)
+        subprocess.run([self.pke, f"{install_path}/sbin/studio-system", gov], shell=False)
 
     def set_boost(self, enable):
         boost_path = "/sys/devices/system/cpu/intel_pstate/no_turbo"
         if os.path.exists(boost_path):
             if enable == True:
-                subprocess.run(["/usr/bin/pkexec", f"{install_path}/sbin/studio-system", "boost"], shell=False)
+                subprocess.run([self.pke, f"{install_path}/sbin/studio-system", "boost"], shell=False)
             else:
-                subprocess.run(["/usr/bin/pkexec", f"{install_path}/sbin/studio-system", "noboost"], shell=False)
+                subprocess.run([self.pke, f"{install_path}/sbin/studio-system", "noboost"], shell=False)
 
 
 class DevDB:
@@ -418,6 +420,7 @@ class StudioControls:
         self.cap_lat_spin = builder.get_object('cap_lat_spin')
         self.play_lat_spin = builder.get_object('play_lat_spin')
         self.jack_midi_check = builder.get_object('jack_midi_check')
+        self.jack_midi_u = builder.get_object('jack_midi_u')
         self.jack_ind = builder.get_object('jack_ind')
         self.jack_state = builder.get_object('jack_state')
         self.dsp_label = builder.get_object('dsp_label')
@@ -565,6 +568,7 @@ class StudioControls:
         self.cap_lat_spin.set_sensitive(False)
         self.play_lat_spin.set_sensitive(False)
         self.jack_midi_check.set_sensitive(False)
+        self.jack_midi_u.set_sensitive(False)
         self.usb_plug_check.set_sensitive(False)
         self.jk_connect_mode.set_sensitive(False)
 
@@ -579,6 +583,9 @@ class StudioControls:
         self.cap_lat_spin.set_value(self.jackdb['cap-latency'])
         self.play_lat_spin.set_value(self.jackdb['play-latency'])
         self.jack_midi_check.set_active(self.extra['a2j'])
+        if not "a2j_u" in self.extra:
+            self.extra['a2j_u'] = False
+        self.jack_midi_u.set_active(self.extra['a2j_u'])
         # Fill Extra devices widgets
         self.usb_plug_check.set_active(self.extra['usbauto'])
 
@@ -597,6 +604,7 @@ class StudioControls:
         self.cap_lat_spin.set_sensitive(True)
         self.play_lat_spin.set_sensitive(True)
         self.jack_midi_check.set_sensitive(True)
+        self.jack_midi_u.set_sensitive(True)
         self.usb_plug_check.set_sensitive(True)
         self.jk_connect_mode.set_sensitive(True)
 
@@ -971,7 +979,11 @@ class StudioControls:
 
 
     def rt_button_hit(self, button):
-        subprocess.run(["/usr/bin/pkexec", f"{install_path}/sbin/studio-system", "fix"], shell=False)
+        pke = shutil.which("pkexec")
+        if not self.pke:
+            print ("no pkexec, Fail")
+            return
+        subprocess.run([pke, f"{install_path}/sbin/studio-system", "fix"], shell=False)
         self.rt_button.set_label("Logout required")
         self.rt_button.set_sensitive(False)
         self.message_dialog_rt_info.show()
@@ -1008,7 +1020,11 @@ class StudioControls:
     def firewire_cb(self, widget):
         newval = widget.get_active_id()
         if newval == "alsa" or newval == "ffado":
-            subprocess.run(["/usr/bin/pkexec", f"{install_path}/sbin/studio-system", newval], shell=False)
+            pke = shutil.which("pkexec")
+            if not self.pke:
+                print ("no pkexec, Fail")
+                return
+            subprocess.run([pke, f"{install_path}/sbin/studio-system", newval], shell=False)
 
 
     # Audio setup call backs
@@ -1442,7 +1458,8 @@ class StudioControls:
         # midi
         self.mnet_count.set_sensitive(False)
         self.mnet_type.set_sensitive(False)
-        if not (os.path.isfile("/usr/bin/qmidinet") and os.access("/usr/bin/qmidinet", os.X_OK)):
+        qmn = shutil.which("qmidinet")
+        if not (os.path.isfile(qmn) and os.access(qmn, os.X_OK)):
             self.mnet_warn.set_text("Please Install qmidinet First")
             self.mnet_count.set_value(0)
         else:
@@ -1462,7 +1479,8 @@ class StudioControls:
         self.znet_bits.set_sensitive(False)
         self.znet_name.set_sensitive(False)
         self.znet_late.set_sensitive(False)
-        if not (os.path.isfile("/usr/bin/zita-n2j") and os.access("/usr/bin/zita-n2j", os.X_OK)):
+        znj = shutil.which("zita-n2j")
+        if not (os.path.isfile(znj) and os.access(znj, os.X_OK)):
             self.znet_warn.set_text("Please Install zita-njbridge First")
         else:
             self.znet_warn.set_text("")
@@ -1655,49 +1673,63 @@ class StudioControls:
         if widget.get_active_id() == "none":
             return
         if widget.get_active_id() == "ffado":
-            try:
-                subprocess.Popen(["/usr/bin/ffado-mixer"], shell=False).pid
-            except:
-                print("ffado-mixer errors are normal :P")
+            ffm = shutil.which("ffado-mixer")
+            if ffm:
+                try:
+                    subprocess.Popen([ffm], shell=False).pid
+                except:
+                    print("ffado-mixer errors are normal :P")
+            else:
+                print("ffado-mixer not installed")
         else:
             mixdevice = widget.get_active_id()
-            subprocess.Popen(["/usr/bin/qasmixer", "-n", f"--device=hw:{str(mixdevice)}"], shell=False).pid
+            qasm=shutil.which("qasmixer")
+            if qasm:
+                subprocess.Popen([qasm, "-n", f"--device=hw:{str(mixdevice)}"], shell=False).pid
+            else:
+                print("qasmixer not installed")
         widget.set_active_id("none")
         widget.set_sensitive(True)
 
 
     def pavucontrol_cb(self, button):
         '''callback for pulse control button, opens pavucontrol'''
-        subprocess.Popen(["/usr/bin/pavucontrol"], shell=False).pid
+        pvc = shutil.which("pavucontrol")
+
+        subprocess.Popen([pvc], shell=False).pid
 
     def carla_cb(self, button):
         '''callback for carla button, opens carla'''
-        if os.path.isfile("/usr/bin/carla") and os.access("/usr/bin/carla", os.X_OK):
-            subprocess.Popen(["/usr/bin/carla"], shell=False).pid
+        crla = shutil.which("carla")
+        if os.path.isfile(crla) and os.access(crla, os.X_OK):
+            subprocess.Popen([crla], shell=False).pid
         else:
             button.set_label("Please Install Carla First")
             button.set_sensitive(False)
 
     def ray_cb(self, button):
         '''callback for raysession button, opens raysession'''
-        if os.path.isfile("/usr/bin/raysession") and os.access("/usr/bin/raysession", os.X_OK):
-            subprocess.Popen(["/usr/bin/raysession"], shell=False).pid
+        rays = shutil.which("raysession")
+        if os.path.isfile(rays) and os.access(rays, os.X_OK):
+            subprocess.Popen([rays], shell=False).pid
         else:
             button.set_label("Please Install RaySession First")
             button.set_sensitive(False)
 
     def nsm_cb(self, button):
         '''callback for nsm button, opens New Session Manager'''
-        if os.path.isfile("/usr/bin/nsm-legacy-gui") and os.access("/usr/bin/nsm-legacy-gui", os.X_OK):
-            subprocess.Popen(["/usr/bin/nsm-legacy-gui"], shell=False).pid
+        ns = shutil.which("nsm-legacy-gui")
+        if os.path.isfile(ns) and os.access(ns, os.X_OK):
+            subprocess.Popen([ns], shell=False).pid
         else:
             button.set_label("Please Install New Session Manager First")
             button.set_sensitive(False)
 
     def agordejo_cb(self, button):
         '''callback for agordejo button, opens agordejo'''
-        if os.path.isfile("/usr/bin/agordejo") and os.access("/usr/bin/agordejo", os.X_OK):
-            subprocess.Popen(["/usr/bin/agordejo"], shell=False).pid
+        agdo = shutil.which("agordejo")
+        if os.path.isfile(agdo) and os.access(agdo, os.X_OK):
+            subprocess.Popen([agdo], shell=False).pid
         else:
             button.set_label("Please Install Agordejo First")
             button.set_sensitive(False)
@@ -1739,6 +1771,7 @@ class StudioControls:
         self.jackdb['play-latency'] = int(self.play_lat_spin.get_value_as_int())
 
         self.extra['a2j'] = self.jack_midi_check.get_active()
+        self.extra['a2j_u'] = self.jack_midi_u.get_active()
         self.extra['usbauto'] = self.usb_plug_check.get_active()
         self.extra['monitor'] = str(self.monitor_combo.get_active_id())
         self.extra['phone-action'] = str(self.hp_action.get_active_id())

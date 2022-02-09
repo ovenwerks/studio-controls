@@ -1,56 +1,56 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<!-- Generated with glade 3.22.2 -->
+<!-- Generated with glade 3.38.2 -->
 <interface>
   <requires lib="gtk+" version="3.12"/>
   <object class="GtkAdjustment" id="ad_jack_cap_lat">
     <property name="upper">100</property>
-    <property name="step_increment">1</property>
-    <property name="page_increment">10</property>
+    <property name="step-increment">1</property>
+    <property name="page-increment">10</property>
   </object>
   <object class="GtkAdjustment" id="ad_jack_chan_cap">
     <property name="upper">100</property>
-    <property name="step_increment">1</property>
-    <property name="page_increment">10</property>
+    <property name="step-increment">1</property>
+    <property name="page-increment">10</property>
   </object>
   <object class="GtkAdjustment" id="ad_jack_chan_play">
     <property name="upper">100</property>
-    <property name="step_increment">1</property>
-    <property name="page_increment">10</property>
+    <property name="step-increment">1</property>
+    <property name="page-increment">10</property>
   </object>
   <object class="GtkAdjustment" id="ad_jack_play_lat">
     <property name="upper">100</property>
-    <property name="step_increment">1</property>
-    <property name="page_increment">10</property>
+    <property name="step-increment">1</property>
+    <property name="page-increment">10</property>
   </object>
   <object class="GtkAdjustment" id="ad_pulse_chan_in">
     <property name="upper">100</property>
-    <property name="step_increment">1</property>
-    <property name="page_increment">10</property>
+    <property name="step-increment">1</property>
+    <property name="page-increment">10</property>
   </object>
   <object class="GtkAdjustment" id="ad_pulse_chan_out">
     <property name="upper">100</property>
-    <property name="step_increment">1</property>
-    <property name="page_increment">10</property>
+    <property name="step-increment">1</property>
+    <property name="page-increment">10</property>
   </object>
   <object class="GtkAdjustment" id="ad_xdev_chan_cap">
     <property name="upper">100</property>
-    <property name="step_increment">1</property>
-    <property name="page_increment">10</property>
+    <property name="step-increment">1</property>
+    <property name="page-increment">10</property>
   </object>
   <object class="GtkAdjustment" id="ad_xdev_chan_play">
     <property name="upper">100</property>
-    <property name="step_increment">1</property>
-    <property name="page_increment">10</property>
+    <property name="step-increment">1</property>
+    <property name="page-increment">10</property>
   </object>
   <object class="GtkAdjustment" id="ad_xdev_lat_cap">
     <property name="upper">100</property>
-    <property name="step_increment">1</property>
-    <property name="page_increment">10</property>
+    <property name="step-increment">1</property>
+    <property name="page-increment">10</property>
   </object>
   <object class="GtkAdjustment" id="ad_xdev_lat_play">
     <property name="upper">100</property>
-    <property name="step_increment">1</property>
-    <property name="page_increment">10</property>
+    <property name="step-increment">1</property>
+    <property name="page-increment">10</property>
   </object>
   <object class="GtkTextBuffer" id="current_preset_text">
     <property name="text" translatable="yes">Default_Audio</property>
@@ -62,26 +62,23 @@
     <property name="text" translatable="yes">CPU Governor settings can affect low latency audio. Audio works best if the CPU speed is constant. For this to happen, The cpu Governor should be set to "performance" and "boost" should be turned off. These settings can be turned on and off on the fly or be set to take effect from boot. Turning performance off while not using low latency audio may increase battery life on a laptop.</property>
   </object>
   <object class="GtkWindow" id="window_help">
-    <property name="width_request">500</property>
-    <property name="can_focus">False</property>
+    <property name="width-request">500</property>
+    <property name="can-focus">False</property>
     <property name="hexpand">True</property>
     <property name="vexpand">True</property>
     <property name="title" translatable="yes">Studio Controls Help</property>
     <property name="resizable">False</property>
-    <property name="destroy_with_parent">True</property>
+    <property name="destroy-with-parent">True</property>
     <signal name="delete-event" handler="on_window_help_delete_event" swapped="no"/>
-    <child type="titlebar">
-      <placeholder/>
-    </child>
     <child>
       <object class="GtkBox" id="box1">
         <property name="visible">True</property>
-        <property name="can_focus">False</property>
+        <property name="can-focus">False</property>
         <property name="orientation">vertical</property>
         <child>
           <object class="GtkLabel" id="label3">
             <property name="visible">True</property>
-            <property name="can_focus">False</property>
+            <property name="can-focus">False</property>
             <property name="ypad">8</property>
             <property name="label" translatable="yes">GENERAL</property>
           </object>
@@ -94,14 +91,14 @@
         <child>
           <object class="GtkTextView" id="help_general_text">
             <property name="visible">True</property>
-            <property name="can_focus">True</property>
-            <property name="pixels_above_lines">8</property>
-            <property name="pixels_below_lines">8</property>
-            <property name="pixels_inside_wrap">4</property>
+            <property name="can-focus">True</property>
+            <property name="pixels-above-lines">8</property>
+            <property name="pixels-below-lines">8</property>
+            <property name="pixels-inside-wrap">4</property>
             <property name="editable">False</property>
-            <property name="wrap_mode">word</property>
-            <property name="left_margin">12</property>
-            <property name="right_margin">12</property>
+            <property name="wrap-mode">word</property>
+            <property name="left-margin">12</property>
+            <property name="right-margin">12</property>
             <property name="buffer">help_general_text_buffer</property>
           </object>
           <packing>
@@ -113,14 +110,14 @@
         <child>
           <object class="GtkTextView" id="help_system_text">
             <property name="visible">True</property>
-            <property name="can_focus">True</property>
-            <property name="pixels_above_lines">8</property>
-            <property name="pixels_below_lines">8</property>
-            <property name="pixels_inside_wrap">4</property>
+            <property name="can-focus">True</property>
+            <property name="pixels-above-lines">8</property>
+            <property name="pixels-below-lines">8</property>
+            <property name="pixels-inside-wrap">4</property>
             <property name="editable">False</property>
-            <property name="wrap_mode">word</property>
-            <property name="left_margin">12</property>
-            <property name="right_margin">12</property>
+            <property name="wrap-mode">word</property>
+            <property name="left-margin">12</property>
+            <property name="right-margin">12</property>
             <property name="buffer">help_system_text_buffer</property>
           </object>
           <packing>
@@ -130,46 +127,65 @@
           </packing>
         </child>
         <child>
+          <!-- n-columns=3 n-rows=3 -->
           <object class="GtkGrid" id="grid3">
             <property name="visible">True</property>
-            <property name="can_focus">False</property>
+            <property name="can-focus">False</property>
             <child>
               <object class="GtkButton" id="button_help_ok">
                 <property name="label" translatable="yes">Ok</property>
-                <property name="width_request">100</property>
+                <property name="width-request">100</property>
                 <property name="visible">True</property>
-                <property name="can_focus">True</property>
-                <property name="receives_default">True</property>
-                <property name="margin_top">8</property>
-                <property name="margin_bottom">8</property>
+                <property name="can-focus">True</property>
+                <property name="receives-default">True</property>
+                <property name="margin-top">8</property>
+                <property name="margin-bottom">8</property>
                 <signal name="clicked" handler="on_button_help_ok_clicked" swapped="no"/>
               </object>
               <packing>
-                <property name="left_attach">1</property>
-                <property name="top_attach">0</property>
+                <property name="left-attach">1</property>
+                <property name="top-attach">0</property>
               </packing>
             </child>
             <child>
               <object class="GtkFixed" id="fixed3">
                 <property name="visible">True</property>
-                <property name="can_focus">False</property>
+                <property name="can-focus">False</property>
                 <property name="hexpand">True</property>
               </object>
               <packing>
-                <property name="left_attach">0</property>
-                <property name="top_attach">0</property>
+                <property name="left-attach">0</property>
+                <property name="top-attach">0</property>
               </packing>
             </child>
             <child>
               <object class="GtkFixed" id="fixed4">
                 <property name="visible">True</property>
-                <property name="can_focus">False</property>
+                <property name="can-focus">False</property>
                 <property name="hexpand">True</property>
               </object>
               <packing>
-                <property name="left_attach">2</property>
-                <property name="top_attach">0</property>
+                <property name="left-attach">2</property>
+                <property name="top-attach">0</property>
               </packing>
+            </child>
+            <child>
+              <placeholder/>
+            </child>
+            <child>
+              <placeholder/>
+            </child>
+            <child>
+              <placeholder/>
+            </child>
+            <child>
+              <placeholder/>
+            </child>
+            <child>
+              <placeholder/>
+            </child>
+            <child>
+              <placeholder/>
             </child>
           </object>
           <packing>
@@ -195,54 +211,51 @@
   </object>
   <object class="GtkAdjustment" id="qnet_count_value">
     <property name="upper">100</property>
-    <property name="step_increment">1</property>
-    <property name="page_increment">10</property>
+    <property name="step-increment">1</property>
+    <property name="page-increment">10</property>
   </object>
   <object class="GtkAdjustment" id="zn_cnt">
     <property name="lower">1</property>
     <property name="upper">64</property>
-    <property name="step_increment">1</property>
-    <property name="page_increment">10</property>
+    <property name="step-increment">1</property>
+    <property name="page-increment">10</property>
   </object>
   <object class="GtkAdjustment" id="zn_late">
     <property name="upper">100</property>
-    <property name="step_increment">1</property>
-    <property name="page_increment">10</property>
+    <property name="step-increment">1</property>
+    <property name="page-increment">10</property>
   </object>
   <object class="GtkAdjustment" id="zn_port">
     <property name="lower">8300</property>
     <property name="upper">9000</property>
-    <property name="step_increment">1</property>
-    <property name="page_increment">10</property>
+    <property name="step-increment">1</property>
+    <property name="page-increment">10</property>
   </object>
   <object class="GtkWindow" id="window_main">
-    <property name="width_request">400</property>
-    <property name="can_focus">False</property>
+    <property name="width-request">400</property>
+    <property name="can-focus">False</property>
     <property name="title" translatable="yes">Studio Controls</property>
-    <property name="window_position">center-always</property>
-    <property name="default_width">500</property>
+    <property name="window-position">center-always</property>
+    <property name="default-width">500</property>
     <property name="gravity">center</property>
     <signal name="delete-event" handler="on_window_main_delete_event" swapped="no"/>
-    <child type="titlebar">
-      <placeholder/>
-    </child>
     <child>
       <object class="GtkBox" id="main_box">
         <property name="visible">True</property>
-        <property name="can_focus">False</property>
-        <property name="margin_left">8</property>
-        <property name="margin_right">8</property>
-        <property name="margin_top">8</property>
-        <property name="margin_bottom">8</property>
+        <property name="can-focus">False</property>
+        <property name="margin-left">8</property>
+        <property name="margin-right">8</property>
+        <property name="margin-top">8</property>
+        <property name="margin-bottom">8</property>
         <property name="hexpand">True</property>
         <property name="vexpand">True</property>
         <property name="orientation">vertical</property>
         <child>
           <object class="GtkLabel" id="label_main_top">
             <property name="visible">True</property>
-            <property name="can_focus">False</property>
-            <property name="margin_top">4</property>
-            <property name="margin_bottom">8</property>
+            <property name="can-focus">False</property>
+            <property name="margin-top">4</property>
+            <property name="margin-bottom">8</property>
             <property name="label" translatable="yes">Studio Set Up Utility</property>
             <attributes>
               <attribute name="weight" value="bold"/>
@@ -257,21 +270,21 @@
         <child>
           <object class="GtkBox">
             <property name="visible">True</property>
-            <property name="can_focus">False</property>
+            <property name="can-focus">False</property>
             <child>
               <object class="GtkBox">
                 <property name="visible">True</property>
-                <property name="can_focus">False</property>
+                <property name="can-focus">False</property>
                 <property name="valign">end</property>
-                <property name="margin_left">6</property>
+                <property name="margin-left">6</property>
                 <property name="orientation">vertical</property>
                 <child>
                   <object class="GtkButton" id="button_jack_start">
                     <property name="label" translatable="yes">Start or Restart  JACK</property>
                     <property name="visible">True</property>
-                    <property name="can_focus">True</property>
-                    <property name="receives_default">True</property>
-                    <property name="tooltip_text" translatable="yes">Starts JACK. Also saves audio settings and sets JACK auto start on session start.</property>
+                    <property name="can-focus">True</property>
+                    <property name="receives-default">True</property>
+                    <property name="tooltip-text" translatable="yes">Starts JACK. Also saves audio settings and sets JACK auto start on session start.</property>
                     <property name="hexpand">True</property>
                     <signal name="clicked" handler="cb_jack_start" swapped="no"/>
                   </object>
@@ -285,9 +298,9 @@
                   <object class="GtkButton" id="button_jack_stop">
                     <property name="label" translatable="yes">Stop JACK</property>
                     <property name="visible">True</property>
-                    <property name="can_focus">True</property>
-                    <property name="receives_default">True</property>
-                    <property name="tooltip_text" translatable="yes">Stops JACK. Also saves audio settings and unsets JACK auto start on session start.</property>
+                    <property name="can-focus">True</property>
+                    <property name="receives-default">True</property>
+                    <property name="tooltip-text" translatable="yes">Stops JACK. Also saves audio settings and unsets JACK auto start on session start.</property>
                     <property name="hexpand">True</property>
                     <signal name="clicked" handler="cb_jack_stop" swapped="no"/>
                   </object>
@@ -301,9 +314,9 @@
                   <object class="GtkButton" id="audio_apply">
                     <property name="label" translatable="yes">Apply Audio Settings</property>
                     <property name="visible">True</property>
-                    <property name="can_focus">True</property>
-                    <property name="receives_default">True</property>
-                    <property name="tooltip_text" translatable="yes">Saves audio setting to the config file at ~/.config/autojack/autojack.json and tells autojack to reread the config file.</property>
+                    <property name="can-focus">True</property>
+                    <property name="receives-default">True</property>
+                    <property name="tooltip-text" translatable="yes">Saves audio setting to the config file at ~/.config/autojack/autojack.json and tells autojack to reread the config file.</property>
                     <property name="hexpand">True</property>
                     <signal name="clicked" handler="cb_audio_apply" swapped="no"/>
                   </object>
@@ -316,7 +329,7 @@
                 <child>
                   <object class="GtkSeparator">
                     <property name="visible">True</property>
-                    <property name="can_focus">False</property>
+                    <property name="can-focus">False</property>
                   </object>
                   <packing>
                     <property name="expand">False</property>
@@ -327,23 +340,23 @@
                 <child>
                   <object class="GtkBox">
                     <property name="visible">True</property>
-                    <property name="can_focus">False</property>
-                    <property name="margin_left">6</property>
-                    <property name="margin_top">6</property>
-                    <property name="margin_bottom">6</property>
+                    <property name="can-focus">False</property>
+                    <property name="margin-left">6</property>
+                    <property name="margin-top">6</property>
+                    <property name="margin-bottom">6</property>
                     <property name="orientation">vertical</property>
                     <property name="homogeneous">True</property>
                     <child>
                       <object class="GtkBox">
                         <property name="visible">True</property>
-                        <property name="can_focus">False</property>
+                        <property name="can-focus">False</property>
                         <child>
                           <placeholder/>
                         </child>
                         <child>
                           <object class="GtkLabel">
                             <property name="visible">True</property>
-                            <property name="can_focus">False</property>
+                            <property name="can-focus">False</property>
                             <property name="halign">start</property>
                             <property name="label" translatable="yes">JACK status: </property>
                           </object>
@@ -356,10 +369,10 @@
                         <child>
                           <object class="GtkLabel" id="jack_state">
                             <property name="visible">True</property>
-                            <property name="can_focus">False</property>
+                            <property name="can-focus">False</property>
                             <property name="halign">end</property>
                             <property name="label" translatable="yes"> unknown</property>
-                            <property name="width_chars">17</property>
+                            <property name="width-chars">17</property>
                             <attributes>
                               <attribute name="weight" value="semibold"/>
                             </attributes>
@@ -381,7 +394,7 @@
                     <child>
                       <object class="GtkLabel" id="dsp_label">
                         <property name="visible">True</property>
-                        <property name="can_focus">False</property>
+                        <property name="can-focus">False</property>
                         <property name="halign">start</property>
                         <property name="label" translatable="yes">DSP:</property>
                       </object>
@@ -394,12 +407,12 @@
                     <child>
                       <object class="GtkBox">
                         <property name="visible">True</property>
-                        <property name="can_focus">False</property>
+                        <property name="can-focus">False</property>
                         <property name="homogeneous">True</property>
                         <child>
                           <object class="GtkLabel">
                             <property name="visible">True</property>
-                            <property name="can_focus">False</property>
+                            <property name="can-focus">False</property>
                             <property name="halign">start</property>
                             <property name="label" translatable="yes">X-runs:</property>
                           </object>
@@ -412,7 +425,7 @@
                         <child>
                           <object class="GtkLabel" id="xrun_lab">
                             <property name="visible">True</property>
-                            <property name="can_focus">False</property>
+                            <property name="can-focus">False</property>
                             <property name="halign">center</property>
                             <property name="xpad">4</property>
                             <property name="label" translatable="yes">  0 </property>
@@ -427,15 +440,15 @@
                           <object class="GtkButton" id="xrun_but">
                             <property name="label" translatable="yes">Reset</property>
                             <property name="visible">True</property>
-                            <property name="can_focus">True</property>
-                            <property name="receives_default">True</property>
+                            <property name="can-focus">True</property>
+                            <property name="receives-default">True</property>
                             <property name="halign">end</property>
                             <signal name="clicked" handler="xrun_reset" swapped="no"/>
                           </object>
                           <packing>
                             <property name="expand">False</property>
                             <property name="fill">True</property>
-                            <property name="pack_type">end</property>
+                            <property name="pack-type">end</property>
                             <property name="position">2</property>
                           </packing>
                         </child>
@@ -456,7 +469,7 @@
                 <child>
                   <object class="GtkSeparator">
                     <property name="visible">True</property>
-                    <property name="can_focus">False</property>
+                    <property name="can-focus">False</property>
                   </object>
                   <packing>
                     <property name="expand">False</property>
@@ -467,7 +480,7 @@
                 <child>
                   <object class="GtkComboBoxText" id="mixer_start">
                     <property name="visible">True</property>
-                    <property name="can_focus">False</property>
+                    <property name="can-focus">False</property>
                     <property name="active">0</property>
                     <items>
                       <item id="none" translatable="yes">Open Device Mixer</item>
@@ -484,8 +497,8 @@
                   <object class="GtkButton" id="pulse_mix">
                     <property name="label" translatable="yes">Open Pulse Control</property>
                     <property name="visible">True</property>
-                    <property name="can_focus">True</property>
-                    <property name="receives_default">True</property>
+                    <property name="can-focus">True</property>
+                    <property name="receives-default">True</property>
                     <signal name="clicked" handler="pavucontrol_cb" swapped="no"/>
                   </object>
                   <packing>
@@ -498,9 +511,9 @@
                   <object class="GtkButton" id="start_carla">
                     <property name="label" translatable="yes">Open Carla</property>
                     <property name="visible">True</property>
-                    <property name="can_focus">True</property>
-                    <property name="receives_default">True</property>
-                    <property name="tooltip_text" translatable="yes">Carla's patch bay can be used to set JACK's connections</property>
+                    <property name="can-focus">True</property>
+                    <property name="receives-default">True</property>
+                    <property name="tooltip-text" translatable="yes">Carla's patch bay can be used to set JACK's connections</property>
                     <signal name="clicked" handler="carla_cb" swapped="no"/>
                   </object>
                   <packing>
@@ -512,7 +525,7 @@
                 <child>
                   <object class="GtkSeparator">
                     <property name="visible">True</property>
-                    <property name="can_focus">False</property>
+                    <property name="can-focus">False</property>
                   </object>
                   <packing>
                     <property name="expand">False</property>
@@ -529,17 +542,17 @@
                 <child>
                   <object class="GtkBox">
                     <property name="visible">True</property>
-                    <property name="can_focus">False</property>
-                    <property name="margin_top">6</property>
+                    <property name="can-focus">False</property>
+                    <property name="margin-top">6</property>
                     <property name="orientation">vertical</property>
                     <child>
                       <object class="GtkButton" id="button_help">
                         <property name="label" translatable="yes">Help</property>
                         <property name="visible">True</property>
-                        <property name="can_focus">True</property>
-                        <property name="receives_default">True</property>
-                        <property name="margin_top">4</property>
-                        <property name="margin_bottom">4</property>
+                        <property name="can-focus">True</property>
+                        <property name="receives-default">True</property>
+                        <property name="margin-top">4</property>
+                        <property name="margin-bottom">4</property>
                         <signal name="clicked" handler="on_main_button_help_clicked" swapped="no"/>
                       </object>
                       <packing>
@@ -552,8 +565,8 @@
                       <object class="GtkButton" id="button_cancel">
                         <property name="label" translatable="yes">  Close  </property>
                         <property name="visible">True</property>
-                        <property name="can_focus">True</property>
-                        <property name="receives_default">True</property>
+                        <property name="can-focus">True</property>
+                        <property name="receives-default">True</property>
                         <signal name="clicked" handler="on_main_button_cancel_clicked" swapped="no"/>
                       </object>
                       <packing>
@@ -579,25 +592,25 @@
               <packing>
                 <property name="expand">False</property>
                 <property name="fill">True</property>
-                <property name="pack_type">end</property>
+                <property name="pack-type">end</property>
                 <property name="position">0</property>
               </packing>
             </child>
             <child>
               <object class="GtkBox">
                 <property name="visible">True</property>
-                <property name="can_focus">False</property>
+                <property name="can-focus">False</property>
                 <property name="orientation">vertical</property>
                 <child>
                   <object class="GtkBox" id="rt_box">
                     <property name="visible">True</property>
-                    <property name="can_focus">False</property>
-                    <property name="margin_top">19</property>
-                    <property name="margin_bottom">7</property>
+                    <property name="can-focus">False</property>
+                    <property name="margin-top">19</property>
+                    <property name="margin-bottom">7</property>
                     <property name="orientation">vertical</property>
                     <child>
                       <object class="GtkLabel" id="rt_warning">
-                        <property name="can_focus">False</property>
+                        <property name="can-focus">False</property>
                         <property name="label" translatable="yes">Warning: Real time permissions have not been properly installed!</property>
                         <attributes>
                           <attribute name="weight" value="bold"/>
@@ -615,8 +628,8 @@
                       <object class="GtkButton" id="rt_button">
                         <property name="label" translatable="yes">Fix Real Time Permissions</property>
                         <property name="visible">True</property>
-                        <property name="can_focus">True</property>
-                        <property name="receives_default">True</property>
+                        <property name="can-focus">True</property>
+                        <property name="receives-default">True</property>
                         <signal name="clicked" handler="rt_button_hit" swapped="no"/>
                       </object>
                       <packing>
@@ -638,13 +651,13 @@
                 <child>
                   <object class="GtkNotebook" id="notebook1">
                     <property name="visible">True</property>
-                    <property name="can_focus">True</property>
+                    <property name="can-focus">True</property>
                     <property name="halign">center</property>
                     <property name="valign">center</property>
                     <child>
                       <object class="GtkBox" id="box_tweaks">
                         <property name="visible">True</property>
-                        <property name="can_focus">False</property>
+                        <property name="can-focus">False</property>
                         <property name="halign">center</property>
                         <property name="valign">center</property>
                         <property name="hexpand">True</property>
@@ -652,7 +665,7 @@
                         <child>
                           <object class="GtkLabel" id="label_tweak">
                             <property name="visible">True</property>
-                            <property name="can_focus">False</property>
+                            <property name="can-focus">False</property>
                             <property name="label" translatable="yes">These are system Settings that can be changed on the fly depending on the work being done. For low latency Audio work, The Governor should be set to performance and Boost should be off. For best battery life choose ondemand or powersave (depending on your CPU).
 Many FireWire devices will work with the ALSA Modules but using the FFADO modules often allows lower Latency operation with more stability. The ALSA Firewire modules are set to have minimum buffer size of 256.</property>
                             <property name="wrap">True</property>
@@ -664,53 +677,54 @@ Many FireWire devices will work with the ALSA Modules but using the FFADO module
                           </packing>
                         </child>
                         <child>
+                          <!-- n-columns=3 n-rows=4 -->
                           <object class="GtkGrid" id="grid_tweaks">
                             <property name="visible">True</property>
-                            <property name="can_focus">False</property>
+                            <property name="can-focus">False</property>
                             <property name="halign">center</property>
                             <child>
                               <object class="GtkLabel" id="governor_label">
                                 <property name="visible">True</property>
-                                <property name="can_focus">False</property>
+                                <property name="can-focus">False</property>
                                 <property name="halign">end</property>
                                 <property name="label" translatable="yes">CPU Governor: </property>
                               </object>
                               <packing>
-                                <property name="left_attach">0</property>
-                                <property name="top_attach">0</property>
+                                <property name="left-attach">0</property>
+                                <property name="top-attach">0</property>
                               </packing>
                             </child>
                             <child>
                               <object class="GtkLabel" id="boost_label">
                                 <property name="visible">True</property>
-                                <property name="can_focus">False</property>
+                                <property name="can-focus">False</property>
                                 <property name="halign">end</property>
                                 <property name="label" translatable="yes">Intel Boost: </property>
                               </object>
                               <packing>
-                                <property name="left_attach">0</property>
-                                <property name="top_attach">1</property>
+                                <property name="left-attach">0</property>
+                                <property name="top-attach">1</property>
                               </packing>
                             </child>
                             <child>
                               <object class="GtkComboBoxText" id="combo_governor">
                                 <property name="visible">True</property>
-                                <property name="can_focus">False</property>
+                                <property name="can-focus">False</property>
                                 <property name="active">0</property>
-                                <property name="active_id">0</property>
+                                <property name="active-id">0</property>
                                 <signal name="changed" handler="combo_governor_changed_cb" swapped="no"/>
                               </object>
                               <packing>
-                                <property name="left_attach">1</property>
-                                <property name="top_attach">0</property>
+                                <property name="left-attach">1</property>
+                                <property name="top-attach">0</property>
                               </packing>
                             </child>
                             <child>
                               <object class="GtkComboBoxText" id="combo_boost">
                                 <property name="visible">True</property>
-                                <property name="can_focus">False</property>
+                                <property name="can-focus">False</property>
                                 <property name="active">0</property>
-                                <property name="active_id">0</property>
+                                <property name="active-id">0</property>
                                 <items>
                                   <item translatable="yes">off</item>
                                   <item translatable="yes">on</item>
@@ -718,26 +732,26 @@ Many FireWire devices will work with the ALSA Modules but using the FFADO module
                                 <signal name="changed" handler="combo_boost_changed_cb" swapped="no"/>
                               </object>
                               <packing>
-                                <property name="left_attach">1</property>
-                                <property name="top_attach">1</property>
+                                <property name="left-attach">1</property>
+                                <property name="top-attach">1</property>
                               </packing>
                             </child>
                             <child>
                               <object class="GtkLabel">
                                 <property name="visible">True</property>
-                                <property name="can_focus">False</property>
+                                <property name="can-focus">False</property>
                                 <property name="halign">end</property>
                                 <property name="label" translatable="yes">Logging level: </property>
                               </object>
                               <packing>
-                                <property name="left_attach">0</property>
-                                <property name="top_attach">2</property>
+                                <property name="left-attach">0</property>
+                                <property name="top-attach">2</property>
                               </packing>
                             </child>
                             <child>
                               <object class="GtkComboBoxText" id="logging_comb">
                                 <property name="visible">True</property>
-                                <property name="can_focus">False</property>
+                                <property name="can-focus">False</property>
                                 <property name="active">0</property>
                                 <items>
                                   <item id="29" translatable="yes">Warnings</item>
@@ -748,27 +762,26 @@ Many FireWire devices will work with the ALSA Modules but using the FFADO module
                                 <signal name="changed" handler="logging_change" swapped="no"/>
                               </object>
                               <packing>
-                                <property name="left_attach">1</property>
-                                <property name="top_attach">2</property>
+                                <property name="left-attach">1</property>
+                                <property name="top-attach">2</property>
                               </packing>
                             </child>
                             <child>
                               <object class="GtkLabel">
                                 <property name="visible">True</property>
-                                <property name="can_focus">False</property>
+                                <property name="can-focus">False</property>
                                 <property name="halign">end</property>
                                 <property name="label" translatable="yes">FireWire Module select (reboot to switch): </property>
                               </object>
                               <packing>
-                                <property name="left_attach">0</property>
-                                <property name="top_attach">3</property>
+                                <property name="left-attach">0</property>
+                                <property name="top-attach">3</property>
                               </packing>
                             </child>
                             <child>
                               <object class="GtkComboBoxText" id="combo_fw">
                                 <property name="visible">True</property>
-                                <property name="can_focus">False</property>
-                                <property name="focus_on_click">False</property>
+                                <property name="can-focus">False</property>
                                 <property name="active">0</property>
                                 <items>
                                   <item id="alsa" translatable="yes">Use ALSA FireWire Modules (default)</item>
@@ -777,9 +790,21 @@ Many FireWire devices will work with the ALSA Modules but using the FFADO module
                                 <signal name="changed" handler="firewire_cb" swapped="no"/>
                               </object>
                               <packing>
-                                <property name="left_attach">1</property>
-                                <property name="top_attach">3</property>
+                                <property name="left-attach">1</property>
+                                <property name="top-attach">3</property>
                               </packing>
+                            </child>
+                            <child>
+                              <placeholder/>
+                            </child>
+                            <child>
+                              <placeholder/>
+                            </child>
+                            <child>
+                              <placeholder/>
+                            </child>
+                            <child>
+                              <placeholder/>
                             </child>
                           </object>
                           <packing>
@@ -796,141 +821,143 @@ Many FireWire devices will work with the ALSA Modules but using the FFADO module
                     <child type="tab">
                       <object class="GtkLabel" id="label_tweaks">
                         <property name="visible">True</property>
-                        <property name="can_focus">False</property>
+                        <property name="can-focus">False</property>
                         <property name="label" translatable="yes">System Tweaks</property>
-                        <property name="angle">0.040000000000000001</property>
+                        <property name="angle">0.04</property>
                       </object>
                       <packing>
-                        <property name="tab_fill">False</property>
+                        <property name="tab-fill">False</property>
                       </packing>
                     </child>
                     <child>
+                      <!-- n-columns=4 n-rows=7 -->
                       <object class="GtkGrid" id="mastergrid">
                         <property name="visible">True</property>
-                        <property name="can_focus">False</property>
+                        <property name="can-focus">False</property>
                         <property name="halign">center</property>
                         <property name="valign">center</property>
-                        <property name="column_spacing">8</property>
-                        <property name="row_homogeneous">True</property>
+                        <property name="column-spacing">8</property>
+                        <property name="row-homogeneous">True</property>
                         <child>
                           <object class="GtkLabel" id="chan_label">
                             <property name="visible">True</property>
-                            <property name="can_focus">False</property>
+                            <property name="can-focus">False</property>
                             <property name="halign">end</property>
                             <property name="label" translatable="yes">Dummy Channel Count Capture/Playback:</property>
                           </object>
                           <packing>
-                            <property name="left_attach">0</property>
-                            <property name="top_attach">3</property>
+                            <property name="left-attach">0</property>
+                            <property name="top-attach">3</property>
                           </packing>
                         </child>
                         <child>
                           <object class="GtkLabel">
                             <property name="visible">True</property>
-                            <property name="can_focus">False</property>
+                            <property name="can-focus">False</property>
                             <property name="halign">end</property>
                             <property name="label" translatable="yes">Main Output Ports: </property>
                           </object>
                           <packing>
-                            <property name="left_attach">0</property>
-                            <property name="top_attach">4</property>
+                            <property name="left-attach">0</property>
+                            <property name="top-attach">4</property>
                           </packing>
                         </child>
                         <child>
                           <object class="GtkComboBoxText" id="monitor_combo">
                             <property name="visible">True</property>
-                            <property name="can_focus">False</property>
-                            <property name="tooltip_text" translatable="yes">These are the ports that go to the speakers</property>
+                            <property name="can-focus">False</property>
+                            <property name="tooltip-text" translatable="yes">These are the ports that go to the speakers</property>
                             <property name="active">0</property>
                             <signal name="changed" handler="generic_cb" swapped="no"/>
                           </object>
                           <packing>
-                            <property name="left_attach">1</property>
-                            <property name="top_attach">4</property>
+                            <property name="left-attach">1</property>
+                            <property name="top-attach">4</property>
                             <property name="width">2</property>
                           </packing>
                         </child>
                         <child>
                           <object class="GtkLabel" id="jack_device_label">
                             <property name="visible">True</property>
-                            <property name="can_focus">False</property>
+                            <property name="can-focus">False</property>
                             <property name="halign">end</property>
                             <property name="label" translatable="yes">JACK Master Device (no USB):</property>
                             <property name="justify">right</property>
                             <property name="ellipsize">end</property>
                           </object>
                           <packing>
-                            <property name="left_attach">0</property>
-                            <property name="top_attach">0</property>
+                            <property name="left-attach">0</property>
+                            <property name="top-attach">0</property>
                           </packing>
                         </child>
                         <child>
                           <object class="GtkComboBoxText" id="jack_device_combo">
                             <property name="name">jack_device_combo</property>
                             <property name="visible">True</property>
-                            <property name="can_focus">False</property>
+                            <property name="can-focus">False</property>
                             <property name="active">0</property>
-                            <property name="active_id">0</property>
+                            <property name="active-id">0</property>
                             <signal name="changed" handler="jack_device_changed" swapped="no"/>
                           </object>
                           <packing>
-                            <property name="left_attach">1</property>
-                            <property name="top_attach">0</property>
+                            <property name="left-attach">1</property>
+                            <property name="top-attach">0</property>
                             <property name="width">2</property>
                           </packing>
                         </child>
                         <child>
                           <object class="GtkLabel" id="jack_bmaster_label1">
                             <property name="visible">True</property>
-                            <property name="can_focus">False</property>
+                            <property name="can-focus">False</property>
                             <property name="halign">end</property>
                             <property name="label" translatable="yes">USB device that should be Master:</property>
                             <property name="ellipsize">start</property>
                           </object>
                           <packing>
-                            <property name="left_attach">0</property>
-                            <property name="top_attach">1</property>
+                            <property name="left-attach">0</property>
+                            <property name="top-attach">1</property>
                           </packing>
                         </child>
                         <child>
                           <object class="GtkComboBoxText" id="jack_usb_dev_combo">
                             <property name="visible">True</property>
-                            <property name="can_focus">False</property>
+                            <property name="can-focus">False</property>
                             <property name="active">0</property>
-                            <property name="button_sensitivity">on</property>
-                            <property name="active_id">0</property>
+                            <property name="button-sensitivity">on</property>
+                            <property name="active-id">0</property>
                             <signal name="changed" handler="usb_master_changed" swapped="no"/>
                           </object>
                           <packing>
-                            <property name="left_attach">1</property>
-                            <property name="top_attach">1</property>
+                            <property name="left-attach">1</property>
+                            <property name="top-attach">1</property>
                             <property name="width">2</property>
                           </packing>
                         </child>
                         <child>
+                          <!-- n-columns=3 n-rows=4 -->
                           <object class="GtkGrid">
                             <property name="visible">True</property>
-                            <property name="can_focus">False</property>
+                            <property name="can-focus">False</property>
                             <property name="halign">start</property>
-                            <property name="margin_left">4</property>
-                            <property name="row_homogeneous">True</property>
+                            <property name="margin-left">4</property>
+                            <property name="row-homogeneous">True</property>
                             <child>
                               <object class="GtkLabel" id="label_backend">
                                 <property name="visible">True</property>
-                                <property name="can_focus">False</property>
+                                <property name="can-focus">False</property>
                                 <property name="halign">end</property>
                                 <property name="label" translatable="yes">JACK Backend: </property>
                                 <property name="justify">right</property>
                               </object>
                               <packing>
-                                <property name="left_attach">0</property>
-                                <property name="top_attach">0</property>
+                                <property name="left-attach">0</property>
+                                <property name="top-attach">0</property>
                               </packing>
                             </child>
                             <child>
                               <object class="GtkComboBoxText" id="combo_backend">
                                 <property name="visible">True</property>
-                                <property name="can_focus">False</property>
+                                <property name="can-focus">False</property>
                                 <property name="active">0</property>
                                 <items>
                                   <item id="alsa" translatable="yes">alsa</item>
@@ -939,28 +966,28 @@ Many FireWire devices will work with the ALSA Modules but using the FFADO module
                                 <signal name="changed" handler="jack_driver_changed" swapped="no"/>
                               </object>
                               <packing>
-                                <property name="left_attach">1</property>
-                                <property name="top_attach">0</property>
+                                <property name="left-attach">1</property>
+                                <property name="top-attach">0</property>
                               </packing>
                             </child>
                             <child>
                               <object class="GtkLabel" id="jack_sr_label">
-                                <property name="width_request">-1</property>
+                                <property name="width-request">-1</property>
                                 <property name="visible">True</property>
-                                <property name="can_focus">False</property>
+                                <property name="can-focus">False</property>
                                 <property name="halign">end</property>
                                 <property name="label" translatable="yes"> JACK Sample Rate: </property>
-                                <property name="single_line_mode">True</property>
+                                <property name="single-line-mode">True</property>
                               </object>
                               <packing>
-                                <property name="left_attach">0</property>
-                                <property name="top_attach">1</property>
+                                <property name="left-attach">0</property>
+                                <property name="top-attach">1</property>
                               </packing>
                             </child>
                             <child>
                               <object class="GtkComboBoxText" id="jack_rate_combo">
                                 <property name="visible">True</property>
-                                <property name="can_focus">False</property>
+                                <property name="can-focus">False</property>
                                 <property name="active">3</property>
                                 <items>
                                   <item id="22050" translatable="yes">22050</item>
@@ -974,26 +1001,26 @@ Many FireWire devices will work with the ALSA Modules but using the FFADO module
                                 <signal name="changed" handler="generic_cb" swapped="no"/>
                               </object>
                               <packing>
-                                <property name="left_attach">1</property>
-                                <property name="top_attach">1</property>
+                                <property name="left-attach">1</property>
+                                <property name="top-attach">1</property>
                               </packing>
                             </child>
                             <child>
                               <object class="GtkLabel" id="jack_late_label">
                                 <property name="visible">True</property>
-                                <property name="can_focus">False</property>
+                                <property name="can-focus">False</property>
                                 <property name="halign">end</property>
                                 <property name="label" translatable="yes">JACK Buffer Size: </property>
                               </object>
                               <packing>
-                                <property name="left_attach">0</property>
-                                <property name="top_attach">2</property>
+                                <property name="left-attach">0</property>
+                                <property name="top-attach">2</property>
                               </packing>
                             </child>
                             <child>
                               <object class="GtkComboBoxText" id="combobox_late">
                                 <property name="visible">True</property>
-                                <property name="can_focus">False</property>
+                                <property name="can-focus">False</property>
                                 <property name="active">6</property>
                                 <items>
                                   <item id="16" translatable="yes">16</item>
@@ -1009,26 +1036,26 @@ Many FireWire devices will work with the ALSA Modules but using the FFADO module
                                 <signal name="changed" handler="generic_cb" swapped="no"/>
                               </object>
                               <packing>
-                                <property name="left_attach">1</property>
-                                <property name="top_attach">2</property>
+                                <property name="left-attach">1</property>
+                                <property name="top-attach">2</property>
                               </packing>
                             </child>
                             <child>
                               <object class="GtkLabel" id="jack_period_label">
                                 <property name="visible">True</property>
-                                <property name="can_focus">False</property>
+                                <property name="can-focus">False</property>
                                 <property name="halign">end</property>
                                 <property name="label" translatable="yes">JACK Periods: </property>
                               </object>
                               <packing>
-                                <property name="left_attach">0</property>
-                                <property name="top_attach">3</property>
+                                <property name="left-attach">0</property>
+                                <property name="top-attach">3</property>
                               </packing>
                             </child>
                             <child>
                               <object class="GtkComboBoxText" id="combo_periods">
                                 <property name="visible">True</property>
-                                <property name="can_focus">False</property>
+                                <property name="can-focus">False</property>
                                 <property name="active">0</property>
                                 <items>
                                   <item id="2" translatable="yes">2</item>
@@ -1038,120 +1065,146 @@ Many FireWire devices will work with the ALSA Modules but using the FFADO module
                                 <signal name="changed" handler="generic_cb" swapped="no"/>
                               </object>
                               <packing>
-                                <property name="left_attach">1</property>
-                                <property name="top_attach">3</property>
+                                <property name="left-attach">1</property>
+                                <property name="top-attach">3</property>
                               </packing>
+                            </child>
+                            <child>
+                              <placeholder/>
+                            </child>
+                            <child>
+                              <placeholder/>
+                            </child>
+                            <child>
+                              <placeholder/>
+                            </child>
+                            <child>
+                              <placeholder/>
                             </child>
                           </object>
                           <packing>
-                            <property name="left_attach">3</property>
-                            <property name="top_attach">0</property>
+                            <property name="left-attach">3</property>
+                            <property name="top-attach">0</property>
                             <property name="height">4</property>
                           </packing>
                         </child>
                         <child>
                           <object class="GtkLabel">
                             <property name="visible">True</property>
-                            <property name="can_focus">False</property>
+                            <property name="can-focus">False</property>
                             <property name="halign">end</property>
                             <property name="label" translatable="yes">JACK Extra Latency - Capture/Playback:</property>
                           </object>
                           <packing>
-                            <property name="left_attach">0</property>
-                            <property name="top_attach">2</property>
+                            <property name="left-attach">0</property>
+                            <property name="top-attach">2</property>
                           </packing>
                         </child>
                         <child>
                           <object class="GtkSpinButton" id="play_lat_spin">
                             <property name="visible">True</property>
-                            <property name="can_focus">True</property>
+                            <property name="can-focus">True</property>
                             <property name="text" translatable="yes">0</property>
                             <property name="adjustment">ad_jack_play_lat</property>
-                            <property name="climb_rate">1</property>
+                            <property name="climb-rate">1</property>
                             <property name="numeric">True</property>
                             <signal name="value-changed" handler="generic_cb" swapped="no"/>
                           </object>
                           <packing>
-                            <property name="left_attach">2</property>
-                            <property name="top_attach">2</property>
+                            <property name="left-attach">2</property>
+                            <property name="top-attach">2</property>
                           </packing>
                         </child>
                         <child>
                           <object class="GtkSpinButton" id="chan_out_spin">
                             <property name="visible">True</property>
-                            <property name="can_focus">True</property>
+                            <property name="can-focus">True</property>
                             <property name="text" translatable="yes">1</property>
-                            <property name="input_purpose">number</property>
+                            <property name="input-purpose">number</property>
                             <property name="adjustment">ad_jack_chan_play</property>
                             <property name="numeric">True</property>
-                            <property name="update_policy">if-valid</property>
+                            <property name="update-policy">if-valid</property>
                             <property name="value">1</property>
                             <signal name="value-changed" handler="generic_cb" swapped="no"/>
                           </object>
                           <packing>
-                            <property name="left_attach">2</property>
-                            <property name="top_attach">3</property>
+                            <property name="left-attach">2</property>
+                            <property name="top-attach">3</property>
                           </packing>
                         </child>
                         <child>
                           <object class="GtkSpinButton" id="cap_lat_spin">
                             <property name="visible">True</property>
-                            <property name="can_focus">True</property>
+                            <property name="can-focus">True</property>
                             <property name="text" translatable="yes">0</property>
                             <property name="adjustment">ad_jack_cap_lat</property>
-                            <property name="climb_rate">1</property>
+                            <property name="climb-rate">1</property>
                             <property name="numeric">True</property>
                             <signal name="value-changed" handler="generic_cb" swapped="no"/>
                           </object>
                           <packing>
-                            <property name="left_attach">1</property>
-                            <property name="top_attach">2</property>
+                            <property name="left-attach">1</property>
+                            <property name="top-attach">2</property>
                           </packing>
                         </child>
                         <child>
                           <object class="GtkSpinButton" id="chan_in_spin">
                             <property name="visible">True</property>
-                            <property name="can_focus">True</property>
+                            <property name="can-focus">True</property>
                             <property name="text" translatable="yes">1</property>
-                            <property name="input_purpose">number</property>
+                            <property name="input-purpose">number</property>
                             <property name="adjustment">ad_jack_chan_cap</property>
-                            <property name="climb_rate">1</property>
+                            <property name="climb-rate">1</property>
                             <property name="numeric">True</property>
                             <property name="value">1</property>
                             <signal name="value-changed" handler="generic_cb" swapped="no"/>
                           </object>
                           <packing>
-                            <property name="left_attach">1</property>
-                            <property name="top_attach">3</property>
+                            <property name="left-attach">1</property>
+                            <property name="top-attach">3</property>
                           </packing>
                         </child>
                         <child>
                           <object class="GtkCheckButton" id="jack_midi_check">
                             <property name="label" translatable="yes">Bridge ALSA to JACK MIDI (turn on a2jmidid)</property>
                             <property name="visible">True</property>
-                            <property name="can_focus">True</property>
-                            <property name="receives_default">False</property>
+                            <property name="can-focus">True</property>
+                            <property name="receives-default">False</property>
                             <property name="halign">center</property>
                             <property name="active">True</property>
-                            <property name="draw_indicator">True</property>
+                            <property name="draw-indicator">True</property>
                             <signal name="toggled" handler="generic_cb" swapped="no"/>
                           </object>
                           <packing>
-                            <property name="left_attach">0</property>
-                            <property name="top_attach">6</property>
-                            <property name="width">4</property>
+                            <property name="left-attach">0</property>
+                            <property name="top-attach">6</property>
+                            <property name="width">3</property>
                           </packing>
                         </child>
                         <child>
                           <object class="GtkSeparator">
                             <property name="visible">True</property>
-                            <property name="can_focus">False</property>
+                            <property name="can-focus">False</property>
                             <property name="valign">center</property>
                           </object>
                           <packing>
-                            <property name="left_attach">0</property>
-                            <property name="top_attach">5</property>
+                            <property name="left-attach">0</property>
+                            <property name="top-attach">5</property>
                             <property name="width">4</property>
+                          </packing>
+                        </child>
+                        <child>
+                          <object class="GtkCheckButton" id="jack_midi_u">
+                            <property name="label" translatable="yes">Allow non-unique (a2jmidid -u)</property>
+                            <property name="visible">True</property>
+                            <property name="can-focus">True</property>
+                            <property name="receives-default">False</property>
+                            <property name="draw-indicator">True</property>
+                            <signal name="toggled" handler="generic_cb" swapped="no"/>
+                          </object>
+                          <packing>
+                            <property name="left-attach">3</property>
+                            <property name="top-attach">6</property>
                           </packing>
                         </child>
                         <child>
@@ -1165,88 +1218,90 @@ Many FireWire devices will work with the ALSA Modules but using the FFADO module
                     <child type="tab">
                       <object class="GtkLabel" id="label_jackmaster">
                         <property name="visible">True</property>
-                        <property name="can_focus">False</property>
+                        <property name="can-focus">False</property>
                         <property name="label" translatable="yes">JACK Master Settings</property>
-                        <property name="angle">0.040000000000000001</property>
+                        <property name="angle">0.04</property>
                       </object>
                       <packing>
                         <property name="position">1</property>
-                        <property name="tab_fill">False</property>
+                        <property name="tab-fill">False</property>
                       </packing>
                     </child>
                     <child>
+                      <!-- n-columns=3 n-rows=9 -->
                       <object class="GtkGrid" id="extragrid">
                         <property name="visible">True</property>
-                        <property name="can_focus">False</property>
+                        <property name="can-focus">False</property>
                         <property name="halign">center</property>
                         <property name="valign">center</property>
-                        <property name="row_homogeneous">True</property>
+                        <property name="row-homogeneous">True</property>
                         <child>
                           <object class="GtkComboBoxText" id="xdev_select">
                             <property name="visible">True</property>
-                            <property name="can_focus">False</property>
+                            <property name="can-focus">False</property>
                             <property name="active">0</property>
-                            <property name="active_id">none</property>
+                            <property name="active-id">none</property>
                             <items>
                               <item id="none" translatable="yes">none</item>
                             </items>
                             <signal name="changed" handler="xdev_select_cb" swapped="no"/>
                           </object>
                           <packing>
-                            <property name="left_attach">1</property>
-                            <property name="top_attach">0</property>
+                            <property name="left-attach">1</property>
+                            <property name="top-attach">0</property>
                             <property name="width">2</property>
                           </packing>
                         </child>
                         <child>
                           <object class="GtkLabel">
                             <property name="visible">True</property>
-                            <property name="can_focus">False</property>
+                            <property name="can-focus">False</property>
                             <property name="halign">end</property>
                             <property name="label" translatable="yes">Select Device to Edit: </property>
                           </object>
                           <packing>
-                            <property name="left_attach">0</property>
-                            <property name="top_attach">0</property>
+                            <property name="left-attach">0</property>
+                            <property name="top-attach">0</property>
                           </packing>
                         </child>
                         <child>
                           <object class="GtkCheckButton" id="hide_check">
                             <property name="label" translatable="yes">Hide this device (blacklist)</property>
                             <property name="visible">True</property>
-                            <property name="can_focus">True</property>
-                            <property name="receives_default">False</property>
+                            <property name="can-focus">True</property>
+                            <property name="receives-default">False</property>
                             <property name="halign">center</property>
-                            <property name="draw_indicator">True</property>
+                            <property name="draw-indicator">True</property>
                             <signal name="toggled" handler="xdev_changed" swapped="no"/>
                           </object>
                           <packing>
-                            <property name="left_attach">0</property>
-                            <property name="top_attach">1</property>
+                            <property name="left-attach">0</property>
+                            <property name="top-attach">1</property>
                           </packing>
                         </child>
                         <child>
+                          <!-- n-columns=3 n-rows=3 -->
                           <object class="GtkGrid">
                             <property name="visible">True</property>
-                            <property name="can_focus">False</property>
+                            <property name="can-focus">False</property>
                             <property name="halign">center</property>
                             <child>
                               <object class="GtkLabel">
                                 <property name="visible">True</property>
-                                <property name="can_focus">False</property>
+                                <property name="can-focus">False</property>
                                 <property name="halign">end</property>
                                 <property name="label" translatable="yes">Sample Rate: </property>
                                 <property name="justify">right</property>
                               </object>
                               <packing>
-                                <property name="left_attach">0</property>
-                                <property name="top_attach">0</property>
+                                <property name="left-attach">0</property>
+                                <property name="top-attach">0</property>
                               </packing>
                             </child>
                             <child>
                               <object class="GtkComboBoxText" id="xdev_rate_drop">
                                 <property name="visible">True</property>
-                                <property name="can_focus">False</property>
+                                <property name="can-focus">False</property>
                                 <property name="active">0</property>
                                 <items>
                                   <item id="1024" translatable="yes">1024</item>
@@ -1255,54 +1310,54 @@ Many FireWire devices will work with the ALSA Modules but using the FFADO module
                                 <signal name="changed" handler="xdev_changed" swapped="no"/>
                               </object>
                               <packing>
-                                <property name="left_attach">1</property>
-                                <property name="top_attach">0</property>
+                                <property name="left-attach">1</property>
+                                <property name="top-attach">0</property>
                               </packing>
                             </child>
                             <child>
                               <object class="GtkLabel">
                                 <property name="visible">True</property>
-                                <property name="can_focus">False</property>
+                                <property name="can-focus">False</property>
                                 <property name="halign">end</property>
                                 <property name="label" translatable="yes">Frame (buffer) size: </property>
                               </object>
                               <packing>
-                                <property name="left_attach">0</property>
-                                <property name="top_attach">1</property>
+                                <property name="left-attach">0</property>
+                                <property name="top-attach">1</property>
                               </packing>
                             </child>
                             <child>
                               <object class="GtkComboBoxText" id="xdev_buff_drop">
                                 <property name="visible">True</property>
-                                <property name="can_focus">False</property>
-                                <property name="active_id">1024</property>
+                                <property name="can-focus">False</property>
+                                <property name="active-id">1024</property>
                                 <items>
                                   <item id="1024" translatable="yes">1024</item>
                                 </items>
                                 <signal name="changed" handler="xdev_changed" swapped="no"/>
                               </object>
                               <packing>
-                                <property name="left_attach">1</property>
-                                <property name="top_attach">1</property>
+                                <property name="left-attach">1</property>
+                                <property name="top-attach">1</property>
                               </packing>
                             </child>
                             <child>
                               <object class="GtkLabel">
                                 <property name="visible">True</property>
-                                <property name="can_focus">False</property>
+                                <property name="can-focus">False</property>
                                 <property name="halign">end</property>
                                 <property name="label" translatable="yes">Number of Periods to use: </property>
                               </object>
                               <packing>
-                                <property name="left_attach">0</property>
-                                <property name="top_attach">2</property>
+                                <property name="left-attach">0</property>
+                                <property name="top-attach">2</property>
                               </packing>
                             </child>
                             <child>
                               <object class="GtkComboBoxText" id="xdev_nperiods_drop">
                                 <property name="visible">True</property>
-                                <property name="can_focus">False</property>
-                                <property name="active_id">3</property>
+                                <property name="can-focus">False</property>
+                                <property name="active-id">3</property>
                                 <items>
                                   <item id="2" translatable="yes">2</item>
                                   <item id="3" translatable="yes">3</item>
@@ -1311,198 +1366,218 @@ Many FireWire devices will work with the ALSA Modules but using the FFADO module
                                 <signal name="changed" handler="xdev_changed" swapped="no"/>
                               </object>
                               <packing>
-                                <property name="left_attach">1</property>
-                                <property name="top_attach">2</property>
+                                <property name="left-attach">1</property>
+                                <property name="top-attach">2</property>
                               </packing>
+                            </child>
+                            <child>
+                              <placeholder/>
+                            </child>
+                            <child>
+                              <placeholder/>
+                            </child>
+                            <child>
+                              <placeholder/>
                             </child>
                           </object>
                           <packing>
-                            <property name="left_attach">2</property>
-                            <property name="top_attach">1</property>
+                            <property name="left-attach">2</property>
+                            <property name="top-attach">1</property>
                             <property name="height">3</property>
                           </packing>
                         </child>
                         <child>
+                          <!-- n-columns=3 n-rows=3 -->
                           <object class="GtkGrid">
                             <property name="visible">True</property>
-                            <property name="can_focus">False</property>
+                            <property name="can-focus">False</property>
                             <child>
                               <object class="GtkLabel">
                                 <property name="visible">True</property>
-                                <property name="can_focus">False</property>
+                                <property name="can-focus">False</property>
                                 <property name="label" translatable="yes">Capture Port Count: </property>
                                 <property name="justify">right</property>
                               </object>
                               <packing>
-                                <property name="left_attach">0</property>
-                                <property name="top_attach">0</property>
+                                <property name="left-attach">0</property>
+                                <property name="top-attach">0</property>
                               </packing>
                             </child>
                             <child>
                               <object class="GtkButton" id="xdev_cap_all">
                                 <property name="label" translatable="yes"> All </property>
                                 <property name="visible">True</property>
-                                <property name="can_focus">True</property>
-                                <property name="receives_default">True</property>
+                                <property name="can-focus">True</property>
+                                <property name="receives-default">True</property>
                                 <signal name="clicked" handler="xdev_cap_all_cb" swapped="no"/>
                               </object>
                               <packing>
-                                <property name="left_attach">2</property>
-                                <property name="top_attach">0</property>
+                                <property name="left-attach">2</property>
+                                <property name="top-attach">0</property>
                               </packing>
                             </child>
                             <child>
                               <object class="GtkSpinButton" id="cap_chan_spin">
                                 <property name="visible">True</property>
-                                <property name="can_focus">True</property>
+                                <property name="can-focus">True</property>
                                 <property name="text" translatable="yes">0</property>
                                 <property name="adjustment">ad_xdev_chan_cap</property>
-                                <property name="climb_rate">0.01</property>
+                                <property name="climb-rate">0.01</property>
                                 <property name="numeric">True</property>
                                 <signal name="value-changed" handler="xdev_changed" swapped="no"/>
                               </object>
                               <packing>
-                                <property name="left_attach">1</property>
-                                <property name="top_attach">0</property>
+                                <property name="left-attach">1</property>
+                                <property name="top-attach">0</property>
                               </packing>
                             </child>
                             <child>
                               <object class="GtkLabel">
                                 <property name="visible">True</property>
-                                <property name="can_focus">False</property>
+                                <property name="can-focus">False</property>
                                 <property name="halign">end</property>
                                 <property name="label" translatable="yes">Capture Latency: </property>
                               </object>
                               <packing>
-                                <property name="left_attach">0</property>
-                                <property name="top_attach">1</property>
+                                <property name="left-attach">0</property>
+                                <property name="top-attach">1</property>
                               </packing>
                             </child>
                             <child>
                               <object class="GtkSpinButton" id="xdev_cap_lat">
                                 <property name="visible">True</property>
-                                <property name="can_focus">True</property>
+                                <property name="can-focus">True</property>
                                 <property name="text" translatable="yes">0</property>
                                 <property name="adjustment">ad_xdev_lat_cap</property>
                                 <signal name="value-changed" handler="xdev_changed" swapped="no"/>
                               </object>
                               <packing>
-                                <property name="left_attach">1</property>
-                                <property name="top_attach">1</property>
+                                <property name="left-attach">1</property>
+                                <property name="top-attach">1</property>
                               </packing>
+                            </child>
+                            <child>
+                              <placeholder/>
+                            </child>
+                            <child>
+                              <placeholder/>
+                            </child>
+                            <child>
+                              <placeholder/>
                             </child>
                             <child>
                               <placeholder/>
                             </child>
                           </object>
                           <packing>
-                            <property name="left_attach">0</property>
-                            <property name="top_attach">2</property>
+                            <property name="left-attach">0</property>
+                            <property name="top-attach">2</property>
                             <property name="height">2</property>
                           </packing>
                         </child>
                         <child>
                           <object class="GtkLabel">
                             <property name="visible">True</property>
-                            <property name="can_focus">False</property>
+                            <property name="can-focus">False</property>
                             <property name="halign">end</property>
                             <property name="label" translatable="yes">Headphone plug in Action: </property>
                           </object>
                           <packing>
-                            <property name="left_attach">0</property>
-                            <property name="top_attach">6</property>
+                            <property name="left-attach">0</property>
+                            <property name="top-attach">6</property>
                           </packing>
                         </child>
                         <child>
+                          <!-- n-columns=3 n-rows=3 -->
                           <object class="GtkGrid">
                             <property name="visible">True</property>
-                            <property name="can_focus">False</property>
-                            <property name="row_homogeneous">True</property>
+                            <property name="can-focus">False</property>
+                            <property name="row-homogeneous">True</property>
                             <child>
                               <object class="GtkLabel">
                                 <property name="visible">True</property>
-                                <property name="can_focus">False</property>
+                                <property name="can-focus">False</property>
                                 <property name="halign">end</property>
                                 <property name="label" translatable="yes">JACK Base Name: </property>
                               </object>
                               <packing>
-                                <property name="left_attach">0</property>
-                                <property name="top_attach">0</property>
+                                <property name="left-attach">0</property>
+                                <property name="top-attach">0</property>
                               </packing>
                             </child>
                             <child>
                               <object class="GtkEntry" id="xdev_name">
                                 <property name="visible">True</property>
-                                <property name="can_focus">True</property>
+                                <property name="can-focus">True</property>
                                 <signal name="activate" handler="xdev_changed" swapped="no"/>
                               </object>
                               <packing>
-                                <property name="left_attach">1</property>
-                                <property name="top_attach">0</property>
+                                <property name="left-attach">1</property>
+                                <property name="top-attach">0</property>
                                 <property name="width">2</property>
                               </packing>
                             </child>
                             <child>
                               <object class="GtkLabel">
                                 <property name="visible">True</property>
-                                <property name="can_focus">False</property>
+                                <property name="can-focus">False</property>
                                 <property name="label" translatable="yes">Playback Port Count: </property>
                               </object>
                               <packing>
-                                <property name="left_attach">0</property>
-                                <property name="top_attach">1</property>
+                                <property name="left-attach">0</property>
+                                <property name="top-attach">1</property>
                               </packing>
                             </child>
                             <child>
                               <object class="GtkLabel">
                                 <property name="visible">True</property>
-                                <property name="can_focus">False</property>
+                                <property name="can-focus">False</property>
                                 <property name="halign">end</property>
                                 <property name="label" translatable="yes">Playback Latency: </property>
                               </object>
                               <packing>
-                                <property name="left_attach">0</property>
-                                <property name="top_attach">2</property>
+                                <property name="left-attach">0</property>
+                                <property name="top-attach">2</property>
                               </packing>
                             </child>
                             <child>
                               <object class="GtkSpinButton" id="play_chan_spin">
                                 <property name="visible">True</property>
-                                <property name="can_focus">True</property>
+                                <property name="can-focus">True</property>
                                 <property name="text" translatable="yes">0</property>
                                 <property name="adjustment">ad_xdev_chan_play</property>
                                 <property name="numeric">True</property>
                                 <signal name="value-changed" handler="xdev_changed" swapped="no"/>
                               </object>
                               <packing>
-                                <property name="left_attach">1</property>
-                                <property name="top_attach">1</property>
+                                <property name="left-attach">1</property>
+                                <property name="top-attach">1</property>
                               </packing>
                             </child>
                             <child>
                               <object class="GtkButton" id="xdev_play_all">
                                 <property name="label" translatable="yes"> All </property>
                                 <property name="visible">True</property>
-                                <property name="can_focus">True</property>
-                                <property name="receives_default">True</property>
+                                <property name="can-focus">True</property>
+                                <property name="receives-default">True</property>
                                 <signal name="clicked" handler="xdev_play_all_cb" swapped="no"/>
                               </object>
                               <packing>
-                                <property name="left_attach">2</property>
-                                <property name="top_attach">1</property>
+                                <property name="left-attach">2</property>
+                                <property name="top-attach">1</property>
                               </packing>
                             </child>
                             <child>
                               <object class="GtkSpinButton" id="xdev_play_lat">
                                 <property name="visible">True</property>
-                                <property name="can_focus">True</property>
+                                <property name="can-focus">True</property>
                                 <property name="text" translatable="yes">0</property>
                                 <property name="adjustment">ad_xdev_lat_play</property>
                                 <signal name="value-changed" handler="xdev_changed" swapped="no"/>
                               </object>
                               <packing>
-                                <property name="left_attach">1</property>
-                                <property name="top_attach">2</property>
+                                <property name="left-attach">1</property>
+                                <property name="top-attach">2</property>
                               </packing>
                             </child>
                             <child>
@@ -1510,16 +1585,16 @@ Many FireWire devices will work with the ALSA Modules but using the FFADO module
                             </child>
                           </object>
                           <packing>
-                            <property name="left_attach">1</property>
-                            <property name="top_attach">1</property>
+                            <property name="left-attach">1</property>
+                            <property name="top-attach">1</property>
                             <property name="height">3</property>
                           </packing>
                         </child>
                         <child>
                           <object class="GtkComboBoxText" id="hp_action">
                             <property name="visible">True</property>
-                            <property name="can_focus">False</property>
-                            <property name="tooltip_text" translatable="yes">If script is selected, The script at ~/.config/autojack/phones.sh with a param that is True for phones plugged in and False otherwise.</property>
+                            <property name="can-focus">False</property>
+                            <property name="tooltip-text" translatable="yes">If script is selected, The script at ~/.config/autojack/phones.sh with a param that is True for phones plugged in and False otherwise.</property>
                             <property name="active">1</property>
                             <items>
                               <item id="none" translatable="yes">No Action</item>
@@ -1529,21 +1604,21 @@ Many FireWire devices will work with the ALSA Modules but using the FFADO module
                             <signal name="changed" handler="hp_action_cb" swapped="no"/>
                           </object>
                           <packing>
-                            <property name="left_attach">1</property>
-                            <property name="top_attach">6</property>
+                            <property name="left-attach">1</property>
+                            <property name="top-attach">6</property>
                             <property name="width">2</property>
                           </packing>
                         </child>
                         <child>
                           <object class="GtkComboBoxText" id="hp_device">
                             <property name="visible">True</property>
-                            <property name="can_focus">False</property>
-                            <property name="tooltip_text" translatable="yes">Choose the device/ports where the headphones get plugged into.</property>
+                            <property name="can-focus">False</property>
+                            <property name="tooltip-text" translatable="yes">Choose the device/ports where the headphones get plugged into.</property>
                             <property name="active">0</property>
                           </object>
                           <packing>
-                            <property name="left_attach">1</property>
-                            <property name="top_attach">7</property>
+                            <property name="left-attach">1</property>
+                            <property name="top-attach">7</property>
                             <property name="width">2</property>
                           </packing>
                         </child>
@@ -1551,55 +1626,54 @@ Many FireWire devices will work with the ALSA Modules but using the FFADO module
                           <object class="GtkButton" id="hp_switch">
                             <property name="label" translatable="yes">Manual Headphones/Speakers Switch</property>
                             <property name="visible">True</property>
-                            <property name="can_focus">True</property>
-                            <property name="focus_on_click">False</property>
-                            <property name="receives_default">True</property>
-                            <property name="tooltip_text" translatable="yes">Switch between Speakers and headphones in case it can not be auto detected.</property>
+                            <property name="can-focus">True</property>
+                            <property name="receives-default">True</property>
+                            <property name="tooltip-text" translatable="yes">Switch between Speakers and headphones in case it can not be auto detected.</property>
                             <signal name="clicked" handler="hp_switch_cb" swapped="no"/>
                           </object>
                           <packing>
-                            <property name="left_attach">0</property>
-                            <property name="top_attach">8</property>
+                            <property name="left-attach">0</property>
+                            <property name="top-attach">8</property>
                           </packing>
                         </child>
                         <child>
                           <object class="GtkLabel">
                             <property name="visible">True</property>
-                            <property name="can_focus">False</property>
+                            <property name="can-focus">False</property>
                             <property name="halign">end</property>
                             <property name="label" translatable="yes">Headphone Devce: </property>
                           </object>
                           <packing>
-                            <property name="left_attach">0</property>
-                            <property name="top_attach">7</property>
+                            <property name="left-attach">0</property>
+                            <property name="top-attach">7</property>
                           </packing>
                         </child>
                         <child>
                           <object class="GtkCheckButton" id="usb_plug_check">
                             <property name="label" translatable="yes">Bridge USB Devices to JACK When Plugged In</property>
                             <property name="visible">True</property>
-                            <property name="can_focus">True</property>
-                            <property name="receives_default">False</property>
-                            <property name="tooltip_text" translatable="yes">Setting Capture or Playback ports to anything other than 0 or setting Hide will over ride this for that device.</property>
+                            <property name="can-focus">True</property>
+                            <property name="receives-default">False</property>
+                            <property name="tooltip-text" translatable="yes">Setting Capture or Playback ports to anything other than 0 or setting Hide will over ride this for that device.</property>
                             <property name="halign">start</property>
                             <property name="active">True</property>
-                            <property name="draw_indicator">True</property>
+                            <property name="draw-indicator">True</property>
                             <signal name="toggled" handler="usb_plug_cb" swapped="no"/>
                           </object>
                           <packing>
-                            <property name="left_attach">0</property>
-                            <property name="top_attach">5</property>
+                            <property name="left-attach">0</property>
+                            <property name="top-attach">5</property>
                           </packing>
                         </child>
                         <child>
                           <object class="GtkSeparator">
                             <property name="visible">True</property>
-                            <property name="can_focus">False</property>
+                            <property name="can-focus">False</property>
                             <property name="valign">center</property>
                           </object>
                           <packing>
-                            <property name="left_attach">0</property>
-                            <property name="top_attach">4</property>
+                            <property name="left-attach">0</property>
+                            <property name="top-attach">4</property>
                             <property name="width">3</property>
                           </packing>
                         </child>
@@ -1623,176 +1697,177 @@ Many FireWire devices will work with the ALSA Modules but using the FFADO module
                     <child type="tab">
                       <object class="GtkLabel" id="label_zita">
                         <property name="visible">True</property>
-                        <property name="can_focus">False</property>
+                        <property name="can-focus">False</property>
                         <property name="label" translatable="yes">Extra Devices</property>
                       </object>
                       <packing>
                         <property name="position">2</property>
-                        <property name="tab_fill">False</property>
+                        <property name="tab-fill">False</property>
                       </packing>
                     </child>
                     <child>
+                      <!-- n-columns=3 n-rows=6 -->
                       <object class="GtkGrid">
                         <property name="visible">True</property>
-                        <property name="can_focus">False</property>
+                        <property name="can-focus">False</property>
                         <property name="halign">center</property>
                         <property name="valign">center</property>
                         <child>
                           <object class="GtkLabel">
                             <property name="visible">True</property>
-                            <property name="can_focus">False</property>
+                            <property name="can-focus">False</property>
                             <property name="halign">end</property>
                             <property name="label" translatable="yes">Bridge to Configure:</property>
                           </object>
                           <packing>
-                            <property name="left_attach">0</property>
-                            <property name="top_attach">0</property>
+                            <property name="left-attach">0</property>
+                            <property name="top-attach">0</property>
                           </packing>
                         </child>
                         <child>
                           <object class="GtkComboBoxText" id="pj_combo">
                             <property name="visible">True</property>
-                            <property name="can_focus">False</property>
-                            <property name="tooltip_text" translatable="yes">Select a Bridge to edit</property>
+                            <property name="can-focus">False</property>
+                            <property name="tooltip-text" translatable="yes">Select a Bridge to edit</property>
                             <signal name="changed" handler="pj_combo_cb" swapped="no"/>
                           </object>
                           <packing>
-                            <property name="left_attach">1</property>
-                            <property name="top_attach">0</property>
+                            <property name="left-attach">1</property>
+                            <property name="top-attach">0</property>
                           </packing>
                         </child>
                         <child>
                           <object class="GtkLabel">
                             <property name="visible">True</property>
-                            <property name="can_focus">False</property>
+                            <property name="can-focus">False</property>
                             <property name="halign">end</property>
                             <property name="label" translatable="yes">Direction:</property>
                           </object>
                           <packing>
-                            <property name="left_attach">0</property>
-                            <property name="top_attach">1</property>
+                            <property name="left-attach">0</property>
+                            <property name="top-attach">1</property>
                           </packing>
                         </child>
                         <child>
                           <object class="GtkLabel">
                             <property name="visible">True</property>
-                            <property name="can_focus">False</property>
-                            <property name="tooltip_text" translatable="yes">Bridge Names must be unique. They cannot be the same for input and output.</property>
+                            <property name="can-focus">False</property>
+                            <property name="tooltip-text" translatable="yes">Bridge Names must be unique. They cannot be the same for input and output.</property>
                             <property name="halign">end</property>
                             <property name="label" translatable="yes">Change Bridge's Name:</property>
                           </object>
                           <packing>
-                            <property name="left_attach">0</property>
-                            <property name="top_attach">2</property>
+                            <property name="left-attach">0</property>
+                            <property name="top-attach">2</property>
                           </packing>
                         </child>
                         <child>
                           <object class="GtkEntry" id="pj_name">
                             <property name="visible">True</property>
-                            <property name="can_focus">True</property>
-                            <property name="tooltip_text" translatable="yes">Change this Bridge's Name. No spaces allowed</property>
+                            <property name="can-focus">True</property>
+                            <property name="tooltip-text" translatable="yes">Change this Bridge's Name. No spaces allowed</property>
                             <signal name="activate" handler="pj_name_cb" swapped="no"/>
                           </object>
                           <packing>
-                            <property name="left_attach">1</property>
-                            <property name="top_attach">2</property>
+                            <property name="left-attach">1</property>
+                            <property name="top-attach">2</property>
                           </packing>
                         </child>
                         <child>
                           <object class="GtkLabel">
                             <property name="visible">True</property>
-                            <property name="can_focus">False</property>
+                            <property name="can-focus">False</property>
                             <property name="label" translatable="yes">Must be unique.
 </property>
                           </object>
                           <packing>
-                            <property name="left_attach">2</property>
-                            <property name="top_attach">2</property>
+                            <property name="left-attach">2</property>
+                            <property name="top-attach">2</property>
                           </packing>
                         </child>
                         <child>
                           <object class="GtkLabel">
                             <property name="visible">True</property>
-                            <property name="can_focus">False</property>
+                            <property name="can-focus">False</property>
                             <property name="halign">end</property>
                             <property name="label" translatable="yes">Bridge Channel Count:</property>
                           </object>
                           <packing>
-                            <property name="left_attach">0</property>
-                            <property name="top_attach">3</property>
+                            <property name="left-attach">0</property>
+                            <property name="top-attach">3</property>
                           </packing>
                         </child>
                         <child>
                           <object class="GtkSpinButton" id="pj_count">
                             <property name="visible">True</property>
-                            <property name="can_focus">True</property>
-                            <property name="max_width_chars">3</property>
+                            <property name="can-focus">True</property>
+                            <property name="max-width-chars">3</property>
                             <property name="text" translatable="yes">1</property>
                             <property name="adjustment">ad_pulse_chan_out</property>
-                            <property name="climb_rate">1</property>
+                            <property name="climb-rate">1</property>
                             <property name="numeric">True</property>
                             <property name="value">1</property>
                             <signal name="value-changed" handler="pj_name_cb" swapped="no"/>
                           </object>
                           <packing>
-                            <property name="left_attach">1</property>
-                            <property name="top_attach">3</property>
+                            <property name="left-attach">1</property>
+                            <property name="top-attach">3</property>
                           </packing>
                         </child>
                         <child>
                           <object class="GtkLabel">
                             <property name="visible">True</property>
-                            <property name="can_focus">False</property>
+                            <property name="can-focus">False</property>
                             <property name="label" translatable="yes">The auto connections are made starting
 at the port listed and continue to port count
 or the last device port, whichever is less.</property>
                           </object>
                           <packing>
-                            <property name="left_attach">2</property>
-                            <property name="top_attach">3</property>
+                            <property name="left-attach">2</property>
+                            <property name="top-attach">3</property>
                             <property name="height">2</property>
                           </packing>
                         </child>
                         <child>
                           <object class="GtkLabel">
                             <property name="visible">True</property>
-                            <property name="can_focus">False</property>
+                            <property name="can-focus">False</property>
                             <property name="halign">end</property>
                             <property name="label" translatable="yes">Auto Connect Port:</property>
                           </object>
                           <packing>
-                            <property name="left_attach">0</property>
-                            <property name="top_attach">4</property>
+                            <property name="left-attach">0</property>
+                            <property name="top-attach">4</property>
                           </packing>
                         </child>
                         <child>
                           <object class="GtkComboBoxText" id="pj_con">
                             <property name="visible">True</property>
-                            <property name="can_focus">False</property>
+                            <property name="can-focus">False</property>
                             <signal name="changed" handler="pj_name_cb" swapped="no"/>
                           </object>
                           <packing>
-                            <property name="left_attach">1</property>
-                            <property name="top_attach">4</property>
+                            <property name="left-attach">1</property>
+                            <property name="top-attach">4</property>
                           </packing>
                         </child>
                         <child>
                           <object class="GtkButton" id="pj_rem">
                             <property name="label" translatable="yes">Remove This Bridge</property>
                             <property name="visible">True</property>
-                            <property name="can_focus">True</property>
-                            <property name="receives_default">True</property>
+                            <property name="can-focus">True</property>
+                            <property name="receives-default">True</property>
                             <signal name="clicked" handler="pj_rem_cb" swapped="no"/>
                           </object>
                           <packing>
-                            <property name="left_attach">2</property>
-                            <property name="top_attach">5</property>
+                            <property name="left-attach">2</property>
+                            <property name="top-attach">5</property>
                           </packing>
                         </child>
                         <child>
                           <object class="GtkComboBoxText" id="pj_add">
                             <property name="visible">True</property>
-                            <property name="can_focus">False</property>
+                            <property name="can-focus">False</property>
                             <property name="active">2</property>
                             <items>
                               <item id="in" translatable="yes">Add Input Bridge</item>
@@ -1802,14 +1877,14 @@ or the last device port, whichever is less.</property>
                             <signal name="changed" handler="pj_add_cb" swapped="no"/>
                           </object>
                           <packing>
-                            <property name="left_attach">0</property>
-                            <property name="top_attach">5</property>
+                            <property name="left-attach">0</property>
+                            <property name="top-attach">5</property>
                           </packing>
                         </child>
                         <child>
                           <object class="GtkComboBoxText" id="pj_direction">
                             <property name="visible">True</property>
-                            <property name="can_focus">False</property>
+                            <property name="can-focus">False</property>
                             <property name="active">1</property>
                             <items>
                               <item id="in" translatable="yes">Input (JACK to Pulse)</item>
@@ -1818,8 +1893,8 @@ or the last device port, whichever is less.</property>
                             <signal name="changed" handler="pj_name_cb" swapped="no"/>
                           </object>
                           <packing>
-                            <property name="left_attach">1</property>
-                            <property name="top_attach">1</property>
+                            <property name="left-attach">1</property>
+                            <property name="top-attach">1</property>
                           </packing>
                         </child>
                         <child>
@@ -1839,25 +1914,25 @@ or the last device port, whichever is less.</property>
                     <child type="tab">
                       <object class="GtkLabel" id="pulse_t_lab">
                         <property name="visible">True</property>
-                        <property name="can_focus">False</property>
+                        <property name="can-focus">False</property>
                         <property name="label" translatable="yes">Pulse Bridging</property>
                       </object>
                       <packing>
                         <property name="position">3</property>
-                        <property name="tab_fill">False</property>
+                        <property name="tab-fill">False</property>
                       </packing>
                     </child>
                     <child>
                       <object class="GtkBox">
                         <property name="visible">True</property>
-                        <property name="can_focus">False</property>
+                        <property name="can-focus">False</property>
                         <property name="halign">center</property>
                         <property name="valign">center</property>
                         <property name="orientation">vertical</property>
                         <child>
                           <object class="GtkLabel">
                             <property name="visible">True</property>
-                            <property name="can_focus">False</property>
+                            <property name="can-focus">False</property>
                             <property name="label" translatable="yes">Most people will not want to change this.
 Use the default value unless you are using a session manager to make connections.
 Otherwise your applications may loose it's connections on reopening.
@@ -1874,12 +1949,12 @@ In general prefer "Ignore" over "Fail" modes.
                         <child>
                           <object class="GtkBox">
                             <property name="visible">True</property>
-                            <property name="can_focus">False</property>
+                            <property name="can-focus">False</property>
                             <property name="halign">center</property>
                             <child>
                               <object class="GtkLabel">
                                 <property name="visible">True</property>
-                                <property name="can_focus">False</property>
+                                <property name="can-focus">False</property>
                                 <property name="halign">end</property>
                                 <property name="label" translatable="yes">JACK Self Connect Mode:</property>
                               </object>
@@ -1892,7 +1967,7 @@ In general prefer "Ignore" over "Fail" modes.
                             <child>
                               <object class="GtkComboBoxText" id="jk_connect_mode">
                                 <property name="visible">True</property>
-                                <property name="can_focus">False</property>
+                                <property name="can-focus">False</property>
                                 <property name="halign">start</property>
                                 <property name="active">0</property>
                                 <items>
@@ -1923,16 +1998,16 @@ In general prefer "Ignore" over "Fail" modes.
                         <child>
                           <object class="GtkBox">
                             <property name="visible">True</property>
-                            <property name="can_focus">False</property>
+                            <property name="can-focus">False</property>
                             <property name="halign">center</property>
                             <property name="homogeneous">True</property>
                             <child>
                               <object class="GtkButton" id="Agordejo_but">
                                 <property name="label" translatable="yes">Start Agordejo</property>
                                 <property name="visible">True</property>
-                                <property name="can_focus">True</property>
-                                <property name="receives_default">True</property>
-                                <property name="tooltip_text" translatable="yes">Agordejo Is the GUI for New Session manager
+                                <property name="can-focus">True</property>
+                                <property name="receives-default">True</property>
+                                <property name="tooltip-text" translatable="yes">Agordejo Is the GUI for New Session manager
 and works with all NSM aware applications</property>
                                 <signal name="clicked" handler="agordejo_cb" swapped="no"/>
                               </object>
@@ -1946,9 +2021,9 @@ and works with all NSM aware applications</property>
                               <object class="GtkButton" id="raysession">
                                 <property name="label" translatable="yes">Start RaySession</property>
                                 <property name="visible">True</property>
-                                <property name="can_focus">True</property>
-                                <property name="receives_default">True</property>
-                                <property name="tooltip_text" translatable="yes">RaySession manager is a replacement for
+                                <property name="can-focus">True</property>
+                                <property name="receives-default">True</property>
+                                <property name="tooltip-text" translatable="yes">RaySession manager is a replacement for
 non-session manager that works with all
 NSM aware applications.</property>
                                 <signal name="clicked" handler="ray_cb" swapped="no"/>
@@ -1963,9 +2038,9 @@ NSM aware applications.</property>
                               <object class="GtkButton" id="nsm_but">
                                 <property name="label" translatable="yes">Start New Session Manager</property>
                                 <property name="visible">True</property>
-                                <property name="can_focus">True</property>
-                                <property name="receives_default">True</property>
-                                <property name="tooltip_text" translatable="yes">The New Session Manger basic GUI ported from NTK</property>
+                                <property name="can-focus">True</property>
+                                <property name="receives-default">True</property>
+                                <property name="tooltip-text" translatable="yes">The New Session Manger basic GUI ported from NTK</property>
                                 <signal name="clicked" handler="nsm_cb" swapped="no"/>
                               </object>
                               <packing>
@@ -1989,85 +2064,87 @@ NSM aware applications.</property>
                     <child type="tab">
                       <object class="GtkLabel" id="session_label">
                         <property name="visible">True</property>
-                        <property name="can_focus">False</property>
+                        <property name="can-focus">False</property>
                         <property name="label" translatable="yes">JACK Session Managment</property>
                       </object>
                       <packing>
                         <property name="position">4</property>
-                        <property name="tab_fill">False</property>
+                        <property name="tab-fill">False</property>
                       </packing>
                     </child>
                     <child>
+                      <!-- n-columns=3 n-rows=3 -->
                       <object class="GtkGrid" id="network_grid">
                         <property name="visible">True</property>
-                        <property name="can_focus">False</property>
+                        <property name="can-focus">False</property>
                         <property name="halign">center</property>
                         <property name="valign">center</property>
                         <child>
+                          <!-- n-columns=4 n-rows=3 -->
                           <object class="GtkGrid" id="midnet_grid">
                             <property name="visible">True</property>
-                            <property name="can_focus">False</property>
+                            <property name="can-focus">False</property>
                             <property name="halign">center</property>
                             <child>
                               <object class="GtkLabel">
                                 <property name="visible">True</property>
-                                <property name="can_focus">False</property>
-                                <property name="tooltip_text" translatable="yes">Zero Channels turns MIDI net working OFF</property>
+                                <property name="can-focus">False</property>
+                                <property name="tooltip-text" translatable="yes">Zero Channels turns MIDI net working OFF</property>
                                 <property name="halign">end</property>
                                 <property name="label" translatable="yes">Channels: </property>
                               </object>
                               <packing>
-                                <property name="left_attach">0</property>
-                                <property name="top_attach">2</property>
+                                <property name="left-attach">0</property>
+                                <property name="top-attach">2</property>
                               </packing>
                             </child>
                             <child>
                               <object class="GtkSpinButton" id="mnet_count">
                                 <property name="visible">True</property>
-                                <property name="can_focus">True</property>
-                                <property name="tooltip_text" translatable="yes">Zero Channels turns MIDI net working OFF</property>
+                                <property name="can-focus">True</property>
+                                <property name="tooltip-text" translatable="yes">Zero Channels turns MIDI net working OFF</property>
                                 <property name="adjustment">qnet_count_value</property>
-                                <property name="snap_to_ticks">True</property>
+                                <property name="snap-to-ticks">True</property>
                                 <property name="numeric">True</property>
-                                <property name="update_policy">if-valid</property>
+                                <property name="update-policy">if-valid</property>
                                 <signal name="value-changed" handler="mnet_count_cb" swapped="no"/>
                               </object>
                               <packing>
-                                <property name="left_attach">1</property>
-                                <property name="top_attach">2</property>
+                                <property name="left-attach">1</property>
+                                <property name="top-attach">2</property>
                               </packing>
                             </child>
                             <child>
                               <object class="GtkLabel" id="mnet_warn">
                                 <property name="visible">True</property>
-                                <property name="can_focus">False</property>
+                                <property name="can-focus">False</property>
                                 <attributes>
                                   <attribute name="foreground" value="#cccc00000000"/>
                                 </attributes>
                               </object>
                               <packing>
-                                <property name="left_attach">0</property>
-                                <property name="top_attach">1</property>
+                                <property name="left-attach">0</property>
+                                <property name="top-attach">1</property>
                                 <property name="width">4</property>
                               </packing>
                             </child>
                             <child>
                               <object class="GtkLabel" id="midinet_title">
                                 <property name="visible">True</property>
-                                <property name="can_focus">False</property>
+                                <property name="can-focus">False</property>
                                 <property name="label" translatable="yes">MIDI networking</property>
                               </object>
                               <packing>
-                                <property name="left_attach">0</property>
-                                <property name="top_attach">0</property>
+                                <property name="left-attach">0</property>
+                                <property name="top-attach">0</property>
                                 <property name="width">4</property>
                               </packing>
                             </child>
                             <child>
                               <object class="GtkComboBoxText" id="mnet_type">
                                 <property name="visible">True</property>
-                                <property name="can_focus">False</property>
-                                <property name="tooltip_text" translatable="yes">Select MIDI ports to be JACK or ALSA ports</property>
+                                <property name="can-focus">False</property>
+                                <property name="tooltip-text" translatable="yes">Select MIDI ports to be JACK or ALSA ports</property>
                                 <property name="active">0</property>
                                 <items>
                                   <item id="jack" translatable="yes">JACK</item>
@@ -2076,85 +2153,86 @@ NSM aware applications.</property>
                                 <signal name="changed" handler="mnet_type_cb" swapped="no"/>
                               </object>
                               <packing>
-                                <property name="left_attach">3</property>
-                                <property name="top_attach">2</property>
+                                <property name="left-attach">3</property>
+                                <property name="top-attach">2</property>
                               </packing>
                             </child>
                             <child>
                               <object class="GtkSeparator">
                                 <property name="visible">True</property>
-                                <property name="can_focus">False</property>
-                                <property name="margin_left">6</property>
-                                <property name="margin_right">6</property>
+                                <property name="can-focus">False</property>
+                                <property name="margin-left">6</property>
+                                <property name="margin-right">6</property>
                                 <property name="orientation">vertical</property>
                               </object>
                               <packing>
-                                <property name="left_attach">2</property>
-                                <property name="top_attach">2</property>
+                                <property name="left-attach">2</property>
+                                <property name="top-attach">2</property>
                               </packing>
                             </child>
                           </object>
                           <packing>
-                            <property name="left_attach">0</property>
-                            <property name="top_attach">2</property>
+                            <property name="left-attach">0</property>
+                            <property name="top-attach">2</property>
                             <property name="width">3</property>
                           </packing>
                         </child>
                         <child>
+                          <!-- n-columns=4 n-rows=6 -->
                           <object class="GtkGrid" id="netaudio_grid">
                             <property name="visible">True</property>
-                            <property name="can_focus">False</property>
+                            <property name="can-focus">False</property>
                             <property name="halign">center</property>
                             <child>
                               <object class="GtkLabel" id="netaud_title">
                                 <property name="visible">True</property>
-                                <property name="can_focus">False</property>
+                                <property name="can-focus">False</property>
                                 <property name="label" translatable="yes">JACK Network Audio Bridge</property>
                               </object>
                               <packing>
-                                <property name="left_attach">1</property>
-                                <property name="top_attach">0</property>
+                                <property name="left-attach">1</property>
+                                <property name="top-attach">0</property>
                               </packing>
                             </child>
                             <child>
                               <object class="GtkLabel">
                                 <property name="visible">True</property>
-                                <property name="can_focus">False</property>
+                                <property name="can-focus">False</property>
                                 <property name="halign">end</property>
                                 <property name="label" translatable="yes">Bridge to Edit: </property>
                               </object>
                               <packing>
-                                <property name="left_attach">0</property>
-                                <property name="top_attach">1</property>
+                                <property name="left-attach">0</property>
+                                <property name="top-attach">1</property>
                               </packing>
                             </child>
                             <child>
                               <object class="GtkComboBoxText" id="znet_bridge">
                                 <property name="visible">True</property>
-                                <property name="can_focus">False</property>
+                                <property name="can-focus">False</property>
                                 <signal name="changed" handler="znet_bridge_cb" swapped="no"/>
                               </object>
                               <packing>
-                                <property name="left_attach">1</property>
-                                <property name="top_attach">1</property>
+                                <property name="left-attach">1</property>
+                                <property name="top-attach">1</property>
                               </packing>
                             </child>
                             <child>
                               <object class="GtkLabel">
                                 <property name="visible">True</property>
-                                <property name="can_focus">False</property>
+                                <property name="can-focus">False</property>
                                 <property name="halign">end</property>
                                 <property name="label" translatable="yes">Audio Direction: </property>
                               </object>
                               <packing>
-                                <property name="left_attach">0</property>
-                                <property name="top_attach">3</property>
+                                <property name="left-attach">0</property>
+                                <property name="top-attach">3</property>
                               </packing>
                             </child>
                             <child>
                               <object class="GtkComboBoxText" id="znet_direction">
                                 <property name="visible">True</property>
-                                <property name="can_focus">False</property>
+                                <property name="can-focus">False</property>
                                 <property name="active">0</property>
                                 <items>
                                   <item id="out" translatable="yes">Playback Audio TO another Computer</item>
@@ -2162,61 +2240,61 @@ NSM aware applications.</property>
                                 </items>
                               </object>
                               <packing>
-                                <property name="left_attach">1</property>
-                                <property name="top_attach">3</property>
+                                <property name="left-attach">1</property>
+                                <property name="top-attach">3</property>
                               </packing>
                             </child>
                             <child>
                               <object class="GtkLabel">
                                 <property name="visible">True</property>
-                                <property name="can_focus">False</property>
+                                <property name="can-focus">False</property>
                                 <property name="halign">end</property>
                                 <property name="label" translatable="yes">Channel Count: </property>
                               </object>
                               <packing>
-                                <property name="left_attach">0</property>
-                                <property name="top_attach">4</property>
+                                <property name="left-attach">0</property>
+                                <property name="top-attach">4</property>
                               </packing>
                             </child>
                             <child>
                               <object class="GtkSpinButton" id="znet_count">
                                 <property name="visible">True</property>
-                                <property name="can_focus">True</property>
+                                <property name="can-focus">True</property>
                                 <property name="adjustment">zn_cnt</property>
                                 <signal name="value-changed" handler="znet_changed_cb" swapped="no"/>
                               </object>
                               <packing>
-                                <property name="left_attach">1</property>
-                                <property name="top_attach">4</property>
+                                <property name="left-attach">1</property>
+                                <property name="top-attach">4</property>
                               </packing>
                             </child>
                             <child>
                               <object class="GtkLabel">
                                 <property name="visible">True</property>
-                                <property name="can_focus">False</property>
+                                <property name="can-focus">False</property>
                                 <property name="halign">end</property>
                                 <property name="label" translatable="yes">Bridge Name: </property>
                               </object>
                               <packing>
-                                <property name="left_attach">0</property>
-                                <property name="top_attach">2</property>
+                                <property name="left-attach">0</property>
+                                <property name="top-attach">2</property>
                               </packing>
                             </child>
                             <child>
                               <object class="GtkEntry" id="znet_name">
                                 <property name="visible">True</property>
-                                <property name="can_focus">True</property>
+                                <property name="can-focus">True</property>
                                 <signal name="activate" handler="znet_changed_cb" swapped="no"/>
                               </object>
                               <packing>
-                                <property name="left_attach">1</property>
-                                <property name="top_attach">2</property>
+                                <property name="left-attach">1</property>
+                                <property name="top-attach">2</property>
                               </packing>
                             </child>
                             <child>
                               <object class="GtkComboBoxText" id="znet_bits">
                                 <property name="visible">True</property>
-                                <property name="can_focus">False</property>
+                                <property name="can-focus">False</property>
                                 <property name="active">2</property>
                                 <items>
                                   <item id="16bit" translatable="yes">16bit integer</item>
@@ -2227,39 +2305,39 @@ NSM aware applications.</property>
                                 <signal name="changed" handler="znet_changed_cb" swapped="no"/>
                               </object>
                               <packing>
-                                <property name="left_attach">3</property>
-                                <property name="top_attach">3</property>
+                                <property name="left-attach">3</property>
+                                <property name="top-attach">3</property>
                               </packing>
                             </child>
                             <child>
                               <object class="GtkLabel">
                                 <property name="visible">True</property>
-                                <property name="can_focus">False</property>
+                                <property name="can-focus">False</property>
                                 <property name="halign">end</property>
                                 <property name="label" translatable="yes">Sender Bit Depth: </property>
                               </object>
                               <packing>
-                                <property name="left_attach">2</property>
-                                <property name="top_attach">3</property>
+                                <property name="left-attach">2</property>
+                                <property name="top-attach">3</property>
                               </packing>
                             </child>
                             <child>
                               <object class="GtkButton" id="znet_rem">
                                 <property name="label" translatable="yes">Remove this Bridge</property>
                                 <property name="visible">True</property>
-                                <property name="can_focus">True</property>
-                                <property name="receives_default">True</property>
+                                <property name="can-focus">True</property>
+                                <property name="receives-default">True</property>
                                 <signal name="clicked" handler="znet_rem_cb" swapped="no"/>
                               </object>
                               <packing>
-                                <property name="left_attach">3</property>
-                                <property name="top_attach">5</property>
+                                <property name="left-attach">3</property>
+                                <property name="top-attach">5</property>
                               </packing>
                             </child>
                             <child>
                               <object class="GtkComboBoxText" id="znet_add">
                                 <property name="visible">True</property>
-                                <property name="can_focus">False</property>
+                                <property name="can-focus">False</property>
                                 <property name="active">2</property>
                                 <items>
                                   <item id="out" translatable="yes">Add Net Send</item>
@@ -2269,96 +2347,96 @@ NSM aware applications.</property>
                                 <signal name="changed" handler="znet_add_cb" swapped="no"/>
                               </object>
                               <packing>
-                                <property name="left_attach">0</property>
-                                <property name="top_attach">5</property>
+                                <property name="left-attach">0</property>
+                                <property name="top-attach">5</property>
                               </packing>
                             </child>
                             <child>
                               <object class="GtkLabel">
                                 <property name="visible">True</property>
-                                <property name="can_focus">False</property>
+                                <property name="can-focus">False</property>
                                 <property name="halign">end</property>
                                 <property name="label" translatable="yes">Bridge Receiver IP: </property>
                               </object>
                               <packing>
-                                <property name="left_attach">2</property>
-                                <property name="top_attach">1</property>
+                                <property name="left-attach">2</property>
+                                <property name="top-attach">1</property>
                               </packing>
                             </child>
                             <child>
                               <object class="GtkEntry" id="znet_ip">
                                 <property name="visible">True</property>
-                                <property name="can_focus">True</property>
+                                <property name="can-focus">True</property>
                                 <signal name="activate" handler="znet_changed_cb" swapped="no"/>
                               </object>
                               <packing>
-                                <property name="left_attach">3</property>
-                                <property name="top_attach">1</property>
+                                <property name="left-attach">3</property>
+                                <property name="top-attach">1</property>
                               </packing>
                             </child>
                             <child>
                               <object class="GtkLabel">
                                 <property name="visible">True</property>
-                                <property name="can_focus">False</property>
+                                <property name="can-focus">False</property>
                                 <property name="halign">end</property>
                                 <property name="label" translatable="yes">Bridge Receiver Port: </property>
                               </object>
                               <packing>
-                                <property name="left_attach">2</property>
-                                <property name="top_attach">2</property>
+                                <property name="left-attach">2</property>
+                                <property name="top-attach">2</property>
                               </packing>
                             </child>
                             <child>
                               <object class="GtkSpinButton" id="znet_port">
                                 <property name="visible">True</property>
-                                <property name="can_focus">True</property>
+                                <property name="can-focus">True</property>
                                 <property name="adjustment">zn_port</property>
                                 <signal name="value-changed" handler="znet_changed_cb" swapped="no"/>
                               </object>
                               <packing>
-                                <property name="left_attach">3</property>
-                                <property name="top_attach">2</property>
+                                <property name="left-attach">3</property>
+                                <property name="top-attach">2</property>
                               </packing>
                             </child>
                             <child>
                               <object class="GtkLabel" id="znet_warn">
                                 <property name="visible">True</property>
-                                <property name="can_focus">False</property>
+                                <property name="can-focus">False</property>
                                 <property name="label" translatable="yes">label</property>
                                 <attributes>
                                   <attribute name="foreground" value="#efef29292929"/>
                                 </attributes>
                               </object>
                               <packing>
-                                <property name="left_attach">1</property>
-                                <property name="top_attach">5</property>
+                                <property name="left-attach">1</property>
+                                <property name="top-attach">5</property>
                                 <property name="width">2</property>
                               </packing>
                             </child>
                             <child>
                               <object class="GtkLabel">
                                 <property name="visible">True</property>
-                                <property name="can_focus">False</property>
+                                <property name="can-focus">False</property>
                                 <property name="halign">end</property>
                                 <property name="label" translatable="yes">Receiver Latency (ms): </property>
                               </object>
                               <packing>
-                                <property name="left_attach">2</property>
-                                <property name="top_attach">4</property>
+                                <property name="left-attach">2</property>
+                                <property name="top-attach">4</property>
                               </packing>
                             </child>
                             <child>
                               <object class="GtkSpinButton" id="znet_late">
                                 <property name="visible">True</property>
-                                <property name="can_focus">True</property>
+                                <property name="can-focus">True</property>
                                 <property name="adjustment">zn_late</property>
                                 <property name="numeric">True</property>
                                 <property name="value">10</property>
                                 <signal name="value-changed" handler="znet_changed_cb" swapped="no"/>
                               </object>
                               <packing>
-                                <property name="left_attach">3</property>
-                                <property name="top_attach">4</property>
+                                <property name="left-attach">3</property>
+                                <property name="top-attach">4</property>
                               </packing>
                             </child>
                             <child>
@@ -2372,21 +2450,21 @@ NSM aware applications.</property>
                             </child>
                           </object>
                           <packing>
-                            <property name="left_attach">0</property>
-                            <property name="top_attach">0</property>
+                            <property name="left-attach">0</property>
+                            <property name="top-attach">0</property>
                             <property name="width">3</property>
                           </packing>
                         </child>
                         <child>
                           <object class="GtkSeparator">
                             <property name="visible">True</property>
-                            <property name="can_focus">False</property>
-                            <property name="margin_top">12</property>
-                            <property name="margin_bottom">8</property>
+                            <property name="can-focus">False</property>
+                            <property name="margin-top">12</property>
+                            <property name="margin-bottom">8</property>
                           </object>
                           <packing>
-                            <property name="left_attach">0</property>
-                            <property name="top_attach">1</property>
+                            <property name="left-attach">0</property>
+                            <property name="top-attach">1</property>
                             <property name="width">3</property>
                           </packing>
                         </child>
@@ -2398,12 +2476,12 @@ NSM aware applications.</property>
                     <child type="tab">
                       <object class="GtkLabel">
                         <property name="visible">True</property>
-                        <property name="can_focus">False</property>
+                        <property name="can-focus">False</property>
                         <property name="label" translatable="yes">Network</property>
                       </object>
                       <packing>
                         <property name="position">5</property>
-                        <property name="tab_fill">False</property>
+                        <property name="tab-fill">False</property>
                       </packing>
                     </child>
                   </object>
@@ -2443,37 +2521,34 @@ NSM aware applications.</property>
     </child>
   </object>
   <object class="GtkMessageDialog" id="message_dialog_changes_info">
-    <property name="can_focus">False</property>
-    <property name="margin_left">2</property>
-    <property name="margin_right">2</property>
-    <property name="margin_top">2</property>
-    <property name="margin_bottom">2</property>
+    <property name="can-focus">False</property>
+    <property name="margin-left">2</property>
+    <property name="margin-right">2</property>
+    <property name="margin-top">2</property>
+    <property name="margin-bottom">2</property>
     <property name="title" translatable="yes">Info</property>
     <property name="resizable">False</property>
-    <property name="window_position">center-always</property>
-    <property name="default_width">400</property>
-    <property name="default_height">115</property>
-    <property name="destroy_with_parent">True</property>
-    <property name="type_hint">dialog</property>
+    <property name="window-position">center-always</property>
+    <property name="default-width">400</property>
+    <property name="default-height">115</property>
+    <property name="destroy-with-parent">True</property>
+    <property name="type-hint">dialog</property>
     <property name="gravity">center</property>
-    <property name="transient_for">window_main</property>
-    <property name="attached_to">window_main</property>
-    <property name="message_type">warning</property>
+    <property name="transient-for">window_main</property>
+    <property name="attached-to">window_main</property>
+    <property name="message-type">warning</property>
     <property name="text" translatable="yes">For changes to take effect, you need to do a reboot.</property>
-    <child type="titlebar">
-      <placeholder/>
-    </child>
     <child internal-child="vbox">
       <object class="GtkBox" id="messagedialog-vbox">
-        <property name="can_focus">False</property>
+        <property name="can-focus">False</property>
         <property name="orientation">vertical</property>
         <property name="spacing">2</property>
         <child internal-child="action_area">
           <object class="GtkButtonBox" id="messagedialog-action_area">
-            <property name="can_focus">False</property>
-            <property name="margin_bottom">10</property>
+            <property name="can-focus">False</property>
+            <property name="margin-bottom">10</property>
             <property name="homogeneous">True</property>
-            <property name="layout_style">end</property>
+            <property name="layout-style">end</property>
             <child>
               <placeholder/>
             </child>
@@ -2481,8 +2556,8 @@ NSM aware applications.</property>
               <object class="GtkButton" id="button_msg_ok">
                 <property name="label" translatable="yes">Ok</property>
                 <property name="visible">True</property>
-                <property name="can_focus">True</property>
-                <property name="receives_default">True</property>
+                <property name="can-focus">True</property>
+                <property name="receives-default">True</property>
                 <signal name="clicked" handler="on_button_msg_ok_clicked" swapped="no"/>
               </object>
               <packing>
@@ -2500,40 +2575,40 @@ NSM aware applications.</property>
         </child>
       </object>
     </child>
-  </object>
-  <object class="GtkMessageDialog" id="message_dialog_rt_info">
-    <property name="can_focus">False</property>
-    <property name="margin_left">2</property>
-    <property name="margin_right">2</property>
-    <property name="margin_top">2</property>
-    <property name="margin_bottom">2</property>
-    <property name="title" translatable="yes">RT info</property>
-    <property name="resizable">False</property>
-    <property name="window_position">center-always</property>
-    <property name="default_width">400</property>
-    <property name="default_height">115</property>
-    <property name="type_hint">dialog</property>
-    <property name="skip_taskbar_hint">True</property>
-    <property name="skip_pager_hint">True</property>
-    <property name="gravity">center</property>
-    <property name="transient_for">window_main</property>
-    <property name="attached_to">window_main</property>
-    <property name="message_type">warning</property>
-    <property name="text" translatable="yes">It seems you have made settings previously and not done a fresh login, or you already have realtime settings in effect, but you are not using the file supplied with the package jackd.
-If you want to use this application for administering realtime settings, please remove any custom settings and reboot your computer.</property>
     <child type="titlebar">
       <placeholder/>
     </child>
+  </object>
+  <object class="GtkMessageDialog" id="message_dialog_rt_info">
+    <property name="can-focus">False</property>
+    <property name="margin-left">2</property>
+    <property name="margin-right">2</property>
+    <property name="margin-top">2</property>
+    <property name="margin-bottom">2</property>
+    <property name="title" translatable="yes">RT info</property>
+    <property name="resizable">False</property>
+    <property name="window-position">center-always</property>
+    <property name="default-width">400</property>
+    <property name="default-height">115</property>
+    <property name="type-hint">dialog</property>
+    <property name="skip-taskbar-hint">True</property>
+    <property name="skip-pager-hint">True</property>
+    <property name="gravity">center</property>
+    <property name="transient-for">window_main</property>
+    <property name="attached-to">window_main</property>
+    <property name="message-type">warning</property>
+    <property name="text" translatable="yes">It seems you have made settings previously and not done a fresh login, or you already have realtime settings in effect, but you are not using the file supplied with the package jackd.
+If you want to use this application for administering realtime settings, please remove any custom settings and reboot your computer.</property>
     <child internal-child="vbox">
       <object class="GtkBox" id="messagedialog-vbox3">
-        <property name="can_focus">False</property>
+        <property name="can-focus">False</property>
         <property name="orientation">vertical</property>
         <property name="spacing">2</property>
         <child internal-child="action_area">
           <object class="GtkButtonBox" id="messagedialog-action_area3">
-            <property name="can_focus">False</property>
+            <property name="can-focus">False</property>
             <property name="homogeneous">True</property>
-            <property name="layout_style">end</property>
+            <property name="layout-style">end</property>
             <child>
               <placeholder/>
             </child>
@@ -2541,8 +2616,8 @@ If you want to use this application for administering realtime settings, please 
               <object class="GtkButton" id="button_rt_info_ok">
                 <property name="label" translatable="yes">Ok</property>
                 <property name="visible">True</property>
-                <property name="can_focus">True</property>
-                <property name="receives_default">True</property>
+                <property name="can-focus">True</property>
+                <property name="receives-default">True</property>
                 <signal name="clicked" handler="on_button_rt_info_ok_clicked" swapped="no"/>
               </object>
               <packing>
@@ -2559,6 +2634,9 @@ If you want to use this application for administering realtime settings, please 
           </packing>
         </child>
       </object>
+    </child>
+    <child type="titlebar">
+      <placeholder/>
     </child>
   </object>
 </interface>
