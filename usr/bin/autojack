@@ -16,7 +16,7 @@
 
 import alsaaudio
 import copy
-import dbus
+import dbus, dbus.service, dbus.exceptions
 import dbus.mainloop.glib
 import glob
 import jack
@@ -42,6 +42,21 @@ name_base = 'org.jackaudio'
 control_interface_name = name_base + '.JackControl'
 configure_interface_name = name_base + '.Configure'
 service_name = name_base + '.service'
+
+class sendbus(dbus.service.Object):
+    def __init__(self):
+        dbus.service.Object.__init__(self, dbus.SessionBus(), "/")
+
+    @dbus.service.signal(dbus_interface="org.studio.control.command", signature="s")
+    def signal(self, sg):
+        logging.log(7, f"sent signal {sg}")
+        print(f"sent it {sg}")
+        pass
+
+    @dbus.service.signal(dbus_interface="org.studio.control.state", signature="ss")
+    def state(self, vr, st):
+        logging.log(7, f"sent state ver: {vr} status: {st}")
+        pass
 
 
 def get_dev_info(x):
@@ -912,13 +927,12 @@ def jackdied(state, why):
 def jack_stat(status):
     global config_path
     global last_status
-    global ping_string
     last_status = status
     statfile =  expanduser(f"{config_path}/autojack.state")
     with open(statfile, "w") as st_file:
         st_file.write(f"{status}\n")
-    subprocess.run(["/usr/bin/dbus-send", "--type=signal", "/",
-                    f"org.studio.control.event.{ping_string}"], shell=False)
+    sendbs.state(version, status)
+
 
 def jack_con_det(a, b, connect):
     ''' a port has had a connection check if one of the ports is monitor L/R
@@ -1156,6 +1170,7 @@ def msg_cb_new(*args, **kwargs):
     or becomes jack's master device'''
     global last_master
     global conf_db
+    global version
 
     if not conf_db['jack']['on']:
         # then we don't care
@@ -1176,8 +1191,7 @@ def msg_cb_new(*args, **kwargs):
                 # check if it was not in db before or "card number" has changed
                 if not dev_name in old_devs_db or dev_db['number'] != old_devs_db[dev_name]['number']:
                     # tell gui devicelist has changed so it can up date device dropdowns
-                    subprocess.run(["/usr/bin/dbus-send", "--type=signal", "/", "org.studio.control.event.usb_signal"],
-                                   shell=False)
+                    sendbs.state(version, 'usb')
                     logging.debug(f"USB device {dev_name} has been plugged in")
 
                     for subn in dev_db['sub']:
@@ -1226,8 +1240,7 @@ def msg_cb_removed(*args, **kwargs):
                 # check if it was not in db before or "card number" has changed
                 if dev_name in old_devs_db or dev_db['number'] != old_devs_db[dev_name]['number']:
                     # tell gui devicelist has changed so it can up date device dropdowns
-                    subprocess.run(["/usr/bin/dbus-send", "--type=signal", "/", "org.studio.control.event.usb_signal"],
-                                   shell=False)
+                    sendbs.state(version, 'usb')
                     logging.debug(f"USB device {dev_name} has been unplugged")
 
                     for subn in dev_db['sub']:
@@ -1418,24 +1431,6 @@ def kill_slave(ldev):
             logging.debug(f"{ldev} no Capture bridge found")
 
 
-def ses_cb_quit(*args, **kwargs):
-    ''' dbus call back when quit signal caught. This is for use in
-    testing and the GUI never sends this. '''
-    logging.warning("Got quit signal.")
-    we_die()
-
-def handler(signum, frame):
-    ''' a handler for system signals that may be sent by the system.
-        we want to trap sigint, sigkill and sigterm and do the same as
-        above. '''
-    logging.warning(f"Got signal number: {str(signum)} - Dying.")
-    we_die()
-
-def ses_cb_stop(*args, **kwargs):
-    ''' dbus call back when stop signal caught. This stops jack. '''
-    logging.info("Got stop signal.")
-    config_start()
-
 def we_die():
     global lock_file
     global midiproc
@@ -1466,27 +1461,6 @@ def we_die():
             if new_pid == old_pid:
                 os.remove(lock_file)
     os._exit(0)
-
-
-def ses_cb_start(*args, **kwargs):
-    ''' dbus call back when (re)start signal caught'''
-    logging.info("Got start signal.")
-    config_start()
-
-
-def ses_cb_config(*args, **kwargs):
-    ''' dbus call back when config signal caught '''
-    logging.info("Got config signal.")
-    reconfig()
-
-
-def ses_cb_ping(*args, **kwargs):
-    ''' dbus call back when config signal caught '''
-    global ping_string
-    logging.info("Got ping signal.")
-    time.sleep(3)
-    subprocess.run(["/usr/bin/dbus-send", "--type=signal", "/", f"org.studio.control.event.{ping_string}"],
-                   shell=False)
 
 
 def phones_switch(plugged):
@@ -1616,18 +1590,6 @@ def phones_check():
         logging.debug(f"headphone detect string: {cp.stdout.strip()}")
 
 
-def ses_cb_phones(*args, **kwargs):
-    ''' User has manually asked to toggle phones (un)plugged'''
-    global phones
-    if phones:
-        phones_switch(False)
-        phones = False
-    else:
-        phones_switch(True)
-        phones = True
-    logging.debug(f"Manual phones switch to: {str(phones)}")
-
-
 def phones_plug(*args, **kwargs):
     ''' callback means headphones have been plugged in lets make sure
         phones are unmuted and have a level higher than -inf.
@@ -1669,6 +1631,55 @@ def jack_info(mesg):
     logging.info(f"Jack Message: {mesg}")
 
 
+def ses_cb_command(*args, **kwargs):
+    ''' Generic signal receiver '''
+    global ping_string
+    global version
+    global last_status
+    global phones
+    rec_string = f"args: {str(args[0])}"
+    logging.debug(f"got signal - {rec_string}")
+    if 'start' in args:
+        logging.info("Got start signal.")
+        config_start()
+        return
+    if 'config' in args:
+        logging.info("Got config signal.")
+        reconfig()
+        return
+    if 'stop' in args:
+        logging.info("Got stop signal.")
+        config_start()
+        return
+    if 'ping' in args:
+        logging.info("Got ping signal.")
+        time.sleep(3)
+        sendbs.state(version, last_status)
+        return
+    if 'quit' in args:
+        logging.warning("Got quit signal.")
+        we_die()
+        return
+    if 'phones' in args:
+        logging.info("Got phones signal.")
+        if phones:
+            phones_switch(False)
+            phones = False
+        else:
+            phones_switch(True)
+            phones = True
+        logging.debug(f"Manual phones switch to: {str(phones)}")
+        return
+
+
+def handler(signum, frame):
+    ''' a handler for system signals that may be sent by the system.
+        we want to trap sigint, sigkill and sigterm and do the same as
+        above. '''
+    logging.warning(f"Got signal number: {str(signum)} - Dying.")
+    we_die()
+
+
 def main():
     ''' Autojack runs at session start and manages audio for the session.
     this is the daemon for studio-controls'''
@@ -1683,8 +1694,8 @@ def main():
     global con_dirty
     global lock_file
     global config_path
-    global ping_string
-    ping_string = "V3_5_signal"
+    global sendbs
+    global version
     phones = False
     jack_count = 0
     jack_client = 0
@@ -1696,6 +1707,23 @@ def main():
     print("starting up")
     install_path = os.path.abspath(f"{os.path.dirname(sys.argv[0])}/..")
     print(f"install path: {install_path}")
+    version = ""
+    vfile = f"{install_path}/share/studio-controls/version"
+    if os.path.isfile(vfile):
+        with open(vfile, "r") as version_file:
+            for line in version_file:
+                version = line.strip()
+    print(f"version: {version}")
+
+    # set up logging
+    logpath = expanduser("~/.log")
+    # make sure the logfile directory exists
+    if not os.path.exists(logpath):
+        os.makedirs(logpath)
+    logfile = expanduser("~/.log/autojack.log")
+    logging.basicConfig(filename=logfile, format='%(asctime)s - AutoJack - %(levelname)s - %(message)s', level=logging.DEBUG)
+    logging.info('Autojack started: logging started')
+    print("logging started")
 
     # Try and kill any other running instance
     config_path = expanduser("~/.config/autojack")
@@ -1704,8 +1732,9 @@ def main():
     lock_file = f"{config_path}/autojack.lock"
     # if os.path.isfile(lock_file): # this can be added in when 20.04 is EOL
     print("sending quit to any old autojack")
-    subprocess.run(["/usr/bin/dbus-send", "--type=signal", "/",
-                "org.studio.control.event.quit_signal"], shell=False)
+    dbus.mainloop.glib.DBusGMainLoop(set_as_default=True)
+    sendbs = sendbus()
+    sendbs.signal('quit')
     time.sleep(3)
     new_pid = str(os.getpid())
     old_pid = new_pid
@@ -1726,22 +1755,12 @@ def main():
         lk_file.write(new_pid)
         print("Lock file created")
 
-    # set up logging
-    logpath = expanduser("~/.log")
-    # make sure the logfile directory exists
-    if not os.path.exists(logpath):
-        os.makedirs(logpath)
-    logfile = expanduser("~/.log/autojack.log")
-    logging.basicConfig(filename=logfile, format='%(asctime)s - AutoJack - %(levelname)s - %(message)s', level=logging.DEBUG)
-    logging.info('Autojack started: logging started')
-    print("logging started")
 
     cp = subprocess.run([f"{install_path}/bin/convert-studio-controls"],
         universal_newlines=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=False)
     logging.debug(f"check config file: {cp.stdout.strip()}")
 
     phones_check()
-    dbus.mainloop.glib.DBusGMainLoop(set_as_default=True)
     signal.signal(signal.SIGHUP, handler)
     signal.signal(signal.SIGINT, handler)
     signal.signal(signal.SIGQUIT, handler)
@@ -1767,22 +1786,12 @@ def main():
     system_bus.add_signal_receiver(phones_unplug, dbus_interface='org.studio.control.event',
                                 signal_name='unplug_signal')
     user_bus = dbus.SessionBus()
-    user_bus.add_signal_receiver(ses_cb_start, dbus_interface='org.studio.control.event',
-                                 signal_name='start_signal')
-    user_bus.add_signal_receiver(ses_cb_stop, dbus_interface='org.studio.control.event',
-                                 signal_name='stop_signal')
-    user_bus.add_signal_receiver(ses_cb_config, dbus_interface='org.studio.control.event',
-                                 signal_name='config_signal')
-    user_bus.add_signal_receiver(ses_cb_ping, dbus_interface='org.studio.control.event',
-                                 signal_name='ping_signal')
-    user_bus.add_signal_receiver(ses_cb_quit, dbus_interface='org.studio.control.event',
-                                 signal_name='quit_signal')
-    user_bus.add_signal_receiver(ses_cb_phones, dbus_interface='org.studio.control.event',
-                                 signal_name='phones_signal')
+    user_bus.add_signal_receiver(ses_cb_command, dbus_interface='org.studio.control.command',
+                                 signal_name='signal')
 
-    subprocess.run(["/usr/bin/dbus-send", "--type=signal", "/",
-                    "org.studio.control.event.start_signal"], shell=False)
-    jack_stat("undetermined")
+    sendbs.signal('start')
+
+    jack_stat("Undetermined")
 
     timeout_id = GLib.timeout_add(500, check_jack_status, None)
 
