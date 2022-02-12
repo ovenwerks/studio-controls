@@ -700,19 +700,21 @@ class StudioControls:
         global version
         global autojack
         global jackstate
+        global jackstring
         global newusb
-        #print(version)
         if version == args[1]:
             if not autojack:
                 autojack = True
                 print("autojack is running")
-            jackstate = True
         else:
             print(f"Autojack version is {args[1]} will be restarted on any command")
 
         if args[2] == 'usb':
             newusb = True
             print("autojack sees usb change")
+        else:
+            jackstring = args[2]
+            jackstate = True
         print(f"version: {args[1]} status:{args[2]}")
 
 
@@ -733,10 +735,7 @@ class StudioControls:
         global jackstring
 
         if jackstate:
-            stat_file = expanduser(f"{self.config_path}/autojack.state")
-            with open(stat_file, "r") as st_file:
-                jackstring = st_file.readline().rstrip()
-                self.jack_state.set_text(f" {jackstring}")
+            self.jack_state.set_text(f" {jackstring}")
             if jack_alive:
                 if jackstring in ["Stopping...", "Stopped", "Config Pulse", "Configuring...", "Starting...", "Start Failed"]:
                     jack_died = True

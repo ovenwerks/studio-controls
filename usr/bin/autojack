@@ -928,9 +928,6 @@ def jack_stat(status):
     global config_path
     global last_status
     last_status = status
-    statfile =  expanduser(f"{config_path}/autojack.state")
-    with open(statfile, "w") as st_file:
-        st_file.write(f"{status}\n")
     sendbs.state(version, status)
 
 

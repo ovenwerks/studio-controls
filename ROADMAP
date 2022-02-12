@@ -8,8 +8,6 @@ Fixes:
 
 TODO:
     - detect if pulse is pw
-    - Check where programs we run are located, they may not be in /usr/bin/ issue 74
-        (use shutil.which("python") where python is replaced by the search term)
     - 
 
 Future Features:

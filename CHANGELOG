@@ -10,6 +10,7 @@ studio-controls version 2.2.9
  - use path for spawning subprocesses
  - Use either pavucontrol or pavucontrol-qt
  - Use python dbus instead of dbus-send
+ - Change autojack status to use dbus parameter
 
  [ Erich Eickmeyer ]
  - Change icon and .desktop filenames to avoid confusion with Android Studio
