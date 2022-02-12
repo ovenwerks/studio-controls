@@ -797,25 +797,29 @@ def config_start():
     pc = shutil.which("pactl")
     if pc:
         if len(conf_db['pulse']['inputs']) or len(conf_db['pulse']['outputs']):
-            cp = subprocess.run(["/usr/bin/pactl", "unload-module", "module-udev-detect"],
+            cp = subprocess.run([pc, "unload-module", "module-udev-detect"],
                                 universal_newlines=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=False)
             logging.debug(f"remove module-udev-detect: {cp.stdout.strip()}")
-            cp = subprocess.run(["/usr/bin/pactl", "unload-module", "module-alsa-card"],
+            time.sleep(1)
+            cp = subprocess.run([pc, "unload-module", "module-alsa-card"],
                                 universal_newlines=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=False)
             logging.debug(f"remove module-alsa-card: {cp.stdout.strip()}")
+            time.sleep(1)
 
         for bridge in conf_db['pulse']['inputs']:
             this_count = str(conf_db['pulse']['inputs'][bridge]['count'])
-            cp = subprocess.run(["/usr/bin/pactl", "load-module", "module-jack-source",
+            cp = subprocess.run([pc, "load-module", "module-jack-source",
                     f"client_name={bridge}", f"channels={this_count}", "connect=no"],
                     universal_newlines=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=False)
             logging.debug(f"Pulseaudio: {cp.stdout.strip()}")
+            time.sleep(1)
         for bridge in conf_db['pulse']['outputs']:
             this_count = str(conf_db['pulse']['outputs'][bridge]['count'])
-            cp = subprocess.run(["/usr/bin/pactl", "load-module", "module-jack-sink",
+            cp = subprocess.run([pc, "load-module", "module-jack-sink",
                     f"client_name={bridge}", f"channels={this_count}", "connect=no"],
                     universal_newlines=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=False)
             logging.debug(f"Pulseaudio: {cp.stdout.strip()}")
+            time.sleep(1)
     else:
         logging.warning("pactl is missing... unable to control pulseaudio\n configure failed")
 
