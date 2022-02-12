@@ -11,6 +11,7 @@ studio-controls version 2.2.9
  - Use either pavucontrol or pavucontrol-qt
  - Use python dbus instead of dbus-send
  - Change autojack status to use dbus parameter
+ - Don't accept USB plug change if device list has not changed
 
  [ Erich Eickmeyer ]
  - Change icon and .desktop filenames to avoid confusion with Android Studio

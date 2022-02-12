@@ -1168,6 +1168,7 @@ def msg_cb_new(*args, **kwargs):
     global last_master
     global conf_db
     global version
+    global cards_f
 
     if not conf_db['jack']['on']:
         # then we don't care
@@ -1175,10 +1176,18 @@ def msg_cb_new(*args, **kwargs):
 
     # let things settle
     time.sleep(3)
-    old_devs_db = copy.deepcopy(conf_db['devices'])
 
     if args[0].find("sound-card") >= 0:
+        # check to see if any new cards
+        with open('/proc/asound/cards', "r") as card_file:
+            my_cards_f = card_file.read()
+            if my_cards_f == cards_f:
+                logging.debug("card file not changed, skip")
+                return
+            else:
+                cards_f = my_cards_f
         # remake database
+        old_devs_db = copy.deepcopy(conf_db['devices'])
         import_device_array()
         dev_db = {}
         for dev_name in conf_db['devices']:
@@ -1218,6 +1227,7 @@ def msg_cb_removed(*args, **kwargs):
     global last_master
     global conf_db
     global jack_died
+    global cards_f
 
     if not conf_db['jack']['on']:
         # then we don't care
@@ -1225,9 +1235,18 @@ def msg_cb_removed(*args, **kwargs):
 
     # let things settle
     time.sleep(.5)
-    old_devs_db = copy.deepcopy(conf_db['devices'])
     if args[0].find("sound-card") >= 0:
+        # check to see if any cards have vanished
+        with open('/proc/asound/cards', "r") as card_file:
+            my_cards_f = card_file.read()
+            if my_cards_f == cards_f:
+                logging.debug("card file not changed, skip")
+                return
+            else:
+                cards_f = my_cards_f
+
         # remake database
+        old_devs_db = copy.deepcopy(conf_db['devices'])
         import_device_array()
         dev_db = {}
         for dev_name in conf_db['devices']:
@@ -1680,6 +1699,7 @@ def handler(signum, frame):
 def main():
     ''' Autojack runs at session start and manages audio for the session.
     this is the daemon for studio-controls'''
+    global cards_f
     global install_path
     global last_master
     global procs
@@ -1693,6 +1713,7 @@ def main():
     global config_path
     global sendbs
     global version
+    cards_f = "none"
     phones = False
     jack_count = 0
     jack_client = 0
