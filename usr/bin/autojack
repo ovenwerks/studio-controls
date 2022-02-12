@@ -1700,28 +1700,28 @@ def main():
     ''' Autojack runs at session start and manages audio for the session.
     this is the daemon for studio-controls'''
     global cards_f
+    global config_path
+    global con_dirty
     global install_path
-    global last_master
-    global procs
     global jack_alive
     global jack_client
-    global jack_died
     global jack_count
-    global phones
-    global con_dirty
+    global jack_died
+    global last_master
     global lock_file
-    global config_path
+    global phones
+    global procs
     global sendbs
     global version
     cards_f = "none"
-    phones = False
-    jack_count = 0
-    jack_client = 0
-    procs = []
-    last_master = ""
-    jack_alive = False
-    jack_died = False
     con_dirty = False
+    phones = False
+    jack_alive = False
+    jack_client = 0
+    jack_count = 0
+    jack_died = False
+    last_master = ""
+    procs = []
     print("starting up")
     install_path = os.path.abspath(f"{os.path.dirname(sys.argv[0])}/..")
     print(f"install path: {install_path}")
