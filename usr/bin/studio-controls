@@ -88,7 +88,7 @@ class RTSetup:
         self.disabled_path = "/etc/security/limits.d/audio.conf.disabled"
         self.backup_file = f"{install_path}/share/studio-controls/audio.conf"
         self.pke = shutil.which("pkexec")
-        if not self.pke:
+        if self.pke == None:
             print ("no pkexec, Fail")
     def set_governor(self, enable):
         if enable:
@@ -991,7 +991,7 @@ class StudioControls:
 
     def rt_button_hit(self, button):
         pke = shutil.which("pkexec")
-        if not self.pke:
+        if self.pke == None:
             print ("no pkexec, Fail")
             return
         subprocess.run([pke, f"{install_path}/sbin/studio-system", "fix"], shell=False)
@@ -1032,7 +1032,7 @@ class StudioControls:
         newval = widget.get_active_id()
         if newval == "alsa" or newval == "ffado":
             pke = shutil.which("pkexec")
-            if not self.pke:
+            if self.pke == None:
                 print ("no pkexec, Fail")
                 return
             subprocess.run([pke, f"{install_path}/sbin/studio-system", newval], shell=False)
@@ -1470,7 +1470,7 @@ class StudioControls:
         self.mnet_count.set_sensitive(False)
         self.mnet_type.set_sensitive(False)
         qmn = shutil.which("qmidinet")
-        if not (os.path.isfile(qmn) and os.access(qmn, os.X_OK)):
+        if qmn == None:
             self.mnet_warn.set_text("Please Install qmidinet First")
             self.mnet_count.set_value(0)
         else:
@@ -1491,7 +1491,7 @@ class StudioControls:
         self.znet_name.set_sensitive(False)
         self.znet_late.set_sensitive(False)
         znj = shutil.which("zita-n2j")
-        if not (os.path.isfile(znj) and os.access(znj, os.X_OK)):
+        if znj == None:
             self.znet_warn.set_text("Please Install zita-njbridge First")
         else:
             self.znet_warn.set_text("")
@@ -1685,20 +1685,20 @@ class StudioControls:
             return
         if widget.get_active_id() == "ffado":
             ffm = shutil.which("ffado-mixer")
-            if ffm:
+            if ffm == None:
+                print("ffado-mixer not installed")
+            else:
                 try:
                     subprocess.Popen([ffm], shell=False).pid
                 except:
                     print("ffado-mixer errors are normal :P")
-            else:
-                print("ffado-mixer not installed")
         else:
             mixdevice = widget.get_active_id()
             qasm=shutil.which("qasmixer")
-            if qasm:
-                subprocess.Popen([qasm, "-n", f"--device=hw:{str(mixdevice)}"], shell=False).pid
-            else:
+            if qasm == None:
                 print("qasmixer not installed")
+            else:
+                subprocess.Popen([qasm, "-n", f"--device=hw:{str(mixdevice)}"], shell=False).pid
         widget.set_active_id("none")
         widget.set_sensitive(True)
 
@@ -1706,46 +1706,44 @@ class StudioControls:
     def pavucontrol_cb(self, button):
         '''callback for pulse control button, opens pavucontrol'''
         pvc = shutil.which("pavucontrol")
-        if not pvc:
+        if pvc == None:
             pvc = shutil.which("pavucontrol-qt")
-
-        subprocess.Popen([pvc], shell=False).pid
+        if pvc == None:
+            print("pavucontrol not installed")
+        else:
+            subprocess.Popen([pvc], shell=False).pid
 
     def carla_cb(self, button):
         '''callback for carla button, opens carla'''
         crla = shutil.which("carla")
-        if os.path.isfile(crla) and os.access(crla, os.X_OK):
-            subprocess.Popen([crla], shell=False).pid
-        else:
+        if crla == None:
             button.set_label("Please Install Carla First")
-            button.set_sensitive(False)
+        else:
+            subprocess.Popen([crla], shell=False).pid
 
     def ray_cb(self, button):
         '''callback for raysession button, opens raysession'''
         rays = shutil.which("raysession")
-        if os.path.isfile(rays) and os.access(rays, os.X_OK):
-            subprocess.Popen([rays], shell=False).pid
-        else:
+        if rays == None:
             button.set_label("Please Install RaySession First")
-            button.set_sensitive(False)
+        else:
+            subprocess.Popen([rays], shell=False).pid
 
     def nsm_cb(self, button):
         '''callback for nsm button, opens New Session Manager'''
         ns = shutil.which("nsm-legacy-gui")
-        if os.path.isfile(ns) and os.access(ns, os.X_OK):
-            subprocess.Popen([ns], shell=False).pid
-        else:
+        if ns == None:
             button.set_label("Please Install New Session Manager First")
-            button.set_sensitive(False)
+        else:
+            subprocess.Popen([ns], shell=False).pid
 
     def agordejo_cb(self, button):
         '''callback for agordejo button, opens agordejo'''
         agdo = shutil.which("agordejo")
-        if os.path.isfile(agdo) and os.access(agdo, os.X_OK):
-            subprocess.Popen([agdo], shell=False).pid
-        else:
+        if agdo == None:
             button.set_label("Please Install Agordejo First")
-            button.set_sensitive(False)
+        else:
+            subprocess.Popen([agdo], shell=False).pid
 
     # Autojack signalling calls
 

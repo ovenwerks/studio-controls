@@ -332,14 +332,14 @@ def net_bridge():
         return
         # no use checking anything else
     kla = shutil.which("killall")
-    if kla:
+    if kla == None:
+        logging.warning("unable to kill old bridges missing killall")
+    else:
         cp = subprocess.run([kla, "zita-n2j"],
                             universal_newlines=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=False)
         cp1 = subprocess.run([kla, "zita-j2n"],
                             universal_newlines=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=False)
         logging.debug(f"kill old zita-njbridge: {cp.stdout.strip()}{cp1.stdout.strip()}")
-    else:
-        logging.warning("unable to kill old bridges missing killall")
 
     for bridge in conf_db['znet']:
         br_db = conf_db['znet'][bridge]
@@ -362,7 +362,7 @@ def net_bridge():
             logging.warning(f"audio network bridge {bridge} invalid")
             continue
         fcmd = shutil.which(cmd)
-        if not fcmd:
+        if fcmd == None:
             logging.warning(f"command {cmd} not found, bridge: {bridge} can not be started")
             continue
         cmd = f"{fcmd} --jname {bridge} {cnt_str} {late_bits} {br_db['ip']} {str(br_db['port'])}"
@@ -456,7 +456,7 @@ def reconfig():
     pulse_dirty = False
     if [old_conf_db['pulse']['inputs'], old_conf_db['pulse']['outputs']] != [conf_db['pulse']['inputs'], conf_db['pulse']['outputs']]:
         pc = shutil.which("pactl")
-        if not pc:
+        if pc == None:
             logging.warning("pactl is missing... unable to control pulseaudio\n reconfigure failed")
             return
 
@@ -514,15 +514,15 @@ def reconfig():
         if conf_db['extra']['a2j']:
             # Can't add logging for background processes. Will show up in syslog
             ajc = shutil.which("a2jmidid")
-            if ajc:
+            if ajc == None:
+                logging.Warning("a2jmidid not found, is it installed? Starting MIDI-JACK bridge failed.")
+            else:
                 up = ""
                 if 'a2j_u' in conf_db['extra']:
                     if conf_db['extra']['a2j_u']:
                         up = "-u"
                     cmd = f"{ajc} -e {up}"
                     midiproc = subprocess.Popen(shlex.split(cmd), shell=False)
-            else:
-                logging.Warning("a2jmidid not found, is it installed? Starting MIDI-JACK bridge failed.")
 
     if [old_conf_db['mnet']['count'], old_conf_db['mnet']['type']] != [conf_db['mnet']['count'], conf_db['mnet']['type']]:
         logging.debug("reconfiguring MIDI network")
@@ -531,14 +531,14 @@ def reconfig():
         logging.debug(f"kill old qmidinet: {cp.stdout.strip()}")
         if conf_db['mnet']['count']:
             mint = shutil.which("qmidinet")
-            if mint:
+            if mint == None:
+                logging.Warning("qmidinet not found, is it installed? Starting networked midi failed.")
+            else:
                 mtype = ""
                 if conf_db['mnet']['type'] == 'jack':
                     mtype = "--alsa-midi=no --jack-midi=yes"
                 cmd = f"{mint} --num-ports={str(conf_db['mnet']['count'])} --no-gui {mtype}"
                 subprocess.Popen(shlex.split(cmd), shell=False).pid
-            else:
-                logging.Warning("qmidinet not found, is it installed? Starting networked midi failed.")
 
 
     # extra devices compares what is to config and fixes things
@@ -618,12 +618,12 @@ def config_start():
 
     # Stop jack if running
     kla = shutil.which("killall")
-    if kla:
+    if kla == None:
+        logging.warning("killall not found, audio controls may fail to work")
+    else:
         cp = subprocess.run([kla, "-q", "-9", "jackdbus", "jackd", "a2jmidid"],
                             universal_newlines=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=False)
         logging.debug(f"Kill old Procs: {cp.stdout.strip()}")
-    else:
-        logging.warning("killall not found, audio controls may fail to work")
 
     jack_stat("Stopped")
     last_master = 'none'
@@ -638,31 +638,31 @@ def config_start():
     if (conf_db['jack']['driver'] == "firewire") or fw_exists:
         time.sleep(3)
         # this is a firewire device, A busreset makes for stability
-        ftst = shutil.which("killall")
-        if ftst:
+        ftst = shutil.which("ffado-test")
+        if ftst == None:
+            logging.warning("ffado-test not found, fire wire device may lock up. ffado-tools not installed?")
+        else:
             cp = subprocess.run([ftst, "BusReset"],
                             universal_newlines=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=False)
             logging.debug(f"reset firewire bus: {cp.stdout.strip()}")
             time.sleep(3)
-        else:
-            logging.warning("ffado-test not found, fire wire device may lock up. ffado-tools not installed?")
 
-        if kla:
+        if kla == None:
+            logging.warning("killall not found, audio controls may fail to work")
+        else:
             cp = subprocess.run([kla, "-q", "ffado-dbus-server", "ffado-mixer"],
                             universal_newlines=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=False)
             logging.debug(f"Kill ffado mixer because busreset needed: {cp.stdout.strip()}")
-        else:
-            logging.warning("killall not found, audio controls may fail to work")
 
     if not conf_db['jack']['on']:
         pa = shutil.which("pulseaudio")
         # restart Pulse
-        if pa:
+        if pa == None:
+            logging.warning("pulseaudio not found, audio controls may fail to work")
+        else:
             cp = subprocess.run([pa, "-k"],
                         universal_newlines=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=False)
             logging.debug(f"JACK is {str(conf_db['jack']['on'])} restart pulse: {cp.stdout.strip()}")
-        else:
-            logging.warning("pulseaudio not found, audio controls may fail to work")
         return
     logging.debug(f"JACK is {str(conf_db['jack']['on'])} start up jack")
     jack_stat("Config Pulse")
@@ -795,7 +795,9 @@ def config_start():
 
     jack_stat("Adding Bridges")
     pc = shutil.which("pactl")
-    if pc:
+    if pc == None:
+        logging.warning("pactl is missing... unable to control pulseaudio\n configure failed")
+    else:
         if len(conf_db['pulse']['inputs']) or len(conf_db['pulse']['outputs']):
             cp = subprocess.run([pc, "unload-module", "module-udev-detect"],
                                 universal_newlines=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=False)
@@ -820,8 +822,6 @@ def config_start():
                     universal_newlines=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=False)
             logging.debug(f"Pulseaudio: {cp.stdout.strip()}")
             time.sleep(1)
-    else:
-        logging.warning("pactl is missing... unable to control pulseaudio\n configure failed")
 
     extra_devices()
     net_bridge()
@@ -846,7 +846,9 @@ def config_start():
 
     if conf_db['extra']['a2j']:
         ajc = shutil.which("a2jmidid")
-        if ajc:
+        if ajc == None:
+            logging.Warning("a2jmidid not found, is it installed? Starting MIDI-JACK bridge failed.")
+        else:
             up = ""
             if 'a2j_u' in conf_db['extra']:
                 if conf_db['extra']['a2j_u']:
@@ -854,19 +856,17 @@ def config_start():
                 cmd = f"{ajc} -e {up}"
                 midiproc = subprocess.Popen(shlex.split(cmd), shell=False)
                 #logging not possible without extra thread
-        else:
-            logging.Warning("a2jmidid not found, is it installed? Starting MIDI-JACK bridge failed.")
 
     if conf_db['mnet']['count']:
         mint = shutil.which("qmidinet")
-        if mint:
+        if mint == None:
+            logging.Warning("qmidinet not found, is it installed? Starting networked midi failed.")
+        else:
             mtype = ""
             if conf_db['mnet']['type'] == 'jack':
                 mtype = "--alsa-midi=no --jack-midi=yes"
             cmd = f"{mint} --num-ports={str(conf_db['mnet']['count'])} --no-gui {mtype}"
             subprocess.Popen(shlex.split(cmd), shell=False).pid
-        else:
-            logging.Warning("qmidinet not found, is it installed? Starting networked midi failed.")
 
     jack_stat("Postbridge")
     fpath = expanduser('~/.config/autojack/postbridge')
