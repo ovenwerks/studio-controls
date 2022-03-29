@@ -1,3 +1,9 @@
+studio-controls version 2.3.1
+
+ [ Len Ovens ]
+ -Monitor should test for system: (issue #77)
+ -Prevent hang if alsaaudio can't access mixer (lp #1964862)
+
 studio-controls version 2.3.0
 
  [ Len Ovens ]

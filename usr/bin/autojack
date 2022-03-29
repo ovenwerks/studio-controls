@@ -550,7 +550,7 @@ def reconfig():
         logging.debug("reconfigure Headphones setup")
         phones = False
         phones_check()
-    if conf_db['extra']['monitor'] != "system:playback_1" and not phones:
+    if conf_db['extra']['monitor'][:7] != "system:" and not phones:
         logging.debug("Check main outputs")
         mon_dev, ldev, temp = conf_db['extra']['monitor'].split('-')
         if not conf_db['devices'][mon_dev]['sub'][ldev] and conf_db['jack']['driver']  != "alsa" or mon_dev != last_master:
@@ -834,7 +834,7 @@ def config_start():
         if conf_db['extra']['phone-device'] != last_master:
             start_slave(conf_db['extra']['phone-device'])
             con_dirty = True
-    elif conf_db['extra']['monitor'] != "system:playback_1":
+    elif conf_db['extra']['monitor'][:7] != "system:":
         mon_dev = conf_db['extra']['monitor'].split('-')[0]
         start_slave(mon_dev)
         con_dirty = True
@@ -1591,7 +1591,11 @@ def phones_check():
     elif dev_db['internal']:
         # this is internal we can use amixer
         logging.debug("Checking for phones with internal device")
-        my_mixers = alsaaudio.mixers(device=f"hw:{dname}")
+        try:
+            my_mixers = alsaaudio.mixers(device=f"hw:{dname}")
+        except:
+            logging.info(f"Phones device: {dname} mixer not accessable")
+            return
         hp_sw = ""
         if "Front" in my_mixers:
             hp_sw = "Front "
