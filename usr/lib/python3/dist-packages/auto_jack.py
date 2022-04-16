@@ -1,5 +1,5 @@
-#!/usr/bin/python3 -u
 
+# common calls for both autojack and studio-controls
 import configparser
 import getopt
 import glob
@@ -10,6 +10,11 @@ import sys
 
 from os.path import expanduser
 
+global install_path
+install_path = os.path.abspath(f"{sys.path[0]}/..")
+#sys.path.insert(1,f"{install_path}/lib/python3/dist-packages")
+
+
 global version
 global config_path
 global new_name
@@ -19,6 +24,22 @@ config_path = "~/.config/autojack/"
 new_name = f"{config_path}autojack.json"
 old_name = f"{config_path}/autojackrc"
 
+def hello():
+    print(f"This is a test of the module: {install_path} Hello")
+
+
+def version():
+    global install_path
+    version = "not installed"
+    vfile = f"{install_path}/share/studio-controls/version"
+    if os.path.isfile(vfile):
+        with open(vfile, "r") as version_file:
+            for line in version_file:
+                version = line.strip()
+                #return after first line
+                return version
+    return version
+    
 
 def get_default_dev():
     # Ideally, this is the HDA device
@@ -82,6 +103,7 @@ def get_dev_name(testname):
         elif device == name:
             return testname
     return 'none'
+
 
 
 def read_old():
@@ -478,15 +500,12 @@ def check_devices():
                 sub_db['cap-pid'] = 0
 
 
-def check_new(use_bk):
+def check_new():
     global new_name
-    global old_name
     global our_db
     global version
     print(f"checking config file for compatability with version {version}")
     c_file = expanduser(new_name)
-    if use_bk:
-        c_file = expanduser(old_name)
     if os.path.isfile(c_file):
         # config file exists, read it in
         with open(c_file) as f:
@@ -494,7 +513,7 @@ def check_new(use_bk):
     else:
         print(f"Error, {c_file} not found.")
         # set to 0 to not cause errors that stop something
-        sys.exit(0)
+        return
 
     if our_db['version'] != version:
         # see if saved file with our version exists
@@ -659,51 +678,22 @@ def check_db():
     write_new()
 
 
-def main(argv):
+def convert():
 
     global config_path
     global new_name
     global old_name
     global version
-    force = False
-    use_bk = False
-    install_path = os.path.abspath(f"{os.path.dirname(sys.argv[0])}/..")
-    vfile = f"{install_path}/share/studio-controls/version"
+    global install_path
 
-    # what is our version?
-    if os.path.isfile(vfile):
-        with open(vfile, "r") as version_file:
-            for line in version_file:
-                version = line.strip()
-                print(f"Convert Studio Conrols Config File (version {version})")
-
-    try:
-        opts, args = getopt.getopt(argv,"hrvb")
-    except getopt.GetoptError:
-        print ('bad parameters')
-        sys.exit(2)
-    for opt, arg in opts:
-        if opt == '-h':
-            print ('convert-studio-controls is not meant to be run manually')
-            sys.exit()
-        elif opt in ("-r"):
-            # for testing pre json config
-            old_name = f"{old_name}.bak"
-            force = True
-        elif opt in ("-b"):
-            # for testing old json config
-            old_name = f"{new_name}.{arg}"
-            use_bk = True
-        elif opt in ("-v"):
-            # version already printed above, just exit
-            sys.exit()
+    version = version()
 
     c_file = expanduser(new_name)
-    print(f"Search for: {c_file} force: {str(force)}")
-    if (not force) and os.path.isfile(c_file):
+    print(f"Search for: {c_file}")
+    if os.path.isfile(c_file):
         print("config file found, check it")
         # Found a config file, test it
-        check_new(use_bk)
+        check_new()
     else:
         print("Config file not found, Create one")
         # no usable config file found.
@@ -715,7 +705,4 @@ def main(argv):
         make_db()
         check_db()
 
-
-if __name__ == '__main__':
-    main(sys.argv[1:])
 

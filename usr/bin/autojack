@@ -31,6 +31,11 @@ import subprocess
 import sys
 import time
 
+global install_path
+install_path = os.path.abspath(f"{sys.path[0]}/..")
+sys.path.insert(1,f"{install_path}/lib/python3/dist-packages")
+import auto_jack
+
 from gi.repository import GLib
 from os.path import expanduser
 
@@ -1731,14 +1736,8 @@ def main():
     last_master = ""
     procs = []
     print("starting up")
-    install_path = os.path.abspath(f"{os.path.dirname(sys.argv[0])}/..")
     print(f"install path: {install_path}")
-    version = ""
-    vfile = f"{install_path}/share/studio-controls/version"
-    if os.path.isfile(vfile):
-        with open(vfile, "r") as version_file:
-            for line in version_file:
-                version = line.strip()
+    version = auto_jack.version()
     print(f"version: {version}")
 
     # set up logging
@@ -1781,10 +1780,7 @@ def main():
         lk_file.write(new_pid)
         print("Lock file created")
 
-
-    cp = subprocess.run([f"{install_path}/bin/convert-studio-controls"],
-        universal_newlines=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=False)
-    logging.debug(f"check config file: {cp.stdout.strip()}")
+    auto_jack.convert()
 
     phones_check()
     signal.signal(signal.SIGHUP, handler)

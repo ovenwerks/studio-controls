@@ -18,6 +18,11 @@ import subprocess
 import sys
 import time
 
+global install_path
+install_path = os.path.abspath(f"{sys.path[0]}/..")
+sys.path.insert(1,f"{install_path}/lib/python3/dist-packages")
+import auto_jack
+
 from dbus.mainloop.glib import DBusGMainLoop
 gi.require_version('Gtk', '3.0')
 from gi.repository import Gtk, GLib
@@ -346,7 +351,6 @@ class StudioControls:
         global lock_file
         global install_path
         global version
-        install_path = os.path.abspath(f"{os.path.dirname(sys.argv[0])}/..")
         print(f"install path: {install_path}")
         self.sysinfo = SysInfo()
         c_dir = expanduser(self.config_path)
@@ -368,12 +372,7 @@ class StudioControls:
                 time.sleep(1)
         with open(lock_file, "w") as lk_file:
             lk_file.write(new_pid)
-        version = ""
-        vfile = f"{install_path}/share/studio-controls/version"
-        if os.path.isfile(vfile):
-            with open(vfile, "r") as version_file:
-                for line in version_file:
-                    version = line.strip()
+        version = auto_jack.version()
 
         signal.signal(signal.SIGHUP, self.sig_handler)
         signal.signal(signal.SIGINT, self.sig_handler)
@@ -556,8 +555,7 @@ class StudioControls:
 
         # read in autojack config file
         c_file = expanduser(self.config_file)
-        cp = subprocess.run([f"{install_path}/bin/convert-studio-controls"],
-        universal_newlines=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=False)
+        auto_jack.convert()
         print(f"Config file: {c_file}")
         with open(c_file) as f:
             self.conf_db = json.load(f)
