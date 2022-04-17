@@ -44,6 +44,7 @@ install:
 	install -d $(DESTDIR)$(LIBDIR)/systemd/system/multi-user.target.wants
 	install -d $(DESTDIR)$(LIBDIR)/systemd/user/default.target.wants
 	install -d $(DESTDIR)$(LIBDIR)/systemd/user/indicator-messages.service.wants
+	install -d $(DESTDIR)$(LIBDIR)/python3/dist-packages
 
 	# now the files
 	install -m 644	usr/share/applications/studio-controls.desktop \
@@ -88,6 +89,8 @@ install:
 		$(DESTDIR)$(LIBDIR)/systemd/user
 	install -m 644 usr/lib/systemd/user/studio.service \
 		$(DESTDIR)$(LIBDIR)/systemd/user
+	install -m 655 usr/lib/python3/dist-packages/* \
+		$(DESTDIR)$(LIBDIR)/python3/dist-packages
 
 	# make links
 	ln -s $(DESTDIR)$(LIBDIR)/systemd/system/studio-system.service \
@@ -124,6 +127,7 @@ uninstall:
 	rm -rf $(DESTDIR)$(DATADIR)/studio-controls
 
 	rm -f $(DESTDIR)$(BINDIR)/autojack
+	rm -f $(DESTDIR)$(BINDIR)/autojack-start
 	rm -f $(DESTDIR)$(BINDIR)/studio-controls
 
 	rm -f $(DESTDIR)$(SBINDIR)/studio-system
@@ -132,6 +136,7 @@ uninstall:
 	rm -f $(DESTDIR)$(LIBDIR)/systemd/system/studio-system.service
 	rm -rf $(DESTDIR)$(LIBDIR)/systemd/system/ondemand.service.d
 	rm -f $(DESTDIR)$(LIBDIR)/systemd/system/multi-user.target.wants/studio-system.service
+	rm -f $(DESTDIR)$(LIBDIR)/python3/dist-packages/auto_jack.py
 
 	rm -f $(DESTDIR)$(LIBDIR)/systemd/user/session-monitor.service
 	rm -f $(DESTDIR)$(LIBDIR)/systemd/user/studio.service

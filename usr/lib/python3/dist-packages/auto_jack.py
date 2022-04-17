@@ -12,8 +12,6 @@ from os.path import expanduser
 
 global install_path
 install_path = os.path.abspath(f"{sys.path[0]}/..")
-#sys.path.insert(1,f"{install_path}/lib/python3/dist-packages")
-
 
 global version
 global config_path
