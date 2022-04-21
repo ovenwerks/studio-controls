@@ -991,7 +991,7 @@ class StudioControls:
 
     def rt_button_hit(self, button):
         pke = shutil.which("pkexec")
-        if self.pke == None:
+        if pke == None:
             print ("no pkexec, Fail")
             return
         subprocess.run([pke, f"{install_path}/sbin/studio-system", "fix"], shell=False)
@@ -1032,7 +1032,7 @@ class StudioControls:
         newval = widget.get_active_id()
         if newval == "alsa" or newval == "ffado":
             pke = shutil.which("pkexec")
-            if self.pke == None:
+            if pke == None:
                 print ("no pkexec, Fail")
                 return
             subprocess.run([pke, f"{install_path}/sbin/studio-system", newval], shell=False)
