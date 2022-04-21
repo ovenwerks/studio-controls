@@ -114,233 +114,9 @@ class RTSetup:
                 subprocess.run([self.pke, f"{install_path}/sbin/studio-system", "noboost"], shell=False)
 
 
-class DevDB:
-    ''' class for adding system devices to config data base:
-    '''
-    #def __init__(self):
-
-
-
-    def scan_dev(self, conf):
-        ''' scan devices and create device db, scan config and add data'''
-        ndevs = 0
-        # first reset device number to -1
-        for dev in conf['devices']:
-            conf['devices'][dev]['number'] = -1
-            if not 'raw' in conf['devices'][dev]:
-                conf['devices'][dev]['raw'] = dev
-            if not 'firewire' in conf['devices'][dev]:
-                conf['devices'][dev]['firewire'] = False
-
-        # now find the real number
-        if os.path.exists("/proc/asound/cards"):
-            with open("/proc/asound/cards", "r") as cards_file:
-                for line in cards_file:
-                    # need to find lines with:space/int/space[
-                    # ndevs = int from above
-                    # last one is highest dev number
-                    sub = line.rstrip()[1:]
-                    sub2 = sub.split(" ")
-                    first_el = line.rstrip()[1:].split(" ")[0]
-                    if first_el.isdigit():
-                        #if sub2[0].isdigit():
-                        #ndevs = int(sub2[0])
-                        ndevs = int(first_el)
-        ndevs += 1
-        for x in range(0, ndevs):
-            # card loop
-            cname = ""
-            usb = False
-            bus = 'none'
-            d_id = 'none'
-            # first get device raw name
-            if os.path.exists(f"/proc/asound/card{str(x)}"):
-                if os.path.isfile(f"/proc/asound/card{str(x)}/id"):
-                    with open(f"/proc/asound/card{str(x)}/id", "r") as card_file:
-                        for line in card_file:
-                            # only need one line
-                            cname = line.rstrip()
-                else:
-                    cname = str(x)
-            #print(f"cname: {cname} card: {str(x)}")
-            # now check for USB device remembering to go by id/bus not raw name
-            if os.path.exists(f"/proc/asound/card{str(x)}/usbbus"):
-                usb = True
-                with open(f"/proc/asound/card{str(x)}/usbbus", "r") as bus_file:
-                    for line in bus_file:
-                        bus = line.strip().split('/')[0]
-                        #print(f"found usb bus: {bus}")
-                if os.path.isfile(f"/proc/asound/card{str(x)}/usbid"):
-                    with open(f"/proc/asound/card{str(x)}/usbid", "r") as id_file:
-                        for line in id_file:
-                            d_id  = line.strip()
-            found_name = ""
-            for dev in conf['devices']:
-                if usb and [ conf['devices'][dev]['id'], conf['devices'][dev]['bus'] ] == [ d_id, bus ]:
-                    #this is the device... well maybe check if it already has a number
-                    #if
-                    #print(f"found usb id/bus match for {cname}")
-                    conf['devices'][dev]['number'] = x
-                    conf['devices'][dev]['raw'] = cname
-                    found_name = dev
-                    break
-                elif usb and [ conf['devices'][dev]['id'], conf['devices'][dev]['bus'] ] == [ 'none', 'none' ]:
-                    #print(f"found usb with none/none {cname}")
-                    if conf['devices'][dev]['raw'] == cname:
-                        #print(f"found usb none/none match for {cname} == {conf['devices'][dev]['raw']}")
-                        found_name = dev
-                        conf['devices'][dev]['number'] = x
-                        conf['devices'][dev]['id'] = d_id
-                        conf['devices'][dev]['bus'] = bus
-                        break
-                elif dev == cname:
-                    conf['devices'][dev]['raw'] = cname
-                    conf['devices'][dev]['number'] = x
-                    found_name = dev
-                    break
-            if found_name == "":
-                #print ("device not found")
-                if usb:
-                    found_name = f"USB{conf['extra']['usbnext']}"
-                    conf['devices'][found_name] = {'number': x, 'usb': True, "internal": False,
-                    'hdmi': False, 'firewire': False,'min_latency': 64,
-                    'rates': ['32000', '44100', '48000', '88200', '96000', '192000'],
-                    'raw': cname, 'id': d_id, 'bus': bus, 'sub': {}}
-                    conf['extra']['usbnext'] += 1
-                else:
-                    found_name = cname
-                    conf['devices'][cname] = {'number': x, 'usb': False, "internal": False,
-                    'hdmi': False, 'firewire': False,'min_latency': 16,
-                    'rates': ['32000', '44100', '48000', '88200', '96000', '192000'],
-                    'raw': cname, 'id': 'none', 'bus': 'none', 'sub': {}}
-
-            #print(f"{cname}")
-            self.get_dev_info(conf['devices'][found_name])
-        #print(json.dumps(conf['devices'], indent = 4))
-        dev_list = list(conf['devices'])
-        '''for device in dev_list:
-            if conf['devices'][device]'''
-
-
-
-    def  get_dev_info(self, config):
-        ''' get device info from system files '''
-        config['usb'] = False
-        config['internal'] = False
-        config['firewire'] = False
-        config['min_latency'] = 16
-        config['hdmi'] = bool(config['raw'] in ['HDMI', 'NVidia'])
-        if not 'id' in config:
-            config['id'] = 'none'
-        if not 'bus' in config:
-            config['bus'] = 'none'
-        sub = 0
-        rates = ['32000', '44100', '48000', '88200', '96000', '192000']
-        drates = []
-        x = int(config['number'])
-        if os.path.exists(f"/proc/asound/card{str(x)}/usbbus"):
-            config['usb'] = True
-            config['min_latency'] = 32
-            with open(f"/proc/asound/card{str(x)}/usbbus", "r") as bus_file:
-                for line in bus_file:
-                    config['bus'] = line.strip().split('/')[0]
-            if os.path.isfile(f"/proc/asound/card{str(x)}/usbid"):
-                with open(f"/proc/asound/card{str(x)}/usbid", "r") as id_file:
-                    for line in id_file:
-                        config['id']  = line.strip()
-            # can get supported rates from /proc/asound/card{str(x)}/stream0
-            if os.path.exists(f"/proc/asound/card{str(x)}/stream0"):
-                with open(f"/proc/asound/card{str(x)}/stream0", "r") as card_file:
-                    for line in card_file:
-                        if 'Rates:' in line:
-                            fnd_rates = line.split()[1:]
-                            for rate in fnd_rates:
-                                rate = rate.split(',')[0]
-                                if not rate in drates:
-                                    drates.append(rate)
-        elif os.path.exists(f"/proc/asound/card{str(x)}/codec#0"):
-            config['internal'] = True
-            config['min_latency'] = 128
-            # can get supported rates from file above
-            with open(f"/proc/asound/card{str(x)}/codec#0", "r") as card_file:
-                node = False
-                for line in card_file:
-                    if 'Node' in line:
-                        node = True
-                        if 'Digital' in line and not config['hdmi']:
-                            node = False
-                    if node and 'rates' in line:
-                        fnd_rates = line.split()[2:]
-                        for rate in fnd_rates:
-                            if not rate in drates:
-                                drates.append(rate)
-        if len(drates):
-            rates = drates
-
-        elif os.path.exists(f"/proc/asound/card{str(x)}/firewire"):
-            config['firewire'] = True
-            config['min_latency'] = 256
-
-        if config['hdmi']:
-            config['min_latency'] = 4096
-
-        config['rates'] = rates
-
-        for y in range(0, 20):
-            cap = False
-            play = False
-            if os.path.exists(f"/proc/asound/card{str(x)}/pcm{str(y)}p"):
-                play = True
-
-            if os.path.exists(f"/proc/asound/card{str(x)}/pcm{str(y)}c"):
-                cap = True
-
-            if cap or play:
-                if not str(y) in config['sub']:
-                    config['sub'][str(y)] = {'playback': play, 'capture': cap}
-
-                sub_db = config['sub'][str(y)]
-                if not 'playback' in sub_db:
-                    sub_db['playback'] = play
-                if not 'capture' in sub_db:
-                    sub_db['capture'] = cap
-                if not "play-chan" in sub_db:
-                    if config['usb']:
-                        sub_db['play-chan'] = 100
-                    else:
-                        sub_db['play-chan'] = 0
-                if not 'cap-chan' in sub_db:
-                    if config['usb']:
-                        sub_db['cap-chan'] = 100
-                    else:
-                        sub_db['cap-chan'] = 0
-                if not "rate" in sub_db:
-                    sub_db['rate'] = 48000
-                    if (not '48000' in rates) and len(rates):
-                        sub_db['rate'] = int(rates[0])
-                if not 'frame' in sub_db:
-                    sub_db['frame'] = 1024
-                    if 1024 < config['min_latency']:
-                        sub_db['frame'] = config['min_latency']
-                if not 'nperiods' in sub_db:
-                    sub_db['nperiods'] = 2
-                if not 'hide' in sub_db:
-                    sub_db['hide'] = False
-                if not 'name' in sub_db:
-                    sub_db['name'] = 'none'
-                if not "cap-latency" in sub_db:
-                    sub_db['cap-latency'] = 0
-                if not "play-latency" in sub_db:
-                    sub_db['play-latency'] = 0
-
-        #print(f"Device list: {str(config)}")
-        #print(json.dumps(config, indent = 4))
-
-
 class StudioControls:
     global lock_file
     config_path = "~/.config/autojack/"
-    old_config_file = f"{config_path}autojackrc"
     config_file = f"{config_path}autojack.json"
 
 
@@ -555,13 +331,7 @@ class StudioControls:
 
         # read in autojack config file
         c_file = expanduser(self.config_file)
-        auto_jack.convert()
-        print(f"Config file: {c_file}")
-        with open(c_file) as f:
-            self.conf_db = json.load(f)
-
-        self.devdb = DevDB()
-        self.devdb.scan_dev(self.conf_db)
+        self.conf_db = auto_jack.convert()
         self.jackdb = self.conf_db['jack']
         self.extra = self.conf_db['extra']
 
@@ -814,7 +584,14 @@ class StudioControls:
         and USB master are set to default and no usb master. However,
         all all alsa devices will still be available for bridging and
         as output device.'''
-        self.devdb.scan_dev(self.conf_db)
+        temp_db = auto_jack.check_devices(self.conf_db)
+        for temp_dev in temp_db['devices']:
+            if temp_dev in self.conf_db:
+                self.conf_db['devices'][temp_dev]['number'] = temp_db['devices'][temp_dev]['number']
+                self.conf_db['devices'][temp_dev]['id'] = temp_db['devices'][temp_dev]['id']
+                self.conf_db['devices'][temp_dev]['bus'] = temp_db['devices'][temp_dev]['bus']
+            else:
+                self.conf_db['devices'][temp_dev] = temp_db['devices'][temp_dev]
         xdev_current = self.xdev_select.get_active_id()
         self.current_ex_dev = xdev_current
         fw_mixer = False
@@ -989,7 +766,7 @@ class StudioControls:
 
     def rt_button_hit(self, button):
         pke = shutil.which("pkexec")
-        if self.pke == None:
+        if pke == None:
             print ("no pkexec, Fail")
             return
         subprocess.run([pke, f"{install_path}/sbin/studio-system", "fix"], shell=False)
@@ -1030,7 +807,7 @@ class StudioControls:
         newval = widget.get_active_id()
         if newval == "alsa" or newval == "ffado":
             pke = shutil.which("pkexec")
-            if self.pke == None:
+            if pke == None:
                 print ("no pkexec, Fail")
                 return
             subprocess.run([pke, f"{install_path}/sbin/studio-system", newval], shell=False)
@@ -1789,11 +1566,11 @@ class StudioControls:
         c_file = expanduser(self.config_file)
         if not os.path.isfile(c_file):
             # either first run or old version
+            # this should not be needed any more as convert does this
+            # that is we should never get here
             c_dir = expanduser(self.config_path)
             if not os.path.isdir(c_dir):
                 os.makedirs(c_dir)
-            if os.path.isfile(expanduser(self.old_config_file)):
-                os.remove(expanduser(self.old_config_file))
         with open(c_file, 'w') as json_file:
             json.dump(self.conf_db, json_file, indent = 4)
             json_file.write("\n")

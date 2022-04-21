@@ -3,6 +3,10 @@ studio-controls version 2.3.2
  [ Len Ovens ]
  - Move studio-controls-convert to a module
  - Change makefile for file differences
+ - Device scanning in convert uses installed devices
+ - Studio-controls uses module device scan (issue #75)
+ - Autojack uses module for device scan
+ - Fix pke spelling (lp #1969827)
 
 studio-controls version 2.3.1
 

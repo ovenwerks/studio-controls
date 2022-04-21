@@ -12,8 +12,9 @@ from os.path import expanduser
 
 global install_path
 install_path = os.path.abspath(f"{sys.path[0]}/..")
+global vers
+vers = "not installed"
 
-global version
 global config_path
 global new_name
 global old_name
@@ -23,20 +24,27 @@ new_name = f"{config_path}autojack.json"
 old_name = f"{config_path}/autojackrc"
 
 def hello():
+    ''' a quick test method to test module '''
     print(f"This is a test of the module: {install_path} Hello")
 
 
 def version():
+    ''' get the version we are running as. Used mostly to detect
+    if a new version has been installed but the old version
+    of autojack is still running. Rather than restart autojack
+    right away, stopping audio, studio-controls will do so at
+    the next apply, jack start or stop '''
     global install_path
-    version = "not installed"
-    vfile = f"{install_path}/share/studio-controls/version"
-    if os.path.isfile(vfile):
-        with open(vfile, "r") as version_file:
-            for line in version_file:
-                version = line.strip()
-                #return after first line
-                return version
-    return version
+    global vers
+    if vers == "not installed":
+        vfile = f"{install_path}/share/studio-controls/version"
+        if os.path.isfile(vfile):
+            with open(vfile, "r") as version_file:
+                for line in version_file:
+                    vers = line.strip()
+                    #return after first line
+                    return vers
+    return vers
     
 
 def get_default_dev():
@@ -103,14 +111,13 @@ def get_dev_name(testname):
     return 'none'
 
 
-
-def read_old():
+def make_db():
     ''' read old config file. '''
-    print("read old file")
     global config
     global def_config
-    global version
-    global default_device
+    global our_db
+
+    print("set some reasonable defaults")
     config = configparser.ConfigParser()
     def_config = config['DEFAULT']
     usbdev = 'none'
@@ -149,11 +156,12 @@ def read_old():
         "MONITOR": 'system:playback_1'
     }
 
+    print("read old style file if it exists")
     c_file = expanduser(old_name)
     if os.path.isfile(c_file):
         # config file exists, read it in
         config.read(c_file)
-        # rename to *.old
+        # rename to *.bak so we don't use it again
         os.replace(c_file, f"{c_file}.bak")
     # fix some well known problems
     if def_config['MONITOR'] == "none":
@@ -167,8 +175,6 @@ def read_old():
     if not def_config['CONNECT-MODE'] in ['a', 'A', 'e', 'E']:
         def_config['CONNECT-MODE'] = "n"
 
-
-def make_db():
     ''' Stuff config into this db:
         Version: text
         log-level: int (20)
@@ -180,9 +186,11 @@ def make_db():
             rate: int (48000)
             frame: int (1024)
             nperiods: int (2)
-            connect_mode: char (' ')
+            connect_mode: char ('n')
             dev: string (1st internal non-hdmi)
             USBdev: string (blank)
+            cap-latency: 0,
+            play-latency: 0
         extra: # Stuff that can be changed without restart
             A2J: bool (True)
             A2J_U: bool (False)
@@ -193,48 +201,18 @@ def make_db():
             Phone_device: string (default device)
         pulse:
             pulse_in:
-                {
-                name
-                connection
-                channels
-                }...
+                name:
+                    connection: "none",
+                    count: 2
             pulse_out:
-                {
-                name
-                connection
-                channels
-                }...
+                name: {
+                    connection: "none",
+                    count: 2
         Devices:
-            {
-            name: string
-                {
-                number: int (-1 for unplugged)
-                usb: bool
-                internal: bool
-                hdmi: bool
-                rates: list
-                sub:
-                    {
-                    number: int
-                    playback: bool
-                    capture: bool
-                    play_chan: int
-                    cap_chan: int
-                    rate: int
-                    frame: int
-                    nperiods: int
-                    hide: bool
-                    }...
-                }
-            }...
+            {}
     '''
-    print("make new data base")
-    global def_config
-    global version
-    global our_db
-    global default_device
-
-    our_db = {'version': 'none'}
+    print("make up to date config file")
+    our_db = {'version': version()}
     our_db['log-level'] = int(def_config['log-level'])
     if def_config['usbdev'] == '':
         def_config['usbdev'] = 'none'
@@ -282,13 +260,12 @@ def make_db():
             this_cnt = def_config['PJ-OUT-COUNT'].split()[idx]
         temp_db = {'connection': this_con, 'count': int(this_cnt)}
         pulse_out_db[bridge] = temp_db
+    our_db['znet'] = {}
+    our_db['mnet'] = {"type": "jack", "count": 0}
 
     # Now devices we just want to add devices in the config file
-    # studio-controls will add all devices it finds and autojack will
-    # make it's own DB as well. We don't check if the rate, buffer,etc
-    # makes sense, the other two programs will correct that and the old
-    # style config file assumed jack master numbers anyway so we use
-    # those.
+    # Since get_devices should start with the current db, create one
+    # from what device the old config knows about
     devices_db = {}
     our_db['devices'] = devices_db
     devicelist = []
@@ -303,24 +280,29 @@ def make_db():
         devicelist.append( def_config['PHONE-DEVICE'])
     print(f"adding devices from xdev: {str(def_config['XDEV'].split())} and blacklist: {str(def_config['BLACKLIST'].split())}")
     devicelist = devicelist + def_config['XDEV'].split() + def_config['BLACKLIST'].split()
+
     for rdev in devicelist:
         rdev_l = rdev.split(',')
         print(f"fleshing out device: {str(rdev_l)}")
         if len(rdev_l) == 3:
             dev, sub, ssub = rdev_l
-            if dev not in devices_db:
-                devices_db[dev] = make_dev_temp()
-            dev_db = devices_db[dev]
-            dev_db['raw'] = dev
-            if dev == default_device.split(',')[0]:
-                dev_db['internal'] = True
+            dev_db = make_dev_temp()
             if def_config['USBDEV'] != 'none' and dev == def_config['USBDEV'].split(',')[0]:
-                devices_db['USB1'] = devices_db.pop(dev)
-                dev_db = devices_db['USB1']
-                extra_db['usbnext'] = 2
-                dev_db['usb'] = True
-                un, ud, us = def_config['USBDEV'].split(',')
-                jack_db['usbdev'] = f"USB1,{ud},{us}"
+                if 'USB1' not in devices_db:
+                    devices_db['USB1'] = dev_db
+                    extra_db['usbnext'] = 2
+                    dev_db['usb'] = True
+                    un, ud, us = def_config['USBDEV'].split(',')
+                    jack_db['usbdev'] = f"USB1,{ud},{us}"
+                else:
+                    dev_db = devices_db['USB1']
+            else:
+                if dev not in devices_db:
+                    dev_db = make_dev_temp()
+                    devices_db[dev] = dev_db
+                else:
+                    dev_db = devices_db[dev]
+            dev_db['raw'] = dev
             if sub not in dev_db['sub']:
                 dev_db['sub'][sub] = make_sub_temp()
             sub_db = dev_db['sub'][sub]
@@ -330,9 +312,8 @@ def make_db():
                 sub_db['cap-chan'] = 100
             if rdev in def_config['BLACKLIST'].split():
                 sub_db['hide'] = True
-    our_db['znet'] = {}
-    our_db['mnet'] = {"type": "jack", "count": 0}
     return
+
 
 def make_dev_temp():
     ''' make a biolerplate device with no sub '''
@@ -340,6 +321,7 @@ def make_dev_temp():
                 'rates': ['32000', '44100', '48000', '88200', '96000', '192000'],
                 'min_latency': 16, 'id':'none', 'bus': 'none', 'sub': {}}
     return dev_temp
+
 
 def make_sub_temp():
     ''' make a template for a sub device '''
@@ -349,6 +331,7 @@ def make_sub_temp():
                 'nperiods': int(def_config['PERIOD']), 'hide': False,
                 'cap-latency': 0, 'play-latency': 0}
     return sub_temp
+
 
 def write_new():
     ''' write new config file '''
@@ -383,25 +366,33 @@ def usb_duplicate(device):
     return 'none'
 
 
+def save_devices(our_db):
+    ''' check devices then save changes'''
+    our_db = check_devices(our_db)
+    write_new()
+    return our_db
 
-def check_devices():
-    global our_db
-    print("Checking Devices")
+
+def check_devices(our_db):
+    ''' take an exsiting db['devices'] db and make sure it agrees
+    with the actual devices in the machine. If a listing in the db
+    does not have a real card right now, card is set to -1 (unplugged)
+    otherwsie card is set to current card number (so we don't duplicate it)
+    if there are devices not in the list they are added according to settings'''
 
     dev_list = list(our_db['devices'])
     for device in dev_list:
+        # do sanity check
         dev_db = our_db['devices'][device]
-        # device raw is the alsa device
+        dev_db['number'] = -1
         if not 'raw' in dev_db:
             dev_db['raw'] = device
-        if not 'number' in dev_db:
-            dev_db['number'] = -1
         if not 'id' in dev_db:
             dev_db['id'] = 'none'
         if not 'bus' in dev_db:
             dev_db['bus'] = 'none'
-        if not 'firewire' in dev_db:
-            dev_db['firewire'] = False
+        if not 'description' in dev_db:
+            dev_db['description'] = 'none'
         if not 'hdmi' in dev_db:
             dev_db['hdmi'] = False
         if not 'internal' in dev_db:
@@ -414,7 +405,6 @@ def check_devices():
             dev_db['rates'] = ["32000", "44100", "48000", "88200", "96000", "192000"]
         if not 'min_latency' in dev_db:
             dev_db['min_latency'] = 16
-
         if dev_db['hdmi']:
             dev_db['min_latency'] = 4096
         elif dev_db['internal']:
@@ -497,12 +487,203 @@ def check_devices():
             if not 'cap-pid' in sub_db:
                 sub_db['cap-pid'] = 0
 
+    # now find the real number
+    if os.path.exists("/proc/asound/cards"):
+        with open("/proc/asound/cards", "r") as cards_file:
+            for line in cards_file:
+                # last one is highest dev number
+                sub = line.rstrip()[1:]
+                sub2 = sub.split(" ")
+                first_el = line.rstrip()[1:].split(" ")[0]
+                if first_el.isdigit():
+                    ndevs = int(first_el)
+    else:
+        return our_db
+    ndevs += 1
+    for x in range(0, ndevs):
+        rates = ['32000', '44100', '48000', '88200', '96000', '192000']
+        drates = []
+        # card loop
+        cname = ""
+        usb = False
+        bus = 'none'
+        d_id = 'none'
+        # first get device raw name
+        if os.path.exists(f"/proc/asound/card{str(x)}"):
+            if os.path.isfile(f"/proc/asound/card{str(x)}/id"):
+                with open(f"/proc/asound/card{str(x)}/id", "r") as card_file:
+                    for line in card_file:
+                        # only need one line
+                        cname = line.rstrip()
+            else:
+                cname = str(x)
+        #print(f"cname: {cname} card: {str(x)}")
+        # now check for USB device remembering to go by id/bus not raw name
+        if os.path.exists(f"/proc/asound/card{str(x)}/usbid"):
+            usb = True
+            with open(f"/proc/asound/card{str(x)}/usbid", "r") as id_file:
+                for line in id_file:
+                    d_id = line.strip()
+            if os.path.isfile(f"/proc/asound/card{str(x)}/usbbus"):
+                with open(f"/proc/asound/card{str(x)}/usbbus", "r") as bus_file:
+                    for line in bus_file:
+                        oldbus = line.strip().split('/')[0]
+            if os.path.isfile(f"/proc/asound/card{str(x)}/stream0"):
+                line0 = True
+                with open(f"/proc/asound/card{str(x)}/stream0", "r") as desc_file:
+                    for line in desc_file:
+                        if line0:
+                            # example: C-Media Electronics Inc. USB PnP Sound Device at usb-0000:00:1d.0-1.1, full spe
+                            prebus = line.strip().split(' at ')[1]
+                            bus = line.strip().split(' at ')[1].split(', ')[0]
+                            description = line.strip().split(' at ')[0]
+                            line0 = False
+                        if 'Rates:' in line:
+                            fnd_rates = line.split()[1:]
+                            for rate in fnd_rates:
+                                rate = rate.split(',')[0]
+                                if not rate in drates:
+                                    drates.append(rate)
+        found_name = ""
+        for dev in our_db['devices']:
+            dev_db = our_db['devices'][dev]
+            if usb and [ dev_db['id'], dev_db['bus'] ] == [ d_id, bus ]:
+                #this is the device...
+                dev_db['usb'] = True
+                found_name = dev
+                break
+            elif usb and [ dev_db['id'], dev_db['bus'] ] == [ d_id, oldbus ]:
+                #this is an old style device... well maybe check if it already has a number
+                dev_db['usb'] = True
+                found_name = dev
+                break
+            elif usb and [ dev_db['id'], dev_db['bus'] ] == [ 'none', 'none' ]:
+                #really old style
+                if dev_db['raw'] == cname:
+                    found_name = dev
+                    dev_db['usb'] = True
+                    break
+            elif dev == cname:
+                dev_db['raw'] = cname
+                dev_db['usb'] = False
+                dev_db['number'] = x
+                found_name = dev
+                break
+        if found_name == "":
+            #print ("device not found")
+            if usb:
+                found_name = f"USB{our_db['extra']['usbnext']}"
+                our_db['devices'][found_name] = {'number': x, 'usb': True, "internal": False,
+                'hdmi': False, 'firewire': False,'min_latency': 32,
+                'rates': ['32000', '44100', '48000', '88200', '96000', '192000'],
+                'raw': cname, 'id': d_id, 'bus': bus, 'description': description, 'sub': {}}
+                our_db['extra']['usbnext'] += 1
+            else:
+                found_name = cname
+                our_db['devices'][cname] = {'number': x, 'usb': False, "internal": False,
+                'hdmi': False, 'firewire': False,'min_latency': 16,
+                'rates': ['32000', '44100', '48000', '88200', '96000', '192000'],
+                'raw': cname, 'id': 'none', 'bus': 'none', 'description': 'none', 'sub': {}}
+
+        #print(f"{cname}")
+            
+        ''' get device info from system files '''
+        dev_db['internal'] = False
+        dev_db['firewire'] = False
+        dev_db['min_latency'] = 16
+        dev_db['hdmi'] = bool(dev_db['raw'] in ['HDMI', 'NVidia'])
+        if not 'id' in dev_db:
+            dev_db['id'] = 'none'
+        if not 'bus' in dev_db:
+            dev_db['bus'] = 'none'
+        sub = 0
+        if dev_db['usb']:
+            dev_db['raw'] = cname
+            dev_db['number'] = x
+            dev_db['id'] = d_id
+            dev_db['bus'] = bus
+            dev_db['description'] = description
+            dev_db['min_latency'] = 32
+        elif os.path.exists(f"/proc/asound/card{str(x)}/codec#0"):
+            dev_db['internal'] = True
+            dev_db['min_latency'] = 128
+            # can get supported rates from file above
+            with open(f"/proc/asound/card{str(x)}/codec#0", "r") as card_file:
+                node = False
+                for line in card_file:
+                    if 'Node' in line:
+                        node = True
+                        if 'Digital' in line and not dev_db['hdmi']:
+                            node = False
+                    if node and 'rates' in line:
+                        fnd_rates = line.split()[2:]
+                        for rate in fnd_rates:
+                            if not rate in drates:
+                                drates.append(rate)
+        if len(drates):
+            rates = drates
+
+        elif os.path.exists(f"/proc/asound/card{str(x)}/firewire"):
+            dev_db['firewire'] = True
+            dev_db['min_latency'] = 256
+
+        if dev_db['hdmi']:
+            dev_db['min_latency'] = 4096
+
+        dev_db['rates'] = rates
+
+        for y in range(0, 20):
+            cap = False
+            play = False
+            if os.path.exists(f"/proc/asound/card{str(x)}/pcm{str(y)}p"):
+                play = True
+
+            if os.path.exists(f"/proc/asound/card{str(x)}/pcm{str(y)}c"):
+                cap = True
+
+            if cap or play:
+                if not str(y) in dev_db['sub']:
+                    dev_db['sub'][str(y)] = {'playback': play, 'capture': cap}
+
+                sub_db = dev_db['sub'][str(y)]
+                if not 'playback' in sub_db:
+                    sub_db['playback'] = play
+                if not 'capture' in sub_db:
+                    sub_db['capture'] = cap
+                if not "play-chan" in sub_db:
+                    if dev_db['usb'] and our_db['extra']['usbauto']:
+                        sub_db['play-chan'] = 100
+                    else:
+                        sub_db['play-chan'] = 0
+                if not 'cap-chan' in sub_db:
+                    if dev_db['usb'] and our_db['extra']['usbauto']:
+                        sub_db['cap-chan'] = 100
+                    else:
+                        sub_db['cap-chan'] = 0
+                if not "rate" in sub_db:
+                    sub_db['rate'] = 48000
+                    if (not '48000' in rates) and len(rates):
+                        sub_db['rate'] = int(rates[0])
+                if not 'frame' in sub_db:
+                    sub_db['frame'] = 1024
+                    if 1024 < dev_db['min_latency']:
+                        sub_db['frame'] = dev_db['min_latency']
+                if not 'nperiods' in sub_db:
+                    sub_db['nperiods'] = 2
+                if not 'hide' in sub_db:
+                    sub_db['hide'] = False
+                if not 'name' in sub_db:
+                    sub_db['name'] = 'none'
+                if not "cap-latency" in sub_db:
+                    sub_db['cap-latency'] = 0
+                if not "play-latency" in sub_db:
+                    sub_db['play-latency'] = 0
+    return our_db
 
 def check_new():
     global new_name
     global our_db
-    global version
-    print(f"checking config file for compatability with version {version}")
+    print(f"checking config file for compatability with version {version()}")
     c_file = expanduser(new_name)
     if os.path.isfile(c_file):
         # config file exists, read it in
@@ -513,11 +694,11 @@ def check_new():
         # set to 0 to not cause errors that stop something
         return
 
-    if our_db['version'] != version:
+    if our_db['version'] != version():
         # see if saved file with our version exists
-        if os.path.isfile(f"{c_file}.{version}"):
-            print(f"A config file for this version exists: {c_file}.{version} Using it")
-            shutil.copyfile(f"{c_file}.{version}", c_file)
+        if os.path.isfile(f"{c_file}.{version()}"):
+            print(f"A config file for this version exists: {c_file}.{version()} Using it")
+            shutil.copyfile(f"{c_file}.{version()}", c_file)
             return
         print(f"config file is version: {our_db['version']} updating")
         print(f"saving old config file to: {c_file}.{our_db['version']}")
@@ -526,10 +707,9 @@ def check_new():
 
 def check_db():
     global our_db
-    global version
     # check all parameters for sanity
     print("checking data base")
-    our_db['version'] = version
+    our_db['version'] = version()
     if not 'log-level' in our_db:
         our_db['log-level'] = 15
     if not 'jack' in our_db:
@@ -540,7 +720,6 @@ def check_db():
         our_db['pulse'] = {}
     if not 'devices' in our_db:
         our_db['devices'] = {}
-    # these two are new for 2.2 (in 2.1.60 +)
     if not 'znet' in our_db:
         our_db['znet'] = {}
     if not 'mnet' in our_db:
@@ -553,7 +732,9 @@ def check_db():
     else:
         extra_db['usbnext'] = int(extra_db['usbnext'])
 
-    check_devices()
+    # check_devices should be universal. It should take db['devices'] as a
+    # parameter and return an updated version
+    our_db = check_devices(our_db)
     print(" Devices checked, continue data base check")
 
     jack_db = our_db['jack']
@@ -681,10 +862,8 @@ def convert():
     global config_path
     global new_name
     global old_name
-    global version
+    global our_db
     global install_path
-
-    version = version()
 
     c_file = expanduser(new_name)
     print(f"Search for: {c_file}")
@@ -702,5 +881,6 @@ def convert():
         read_old()
         make_db()
         check_db()
+    return our_db
 
 

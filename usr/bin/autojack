@@ -64,200 +64,19 @@ class sendbus(dbus.service.Object):
         pass
 
 
-def get_dev_info(x):
-    '''uses audio device number to make add a device structure with device
-    info to the config database
-    '''
-
-    global conf_db
-    global fw_exists
-    fw_exists = False
-    cname = ""
-    sub = 0
-    usb = False
-    usbid = "none"
-    usbbus = "none"
-    if os.path.exists(f"/proc/asound/card{str(x)}"):
-        if os.path.isfile(f"/proc/asound/card{str(x)}/id"):
-            with open(f"/proc/asound/card{str(x)}/id", "r") as card_file:
-                for line in card_file:
-                    # only need one line
-                    cname = line.rstrip()
-        else:
-            cname = str(x)
-    if os.path.exists(f"/proc/asound/card{str(x)}/usbbus"):
-        usb = True
-        with open(f"/proc/asound/card{str(x)}/usbbus", "r") as card_file:
-            for line in card_file:
-                # only need one line
-                usbbus = line.rstrip()
-        with open(f"/proc/asound/card{str(x)}/usbid", "r") as card_file:
-            for line in card_file:
-                # only need one line
-                usbid = line.rstrip()
-        #device['usb'] = True
-
-    dname = "none"
-    for ddev in conf_db['devices']:
-        if usb:
-            # for usb devices where there may be more than one of same model manufacture
-            # so we look for both id and bus to distinguish
-            if [usbid, usbbus] == [conf_db['devices'][ddev]['id'], conf_db['devices'][ddev]['bus']]:
-                conf_db['devices'][ddev]['raw'] = cname
-        if conf_db['devices'][ddev]['raw'] == cname:
-            dname = ddev
-    if dname != "none":
-        conf_db['devices'][dname]['number'] = x
-    else:
-        # device not found in data base
-        if usb:
-            # what is the next available usb* number?
-            dname = f"USB{conf_db['extra']['usbnext']}"
-            conf_db['extra']['usbnext'] += 1
-        else:
-            dname = cname
-        conf_db['devices'][dname] = {'number': x, 'id': usbid, 'bus': usbbus}
-
-    device = conf_db['devices'][dname]
-    device['min_latency'] = 16
-    device['raw'] = cname
-    device['usb'] = usb
-    device['internal'] = os.path.exists(f"/proc/asound/card{str(x)}/codec#0")
-    device['firewire'] = os.path.exists(f"/proc/asound/card{str(x)}/firewire")
-    device['hdmi'] = False
-    if cname == "HDMI" or cname == "NVidia":
-        device['hdmi'] = True
-    rates = ['32000', '44100', '48000', '88200', '96000', '192000']
-    drates = []
-    if device['internal']:
-        device['min_latency'] = 128
-        with open(f"/proc/asound/card{str(x)}/codec#0", "r") as card_file:
-            node = False
-            for line in card_file:
-                if 'Node' in line:
-                    node = True
-                    if 'Digital' in line:
-                        node = False
-                if node and 'rates' in line:
-                    fnd_rates = line.split()[2:]
-                    for rate in fnd_rates:
-                        if not rate in drates:
-                            drates.append(rate)
-
-    if device['usb']:
-        device['min_latency'] = 32
-        if os.path.exists(f"/proc/asound/card{str(x)}/stream0"):
-            with open(f"/proc/asound/card{str(x)}/stream0", "r") as card_file:
-                for line in card_file:
-                    if 'Rates:' in line:
-                        fnd_rates = line.split()[1:]
-                        for rate in fnd_rates:
-                            rate = rate.split(',')[0]
-                            if not rate in drates:
-                                drates.append(rate)
-    if len(drates):
-        rates = drates
-
-    device['rates'] = rates
-    fw_exists = device['firewire']
-
-    if not 'sub' in device:
-        device['sub'] = {}
-
-    for y in range(0, 20):
-
-        subdevice = {}
-        cap = False
-        cap_pid = 0
-        play = False
-        play_pid = 0
-        if os.path.exists(f"/proc/asound/card{str(x)}/pcm{str(y)}p"):
-            play = True
-            if os.path.exists(f"/proc/asound/card{str(x)}/pcm{str(y)}p/sub0"):
-                with open(f"/proc/asound/card{str(x)}/pcm{str(y)}p/sub0/status", "r") as info_file:
-                    for line in info_file:
-                        if re.match("^owner_pid", line.rstrip()):
-                            play_pid = int(line.rstrip().split(": ", 1)[1])
-
-        if os.path.exists(f"/proc/asound/card{str(x)}/pcm{str(y)}c"):
-            cap = True
-            if os.path.exists(f"/proc/asound/card{str(x)}/pcm{str(y)}c/sub0"):
-                with open(f"/proc/asound/card{str(x)}/pcm{str(y)}c/sub0/status", "r") as info_file:
-                    for line in info_file:
-                        if re.match("^owner_pid", line.rstrip()):
-                            cap_pid = int(line.rstrip().split(": ", 1)[1])
-
-        if play or cap:
-            if not str(y) in device['sub']:
-                # Rate and frame should be same as jack unless the device does not support that
-                thisrate = conf_db['jack']['rate']
-                if not conf_db['jack']['rate'] in device['rates']:
-                    if 48000 in device['rates']:
-                        thisrate = 48000
-                    elif 44100 in device['rates']:
-                        thisrate = 44100
-                    else:
-                        thisrate = device['rates'][0]
-                thisframe = conf_db['jack']['frame']
-                if thisframe < device['min_latency']:
-                    thisframe = device['min_latency']
-                if device['usb']:
-                    device['sub'][str(y)] = {'playback': True, 'capture': True,
-                            'play-chan': 100, 'cap-chan': 100,
-                            'rate': thisrate, 'frame': thisframe,
-                            'nperiods': conf_db['jack']['period'], 'hide': False,
-                            'name': f"{device['raw']},{str(y)},0", 'cap-latency': 0,
-                            'play-latency': 0}
-                else:
-                    device['sub'][str(y)] = {'playback': True, 'capture': True,
-                            'play-chan': 0, 'cap-chan': 0,
-                            'rate': thisrate, 'frame': thisframe,
-                            'nperiods': conf_db['jack']['period'], 'hide': False,
-                            'name': f"{device['raw']},{str(y)},0", 'cap-latency': 0,
-                            'play-latency': 0}
-
-            device['sub'][str(y)]['playback'] = play
-            device['sub'][str(y)]['capture'] = cap
-            device['sub'][str(y)]['play-pid'] = play_pid
-            device['sub'][str(y)]['cap-pid'] = cap_pid
-    logging.log(7, f"Device scan found: {str(cname)}")
-    #logging.log(7, f"Device list: {str(device)}")
-    #logging.log(7, json.dumps(device, indent = 4))
-
-
 def import_device_array():
     '''creates an array of device structures as per get_dev_info(), from
-    device 0 to the highest number device currently on the system. Missing
-    device numbers will still save a space in the case a USB device has
-    been removed and there is still a higher number so that array index
-    can be the same as the device number.'''
+    device 0 to the highest number device currently on the system.'''
     global conf_db
+    conf_db = auto_jack.check_devices(conf_db)
+    ### should we be saving the new db at this point?
+    # maybe create a new auto_jack call that includes save
+    # only to use with new usb device detection
+    # would it hurt to use convert in that case?
     devices = conf_db['devices']
-    ndevs = 0
     for this_dev in devices:
-        # we need these even for unplugged devices
-        # devices[this_dev]['firewire'] = False
-        devices[this_dev]['number'] = -1
-        for sub in devices[this_dev]['sub']:
-            if not 'play-pid' in devices[this_dev]['sub'][sub]:
-                devices[this_dev]['sub'][sub]['play-pid'] = 0
-            if not 'cap-pid' in devices[this_dev]['sub'][sub]:
-                devices[this_dev]['sub'][sub]['cap-pid'] = 0
-
-    if os.path.exists("/proc/asound/cards"):
-        with open("/proc/asound/cards", "r") as cards_file:
-            for line in cards_file:
-                # need to find lines with:space/int/space[
-                # ndevs = int from above
-                # last one is highest dev number
-                sub = line.rstrip()[1:]
-                sub2 = sub.split(" ")
-                if sub2[0].isdigit():
-                    ndevs = int(sub2[0])
-    ndevs += 1
-    for x in range(0, ndevs):
-        # card loop
-        get_dev_info(x)
+        if devices[this_dev]['firewire']:
+            fw_exists = True
 
 
 def get_raw(device):
@@ -387,20 +206,13 @@ def import_config(caller):
 
     logging.log(7, f"import_config called by: {caller}")
 
-    config_path = "~/.config/autojack"
-    config_file = f"{config_path}/autojack.json"
+    '''config_path = "~/.config/autojack"
+    config_file = f"{config_path}/autojack.json"'''
 
-    default_device = "0,0,0"
-    for adir in glob.glob("/proc/asound/card*/codec*"):
-        idfile = adir.rsplit('/', 1)[0]
-        with open(f"{idfile}/id", "r") as card_file:
-            for line in card_file:
-                # only need one line
-                tmpname = line.rstrip()
-            if tmpname != "HDMI" and tmpname != "NVidia":
-                default_device = f"{tmpname},0,0"
+    default_device = auto_jack.get_default_dev()
+    # not sure we need this at all if auto_jack.convert loads conf_db
 
-    # read in autojack config file
+    '''# read in autojack config file
     c_file = expanduser(config_file)
     if not os.path.isfile(c_file):
         # no config file, make one
@@ -410,7 +222,8 @@ def import_config(caller):
 
     # config file exists, read it in
     with open(c_file) as f:
-        conf_db = json.load(f)
+        conf_db = json.load(f)'''
+    conf_db = auto_jack.convert()
     #logging.log(7, json.dumps(conf_db, indent = 4))
     # print(json.dumps(conf_db, indent = 4))
 
@@ -424,7 +237,8 @@ def import_config(caller):
     logger = logging.getLogger()
     logger.setLevel(int(conf_db['log-level']))
     logging.log(7, f"log level: {str(conf_db['log-level'])}")
-    import_device_array()
+    # the next line should go away with using auto_jack.convert
+    # import_device_array()
     logging.log(7, json.dumps(conf_db, indent = 4))
 
 
@@ -1780,7 +1594,7 @@ def main():
         lk_file.write(new_pid)
         print("Lock file created")
 
-    auto_jack.convert()
+    #auto_jack.convert() moved to get_config
 
     phones_check()
     signal.signal(signal.SIGHUP, handler)
