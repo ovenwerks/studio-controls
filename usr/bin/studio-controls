@@ -1,13 +1,13 @@
 #!/usr/bin/python3
-
-import gi
-
-import os
-import dbus, dbus.service, dbus.exceptions
+import dbus
+import dbus.service
+import dbus.exceptions
 import getpass
+import gi
 import grp
 import jack
 import json
+import os
 import re
 import resource
 import shlex
@@ -17,27 +17,32 @@ import socket
 import subprocess
 import sys
 import time
-
-global install_path
-install_path = os.path.abspath(f"{sys.path[0]}/..")
-sys.path.insert(1,f"{install_path}/lib/python3/dist-packages")
-import auto_jack
-
-from dbus.mainloop.glib import DBusGMainLoop
+from os.path import expanduser
 gi.require_version('Gtk', '3.0')
 from gi.repository import Gtk, GLib
-from os.path import expanduser
+from dbus.mainloop.glib import DBusGMainLoop
+
+# the auto_jack module might be in local in some cases
+global install_path
+install_path = os.path.abspath(f"{sys.path[0]}/..")
+sys.path.insert(1, f"{install_path}/lib/python3/dist-packages")
+
+import auto_jack
+
 
 DBusGMainLoop(set_as_default=True)
+
 
 class sendbus(dbus.service.Object):
     def __init__(self):
         dbus.service.Object.__init__(self, dbus.SessionBus(), "/")
 
-    @dbus.service.signal(dbus_interface="org.studio.control.command", signature="s")
+    @dbus.service.signal(dbus_interface="org.studio.control.command",
+                         signature="s")
     def signal(self, ping):
         print(f"sent it {ping}")
         pass
+
 
 class SysInfo:
     """Get information about the system"""
@@ -60,14 +65,18 @@ class SysInfo:
         return False
 
     def check_rlimits(self):
-        """returns hard rlimit values for RTPRIO and MEMLOCK"""
-        return resource.getrlimit(resource.RLIMIT_RTPRIO)[1], resource.getrlimit(resource.RLIMIT_MEMLOCK)[1]
+        '''returns hard rlimit values for RTPRIO and MEMLOCK'''
+        return {resource.getrlimit(resource.RLIMIT_RTPRIO)[1],
+                resource.getrlimit(resource.RLIMIT_MEMLOCK)[1]}
 
     # System tweaks
     def get_performance(self):
         '''Checks for current cpu governor'''
-        if os.path.isfile("/sys/devices/system/cpu/cpufreq/policy0/scaling_governor"):
-            with open("/sys/devices/system/cpu/cpufreq/policy0/scaling_governor", "r") as perform_file_test:
+        if os.path.isfile("/sys/devices/system/cpu/cpufreq"
+                          "/policy0/scaling_governor"):
+            with open("/sys/devices/system/cpu/cpufreq"
+                      "/policy0/scaling_governor",
+                      "r") as perform_file_test:
                 for line in perform_file_test:
                     if re.match("performance", line.rstrip()):
                         return True
@@ -93,8 +102,9 @@ class RTSetup:
         self.disabled_path = "/etc/security/limits.d/audio.conf.disabled"
         self.backup_file = f"{install_path}/share/studio-controls/audio.conf"
         self.pke = shutil.which("pkexec")
-        if self.pke == None:
-            print ("no pkexec, Fail")
+        if self.pke is None:
+            print("no pkexec, Fail")
+
     def set_governor(self, enable):
         if enable:
             gov = "performance"
@@ -103,22 +113,28 @@ class RTSetup:
                 gov = "powersave"
             else:
                 gov = "ondemand"
-        subprocess.run([self.pke, f"{install_path}/sbin/studio-system", gov], shell=False)
+        subprocess.run(
+            [self.pke, f"{install_path}/sbin/studio-system", gov], shell=False)
 
     def set_boost(self, enable):
         boost_path = "/sys/devices/system/cpu/intel_pstate/no_turbo"
         if os.path.exists(boost_path):
-            if enable == True:
-                subprocess.run([self.pke, f"{install_path}/sbin/studio-system", "boost"], shell=False)
+            if enable:
+                subprocess.run(
+                    [self.pke,
+                        f"{install_path}/sbin/studio-system", "boost"],
+                    shell=False)
             else:
-                subprocess.run([self.pke, f"{install_path}/sbin/studio-system", "noboost"], shell=False)
+                subprocess.run(
+                    [self.pke,
+                        f"{install_path}/sbin/studio-system", "noboost"],
+                    shell=False)
 
 
 class StudioControls:
     global lock_file
     config_path = "~/.config/autojack/"
     config_file = f"{config_path}autojack.json"
-
 
     def __init__(self):
         '''Activate the SysInfo class'''
@@ -158,7 +174,7 @@ class StudioControls:
         signal.signal(signal.SIGABRT, self.sig_handler)
         signal.signal(signal.SIGBUS, self.sig_handler)
         signal.signal(signal.SIGFPE, self.sig_handler)
-        #signal.signal(signal.SIGKILL, self.sig_handler)
+        # signal.signal(signal.SIGKILL, self.sig_handler)
         signal.signal(signal.SIGUSR1, self.sig_handler)
         signal.signal(signal.SIGSEGV, self.sig_handler)
         signal.signal(signal.SIGUSR2, self.sig_handler)
@@ -166,21 +182,23 @@ class StudioControls:
         signal.signal(signal.SIGALRM, self.sig_handler)
         signal.signal(signal.SIGTERM, self.sig_handler)
 
-
-
         # Create the GUI
         builder = Gtk.Builder()
-        builder.add_from_file(f"{install_path}/share/studio-controls/studio-controls.glade")
+        builder.add_from_file(
+            f"{install_path}/share/studio-controls/studio-controls.glade")
         # Get windows
         self.window_main = builder.get_object('window_main')
         self.window_help = builder.get_object('window_help')
-        self.message_dialog_changes_info = builder.get_object('message_dialog_changes_info')
-        self.message_dialog_rt_info = builder.get_object('message_dialog_rt_info')
+        self.message_dialog_changes_info = builder.get_object(
+            'message_dialog_changes_info')
+        self.message_dialog_rt_info = builder.get_object(
+            'message_dialog_rt_info')
         self.message_dialog_changes_info.set_transient_for(self.window_main)
         self.message_dialog_rt_info.set_transient_for(self.window_main)
         self.title_label = builder.get_object('label_main_top')
         self.button_msg_ok = builder.get_object('button_msg_ok')
-        self.title_label.set_text(f"Studio Set Up Utility (version: {version})")
+        self.title_label.set_text(
+            f"Studio Set Up Utility (version: {version})")
         # Get buttons for system tab
         self.rt_button = builder.get_object('rt_button')
         self.rt_warning = builder.get_object('rt_warning')
@@ -255,15 +273,18 @@ class StudioControls:
 
         # Dbus monitoring
         user_bus = dbus.SessionBus()
-        user_bus.add_signal_receiver(self.db_state_cb, dbus_interface='org.studio.control.state',
-                                     signal_name='state')
+        user_bus.add_signal_receiver(
+            self.db_state_cb, dbus_interface='org.studio.control.state',
+            signal_name='state')
         self.sendbs = sendbus()
 
         # Set default window icon for window managers
-        self.window_main.set_default_icon_name('com.github.ovenwerks.studio-controls')
+        self.window_main.set_default_icon_name(
+            'com.github.ovenwerks.studio-controls')
 
-        # Check if audio.conf and/or audio.conf.disabled exists, returns are true or false
-        #self.rt_file = False
+        # Check if audio.conf and/or audio.conf.disabled
+        # exists, returns are true or false
+        # self.rt_file = False
         self.jack_file_exists = self.sysinfo.check_pam_files()
         if self.jack_file_exists and self.sysinfo.user_audio():
             rtprio, memlock = self.sysinfo.check_rlimits()
@@ -271,7 +292,8 @@ class StudioControls:
                 self.rt_button.set_label("Reboot required")
                 self.rt_button.set_sensitive(False)
                 self.message_dialog_rt_info.show()
-                self.rt_warning.set_text("Session restart required for Real Time Permissions")
+                self.rt_warning.set_text(
+                    "Session restart required for Real Time Permissions")
             else:
                 # turn off warning text, check on, deactivate
                 self.rt_warning.set_text("")
@@ -359,7 +381,7 @@ class StudioControls:
         self.cap_lat_spin.set_value(self.jackdb['cap-latency'])
         self.play_lat_spin.set_value(self.jackdb['play-latency'])
         self.jack_midi_check.set_active(self.extra['a2j'])
-        if not "a2j_u" in self.extra:
+        if "a2j_u" not in self.extra:
             self.extra['a2j_u'] = False
         self.jack_midi_u.set_active(self.extra['a2j_u'])
         # Fill Extra devices widgets
@@ -391,18 +413,27 @@ class StudioControls:
         self.refresh_net(self.znetbridge)
 
         handlers = {
-            "on_window_main_delete_event": self.on_window_main_delete_event,
-            "on_window_help_delete_event": self.on_window_help_delete_event,
-            "on_main_button_cancel_clicked": self.on_main_button_cancel_clicked,
-            "on_main_button_help_clicked": self.on_main_button_help_clicked,
-            "combo_governor_changed_cb": self.combo_governor_changed_cb,
-            "combo_boost_changed_cb": self.combo_boost_changed_cb,
+            "on_window_main_delete_event":
+                self.on_window_main_delete_event,
+            "on_window_help_delete_event":
+                self.on_window_help_delete_event,
+            "on_main_button_cancel_clicked":
+                self.on_main_button_cancel_clicked,
+            "on_main_button_help_clicked":
+                self.on_main_button_help_clicked,
+            "combo_governor_changed_cb":
+                self.combo_governor_changed_cb,
+            "combo_boost_changed_cb":
+                self.combo_boost_changed_cb,
             "logging_change": self.logging_changed,
             "firewire_cb": self.firewire_cb,
             "rt_button_hit": self.rt_button_hit,
-            "on_button_msg_ok_clicked": self.on_button_msg_ok_clicked,
-            "on_button_rt_info_ok_clicked": self.on_button_rt_info_ok_clicked,
-            "on_button_help_ok_clicked": self.on_button_help_ok_clicked,
+            "on_button_msg_ok_clicked":
+                self.on_button_msg_ok_clicked,
+            "on_button_rt_info_ok_clicked":
+                self.on_button_rt_info_ok_clicked,
+            "on_button_help_ok_clicked":
+                self.on_button_help_ok_clicked,
 
             "jack_device_changed": self.jack_device_changed,
             "usb_master_changed": self.usb_master_changed,
@@ -475,7 +506,9 @@ class StudioControls:
                 autojack = True
                 print("autojack is running")
         else:
-            print(f"Autojack version is {args[1]} will be restarted on any command")
+            print(
+                f"Autojack version is {args[1]} will be"
+                "restarted on any command")
 
         if args[2] == 'usb':
             newusb = True
@@ -484,7 +517,6 @@ class StudioControls:
             jackstring = args[2]
             jackstate = True
         print(f"version: {args[1]} status:{args[2]}")
-
 
     def check_jack_status(self, user_data):
         '''Check if jack has died and the client needs to be
@@ -505,7 +537,11 @@ class StudioControls:
         if jackstate:
             self.jack_state.set_text(f" {jackstring}")
             if jack_alive:
-                if jackstring in ["Stopping...", "Stopped", "Config Pulse", "Configuring...", "Starting...", "Start Failed"]:
+                if jackstring in ["Stopping...", "Stopped",
+                                  "Config Pulse",
+                                  "Configuring...",
+                                  "Starting...",
+                                  "Start Failed"]:
                     jack_died = True
             jackstate = False
 
@@ -530,8 +566,10 @@ class StudioControls:
 
         if jack_alive:
             bus = dbus.SessionBus()
-            controller = bus.get_object("org.jackaudio.service", "/org/jackaudio/Controller")
-            control_iface = dbus.Interface(controller, "org.jackaudio.JackControl")
+            controller = bus.get_object(
+                "org.jackaudio.service", "/org/jackaudio/Controller")
+            control_iface = dbus.Interface(
+                controller, "org.jackaudio.JackControl")
             xrun_count = control_iface.GetXruns()
             self.xrun_lab.set_text(f" {str(xrun_count)}")
             load = control_iface.GetLoad()
@@ -539,9 +577,13 @@ class StudioControls:
         else:
             self.dsp_label.set_text("DSP: 0%")
             self.xrun_lab.set_text(" 0")
-            if jackstring in ["Running", "Poststart", "Adding Bridges", "Postbridge"]:
+            if jackstring in ["Running",
+                              "Poststart",
+                              "Adding Bridges",
+                              "Postbridge"]:
                 try:
-                    jack_client = jack.Client('controls', use_exact_name=False, no_start_server=True)
+                    jack_client = jack.Client(
+                        'controls', use_exact_name=False, no_start_server=True)
                 except jack.JackError:
                     self.xrun_lab.set_text(" 0")
                     return True
@@ -555,7 +597,6 @@ class StudioControls:
                 self.refresh_pulse_tab(self.pj_bridge)
         return True
 
-
     def jackdied(state, why, extra):
         '''gets called by jack if it is exiting, we can't clean up
         here... so tell the world jack died with a flag instead'''
@@ -564,34 +605,36 @@ class StudioControls:
         jack_died = True
         jack_alive = False
 
-
     def new_jack_port(port_id, new, extra):
         ''' jack has added a port tell someone '''
         global jack_ports_changed
         jack_ports_changed = True
 
-
     def xrun_reset(self, button):
         ''' user asked for an xrun reset so do it '''
         bus = dbus.SessionBus()
-        controller = bus.get_object("org.jackaudio.service", "/org/jackaudio/Controller")
+        controller = bus.get_object(
+            "org.jackaudio.service", "/org/jackaudio/Controller")
         control_iface = dbus.Interface(controller, "org.jackaudio.JackControl")
         control_iface.ResetXruns()
 
     def refresh_dropdowns(self):
-        '''this call refreshes the device lists for all drop downs
-        that use devices. If backend is not "alsa" then the jack master
-        and USB master are set to default and no usb master. However,
-        all all alsa devices will still be available for bridging and
-        as output device.'''
+        '''this call refreshes the device lists for all drop
+        downs that use devices. If backend is not "alsa" then
+        the jack master and USB master are set to default and
+        no usb master. However, all all alsa devices will
+        still be available for bridging and as output
+        device.'''
         temp_db = auto_jack.check_devices(self.conf_db)
         for temp_dev in temp_db['devices']:
-            if temp_dev in self.conf_db:
-                self.conf_db['devices'][temp_dev]['number'] = temp_db['devices'][temp_dev]['number']
-                self.conf_db['devices'][temp_dev]['id'] = temp_db['devices'][temp_dev]['id']
-                self.conf_db['devices'][temp_dev]['bus'] = temp_db['devices'][temp_dev]['bus']
+            dev_db = self.conf_db['devices'][temp_dev]
+            check_db = temp_db['devices'][temp_dev]
+            if temp_dev in self.conf_db['devices']:
+                dev_db['number'] = check_db['number']
+                dev_db['id'] = check_db['id']
+                dev_db['bus'] = check_db['bus']
             else:
-                self.conf_db['devices'][temp_dev] = temp_db['devices'][temp_dev]
+                dev_db = temp_db['devices'][temp_dev]
         xdev_current = self.xdev_select.get_active_id()
         self.current_ex_dev = xdev_current
         fw_mixer = False
@@ -602,7 +645,6 @@ class StudioControls:
         self.cap_lat_spin.set_value(self.jackdb['cap-latency'])
         self.play_lat_spin.set_value(self.jackdb['play-latency'])
 
-
         self.jack_device_combo.set_sensitive(False)
         self.jack_usb_dev_combo.set_sensitive(False)
         self.chan_in_spin.set_sensitive(False)
@@ -612,7 +654,7 @@ class StudioControls:
         self.jack_rate_combo.set_sensitive(False)
         self.xdev_select.set_sensitive(False)
         self.mixer_start.set_sensitive(False)
-        ### popdown any combo boxes before changing
+        # popdown any combo boxes before changing
         self.jack_device_combo.popdown()
         self.xdev_select.popdown()
         self.jack_usb_dev_combo.popdown()
@@ -631,12 +673,11 @@ class StudioControls:
         if self.combo_fw.get_active_id() == "ffado":
             self.mixer_start.append("ffado", "FFADO Device Mixer")
             fw_mixer = True
-        rates =[]
+        rates = []
         def_rates = ['32000', '44100', '48000', '88200', '96000', '192000']
         frames = [16, 32, 64, 128, 256, 512, 1024, 2048, 4096]
         if self.jackdb['driver'] == "firewire":
             frames = [16, 32, 48, 64, 96, 128, 256, 512, 1024, 2048, 4096]
-            
 
         self.jack_usb_dev_combo.append("none", "No USB Master")
         if self.jackdb['usbdev'] == "" or self.jackdb['usbdev'] == "none":
@@ -644,7 +685,8 @@ class StudioControls:
 
         self.hp_device.popdown()
         self.hp_device.get_model().clear()
-        self.hp_device.append(self.extra['phone-device'], self.extra['phone-device'])
+        self.hp_device.append(
+            self.extra['phone-device'], self.extra['phone-device'])
         self.hp_device.set_active_id(self.extra['phone-device'])
 
         for this_dev in self.conf_db['devices']:
@@ -681,7 +723,7 @@ class StudioControls:
                     self.xdev_select.insert(0, next_id, next_d)
                 if not sub_db['hide']:
                     # not hidden so we can add it
-                    if not "Loopback" in [this_dev]:
+                    if "Loopback" not in [this_dev]:
                         self.hp_device.append(next_id, next_d)
                         if dev_db['usb']:
                             self.jack_usb_dev_combo.append(next_id, next_d)
@@ -692,11 +734,11 @@ class StudioControls:
                     if next_id == self.jackdb['dev']:
                         self.jack_device_combo.set_active_id(next_id)
                         if self.jackdb['usbdev'] == "none":
-                            #this is jack master get rates
+                            # this is jack master get rates
                             rates = dev_db['rates']
                     if next_id == self.jackdb['usbdev']:
                         self.jack_usb_dev_combo.set_active_id(next_id)
-                        #this is jack master get rates
+                        # this is jack master get rates
                         rates = dev_db['rates']
 
         if self.jackdb['driver'] != "alsa" or rates == []:
@@ -712,10 +754,15 @@ class StudioControls:
         fw = False
         if self.jackdb['driver'] == "alsa":
             if self.jackdb['usbdev'] != 'none':
-                minlat = self.conf_db['devices'][self.jackdb['usbdev'].split(',')[0]]['min_latency']
+                minlat = self.conf_db[
+                    'devices'][
+                        self.jackdb['usbdev'].split(',')[0]][
+                        'min_latency']
             else:
-                minlat = self.conf_db['devices'][self.jackdb['dev'].split(',')[0]]['min_latency']
-                fw = self.conf_db['devices'][self.jackdb['dev'].split(',')[0]]['firewire']
+                minlat = self.conf_db['devices'][self.jackdb['dev'].split(',')[
+                    0]]['min_latency']
+                fw = self.conf_db['devices'][self.jackdb['dev'].split(',')[
+                    0]]['firewire']
         for frame in frames:
             tplt = ""
             if frame == minlat and fw:
@@ -723,7 +770,6 @@ class StudioControls:
             if frame >= minlat:
                 self.combobox_late.append(str(frame), f"{str(frame)}{tplt}")
         self.combobox_late.set_active_id(str(self.jackdb['frame']))
-
 
         self.mixer_start.set_sensitive(True)
         self.jack_rate_combo.set_sensitive(True)
@@ -740,37 +786,35 @@ class StudioControls:
 
         self.redraw_extra(xdev_current)
 
-
     '''Functions for all the gui controls'''
 
     def on_window_help_delete_event(self, window, event):
         self.window_help.hide_on_delete()
         return True
 
-
     def on_main_button_help_clicked(self, button):
         self.window_help.show()
 
-
     def rt_button_hit(self, button):
         pke = shutil.which("pkexec")
-        if pke == None:
-            print ("no pkexec, Fail")
+        if pke is None:
+            print("no pkexec, Fail")
             return
-        subprocess.run([pke, f"{install_path}/sbin/studio-system", "fix"], shell=False)
+        subprocess.run(
+            [pke, f"{install_path}/sbin/studio-system", "fix"], shell=False)
         self.rt_button.set_label("Logout required")
         self.rt_button.set_sensitive(False)
         self.message_dialog_rt_info.show()
-        self.rt_warning.set_text("Session restart required for Real Time Permissions")
-
+        self.rt_warning.set_text(
+            "Session restart required for Real Time Permissions")
 
     # system tweaks
+
     def combo_governor_changed_cb(self, button):
         if button.get_active_text() == "Performance":
             self.rtsetup.set_governor(True)
         else:
             self.rtsetup.set_governor(False)
-
 
     def combo_boost_changed_cb(self, button):
         if button.get_active_text() == "on":
@@ -783,32 +827,33 @@ class StudioControls:
         else:
             self.combo_boost.set_active(0)
 
-
     def logging_changed(self, widget):
         newval = widget.get_active_id()
         if self.conf_db['log-level'] != newval:
             self.conf_db['log-level'] = newval
             self.cb_audio_apply(widget)
 
-
     def firewire_cb(self, widget):
         newval = widget.get_active_id()
         if newval == "alsa" or newval == "ffado":
             pke = shutil.which("pkexec")
-            if pke == None:
-                print ("no pkexec, Fail")
+            if pke is None:
+                print("no pkexec, Fail")
                 return
-            subprocess.run([pke, f"{install_path}/sbin/studio-system", newval], shell=False)
-
+            subprocess.run(
+                [pke,
+                 f"{install_path}/sbin/studio-system",
+                 newval], shell=False)
 
     # Audio setup call backs
+
     def xdev_select_cb(self, widget):
         a_id = str(widget.get_active_id())
         if a_id != "None" and a_id != self.current_ex_dev:
             self.redraw_extra(a_id)
 
     def xdev_changed(self, widget):
-        #self.xdev_select.set_sensitive(False)
+        # self.xdev_select.set_sensitive(False)
         if not self.xdev_select.get_sensitive():
             return
         self.cap_chan_spin.set_sensitive(False)
@@ -831,7 +876,7 @@ class StudioControls:
         sub_db['frame'] = int(self.xdev_buff_drop.get_active_id())
         sub_db['nperiods'] = int(self.xdev_nperiods_drop.get_active_id())
         sub_db['name'] = self.xdev_name.get_text().split(' ')[0]
-        #get_value_as_int
+        # get_value_as_int
         self.hide_check.set_sensitive(True)
         if not sub_db['hide']:
             self.cap_chan_spin.set_sensitive(True)
@@ -843,15 +888,14 @@ class StudioControls:
             self.xdev_play_lat.set_sensitive(True)
             self.xdev_name.set_sensitive(True)
 
-
     def xdev_cap_all_cb(self, widget):
         if not widget.get_sensitive():
             return
         self.not_applied = True
 
         widget.set_sensitive(False)
-        #self.cap_chan_spin.set_sensitive(False)
-        #widget.set_active(False)
+        # self.cap_chan_spin.set_sensitive(False)
+        # widget.set_active(False)
         if widget.get_label() == ' All ':
             self.cap_chan_spin.set_value(100)
             widget.set_label(' Off')
@@ -861,14 +905,13 @@ class StudioControls:
         widget.set_sensitive(True)
         self.cap_chan_spin.set_sensitive(True)
 
-
     def xdev_play_all_cb(self, widget):
         if not widget.get_sensitive():
             return
         self.not_applied = True
         widget.set_sensitive(False)
-        #self.play_chan_spin.set_sensitive(False)
-        #widget.set_active(False)
+        # self.play_chan_spin.set_sensitive(False)
+        # widget.set_active(False)
         if widget.get_label() == ' All ':
             self.play_chan_spin.set_value(100)
             widget.set_label(' Off')
@@ -877,7 +920,6 @@ class StudioControls:
             self.play_chan_spin.set_value(0)
         widget.set_sensitive(True)
         self.play_chan_spin.set_sensitive(True)
-
 
     def redraw_extra(self, next_device):
         ''' change all widgets to reflect current values of the
@@ -907,9 +949,11 @@ class StudioControls:
         sub_db = dev_db['sub'][str(next_device.split(',')[1])]
         if dev_db['number'] == -1:
             # device is unplugged, some info may be missing
-            if not 'rates' in dev_db:
-                # the device may not handle all these rates but missing some would be bad
-                dev_db['rates'] = ["32000", "44100", "48000", "88200", "96000", "192000"]
+            if 'rates' not in dev_db:
+                # the device may not handle all these rates
+                # but missing some would be bad
+                dev_db['rates'] = ["32000", "44100",
+                                   "48000", "88200", "96000", "192000"]
 
         self.cap_chan_spin.set_value(sub_db['cap-chan'])
         self.play_chan_spin.set_value(sub_db['play-chan'])
@@ -939,7 +983,6 @@ class StudioControls:
             self.xdev_cap_lat.set_sensitive(True)
             self.xdev_play_lat.set_sensitive(True)
             self.xdev_name.set_sensitive(True)
-
 
     def hp_action_cb(self, widget):
         if not widget.get_sensitive():
@@ -990,7 +1033,6 @@ class StudioControls:
         self.not_applied = True
         a_id = widget.get_active()
 
-
     # Pulse bridge calls
 
     def refresh_pulse_io(self):
@@ -1010,8 +1052,8 @@ class StudioControls:
             br_exists = True
             if self.pj_bridge == "":
                 for br in in_db:
-                   self.pj_bridge = br
-                   break
+                    self.pj_bridge = br
+                    break
         self.pj_con.popdown()
         self.pj_con.get_model().clear()
         self.pj_con.append("none", "no connection")
@@ -1033,7 +1075,8 @@ class StudioControls:
         if jack_alive:
             if direction == 'in':
                 # get capture ports with audio and hardware
-                jack_cap = jack_client.get_ports("", is_audio=True, is_output=True, is_physical=True)
+                jack_cap = jack_client.get_ports(
+                    "", is_audio=True, is_output=True, is_physical=True)
                 extra = ""
                 last_dev = ""
                 for jport in jack_cap:
@@ -1046,12 +1089,15 @@ class StudioControls:
                             extra = f" <{dev}>"
                             dev = adev
                             port = palias
-                    self.pj_con.append(port, f"{port} {extra}")
-                    if br_exists and port == our_db[self.pj_bridge]['connection']:
+                    self.pj_con.append(port,
+                                       f"{port} {extra}")
+                    if br_exists and port == our_db[
+                            self.pj_bridge]['connection']:
                         self.pj_con.remove(self.pj_con.get_active())
                         self.pj_con.set_active_id(port)
 
-            jack_play = jack_client.get_ports("", is_audio=True, is_input=True, is_physical=True)
+            jack_play = jack_client.get_ports(
+                "", is_audio=True, is_input=True, is_physical=True)
             extra = ""
             last_dev = ""
             for jport in jack_play:
@@ -1065,8 +1111,10 @@ class StudioControls:
                         dev = adev
                         port = palias
                 if direction == 'out':
-                    self.pj_con.append(port, f"{port} {extra}")
-                    if br_exists and port == our_db[self.pj_bridge]['connection']:
+                    self.pj_con.append(port,
+                                       f"{port} {extra}")
+                    if br_exists and port == our_db[
+                            self.pj_bridge]['connection']:
                         self.pj_con.remove(self.pj_con.get_active())
                         self.pj_con.set_active_id(port)
                 self.monitor_combo.append(port, f"{port} {extra}")
@@ -1075,12 +1123,13 @@ class StudioControls:
                     self.monitor_combo.set_active_id(monitor)
 
         else:
-            self.pj_con.append("none", "Ports cannot be displayed unless JACK is running.")
-            self.monitor_combo.append("none", "Ports cannot be displayed unless JACK is running.")
+            self.pj_con.append(
+                "none", "Ports cannot be displayed unless JACK is running.")
+            self.monitor_combo.append(
+                "none", "Ports cannot be displayed unless JACK is running.")
 
         self.pj_con.set_sensitive(True)
         self.monitor_combo.set_sensitive(True)
-
 
     def refresh_pulse_tab(self, new_bridge):
         ''' Fill in all pulse related widgets '''
@@ -1102,7 +1151,7 @@ class StudioControls:
             self.pj_count.set_value(1)
             self.pj_con.set_active_id('none')
             self.pj_direction.set_active_id('out')
-            #self.pj_direction.set_active_id('none')
+            # self.pj_direction.set_active_id('none')
             self.pj_bridge = ''
         else:
             for bridge in out_db:
@@ -1117,11 +1166,11 @@ class StudioControls:
             if new_bridge in out_db:
                 our_db = out_db
                 self.pj_direction.set_active_id('out')
-                #self.pj_direct.set_text('Output (Pulse to JACK)')
+                # self.pj_direct.set_text('Output (Pulse to JACK)')
             if new_bridge in in_db:
                 our_db = in_db
                 self.pj_direction.set_active_id('in')
-                #self.pj_direct.set_text('Input (JACK to Pulse)')
+                # self.pj_direct.set_text('Input (JACK to Pulse)')
             self.pj_combo.set_active_id(new_bridge)
             self.pj_name.set_text(new_bridge)
             self.pj_count.set_value(our_db[new_bridge]['count'])
@@ -1129,13 +1178,12 @@ class StudioControls:
             self.pj_bridge = new_bridge
 
         self.pj_combo.set_sensitive(True)
-        #self.pj_direction.set_sensitive(True)
+        # self.pj_direction.set_sensitive(True)
         self.pj_name.set_sensitive(True)
         self.pj_count.set_sensitive(True)
         self.pj_con.set_sensitive(True)
         # rebuild the the connection dropdowns
         jack_ports_changed = True
-
 
     def pj_name_cb(self, widget):
         ''' call back for any pulse bridge input name or connect change
@@ -1154,11 +1202,12 @@ class StudioControls:
                 if old_name in temp_db:
                     temp_db[new_name] = temp_db.pop(old_name)
             else:
-                temp_db[new_name]['connection'] = f"{self.pj_con.get_active_id()}"
-                temp_db[new_name]['count'] = self.pj_count.get_value_as_int()
+                temp_db[new_name][
+                    'connection'] = f"{self.pj_con.get_active_id()}"
+                temp_db[new_name][
+                    'count'] = self.pj_count.get_value_as_int()
 
             self.refresh_pulse_tab(new_name)
-
 
     def pj_combo_cb(self, widget):
         ''' callback to look at different pa bridge.
@@ -1171,7 +1220,6 @@ class StudioControls:
         self.pj_bridge = self.pj_combo.get_active_id()
         self.refresh_pulse_tab(self.pj_bridge)
 
-
     def pj_add_cb(self, widget):
         ''' need to create a name for the bridge and
         assign connect as "none". Before switching
@@ -1181,12 +1229,12 @@ class StudioControls:
             return
         direct = 'out'
         temp_db = {}
-        if  widget.get_active_id() == 'in':
+        if widget.get_active_id() == 'in':
             direct = 'in'
-            temp_db =self.conf_db['pulse']['inputs']
+            temp_db = self.conf_db['pulse']['inputs']
         elif widget.get_active_id() == 'out':
             direct = 'out'
-            temp_db =self.conf_db['pulse']['outputs']
+            temp_db = self.conf_db['pulse']['outputs']
         else:
             widget.set_active_id('label')
             return
@@ -1197,18 +1245,17 @@ class StudioControls:
         new_name = ""
         while not done:
             new_name = f"pulse{str(indx)}-{direct}"
-            if not new_name in temp_db:
+            if new_name not in temp_db:
                 done = True
             else:
                 indx = indx + 1
         temp_db[new_name] = {
-                            'connection': "none",
-                            'count': 2
-                            }
+            'connection': "none",
+            'count': 2
+        }
         self.refresh_pulse_tab(new_name)
         widget.set_active_id('label')
         widget.set_sensitive(True)
-
 
     def pj_rem_cb(self, widget):
         ''' get index of current bridge
@@ -1225,15 +1272,15 @@ class StudioControls:
         self.pj_bridge = ""
         self.refresh_pulse_tab(self.pj_bridge)
 
-
     # network callbacks and refresh
+
     def refresh_net(self, new_bridge):
         ''' set up values for first bridge and midi '''
         # midi
         self.mnet_count.set_sensitive(False)
         self.mnet_type.set_sensitive(False)
         qmn = shutil.which("qmidinet")
-        if qmn == None:
+        if qmn is None:
             self.mnet_warn.set_text("Please Install qmidinet First")
             self.mnet_count.set_value(0)
         else:
@@ -1254,7 +1301,7 @@ class StudioControls:
         self.znet_name.set_sensitive(False)
         self.znet_late.set_sensitive(False)
         znj = shutil.which("zita-n2j")
-        if znj == None:
+        if znj is None:
             self.znet_warn.set_text("Please Install zita-njbridge First")
         else:
             self.znet_warn.set_text("")
@@ -1278,7 +1325,8 @@ class StudioControls:
                     self.znet_bridge.append(bridge, bridge)
                     if not new_bridge:
                         new_bridge = bridge
-                self.znet_direction.set_active_id(znet_db[new_bridge]['direction'])
+                self.znet_direction.set_active_id(
+                    znet_db[new_bridge]['direction'])
                 self.znet_bridge.set_active_id(new_bridge)
                 self.znet_name.set_text(new_bridge)
                 self.znet_count.set_value(znet_db[new_bridge]['count'])
@@ -1292,7 +1340,7 @@ class StudioControls:
                     self.znet_late.set_value(znet_db[new_bridge]['latency'])
                 self.znetbridge = new_bridge
 
-            if shutil.which("zita-n2j") == None:
+            if shutil.which("zita-n2j") is None:
                 self.znet_warn.set_text("Please install zita-njbridge")
             else:
                 self.znet_warn.set_text("")
@@ -1302,14 +1350,15 @@ class StudioControls:
                 if znet_db[new_bridge]['direction'] == 'out':
                     self.znet_bits.set_sensitive(True)
                 self.znet_bridge.set_sensitive(True)
-                #self.znet_direction.set_sensitive(True) # should never be true
+                # self.znet_direction.set_sensitive(True)
+                # should never be true
                 self.znet_count.set_sensitive(True)
                 self.znet_ip.set_sensitive(True)
                 self.znet_port.set_sensitive(True)
                 self.znet_name.set_sensitive(True)
 
-
     # audio
+
     def znet_bridge_cb(self, widget):
         ''' callback to look at different znet bridge.
         need to save name and connection, then
@@ -1343,7 +1392,8 @@ class StudioControls:
             else:
                 this_db[new_name]['bits'] = 'none'
             if this_db[new_name]['direction'] == 'in':
-                this_db[new_name]['latency'] = self.znet_late.get_value_as_int()
+                this_db[new_name][
+                    'latency'] = self.znet_late.get_value_as_int()
             else:
                 this_db[new_name]['latency'] = 0
 
@@ -1368,7 +1418,7 @@ class StudioControls:
         temp_db = self.conf_db['znet']
         while not done:
             new_name = f"net{str(indx)}-{widget.get_active_id()}"
-            if not new_name in temp_db:
+            if new_name not in temp_db:
                 done = True
             else:
                 indx = indx + 1
@@ -1393,13 +1443,13 @@ class StudioControls:
             response = dialog.run()
             dialog.destroy()
         temp_db[new_name] = {
-                            'direction': widget.get_active_id(),
-                            'ip': ip,
-                            'port': 8300,
-                            'bits': bits,
-                            'latency': late,
-                            'count': 2
-                            }
+            'direction': widget.get_active_id(),
+            'ip': ip,
+            'port': 8300,
+            'bits': bits,
+            'latency': late,
+            'count': 2
+        }
         self.refresh_net(new_name)
         widget.set_active_id('label')
         widget.set_sensitive(True)
@@ -1416,21 +1466,19 @@ class StudioControls:
         self.znetbridge = ""
         self.refresh_net(self.znetbridge)
 
-
     # midi
+
     def mnet_count_cb(self, widget):
         if not widget.get_sensitive():
             return
         self.conf_db['mnet']['count'] = widget.get_value_as_int()
         self.not_applied = True
 
-
     def mnet_type_cb(self, widget):
         if not widget.get_sensitive():
             return
         self.conf_db['mnet']['type'] = widget.get_active_id()
         self.not_applied = True
-
 
     # External applications calls
 
@@ -1448,30 +1496,32 @@ class StudioControls:
             return
         if widget.get_active_id() == "ffado":
             ffm = shutil.which("ffado-mixer")
-            if ffm == None:
+            if ffm is None:
                 print("ffado-mixer not installed")
             else:
                 try:
                     subprocess.Popen([ffm], shell=False).pid
-                except:
+                except Exception:
                     print("ffado-mixer errors are normal :P")
         else:
             mixdevice = widget.get_active_id()
-            qasm=shutil.which("qasmixer")
-            if qasm == None:
+            qasm = shutil.which("qasmixer")
+            if qasm is None:
                 print("qasmixer not installed")
             else:
-                subprocess.Popen([qasm, "-n", f"--device=hw:{str(mixdevice)}"], shell=False).pid
+                subprocess.Popen(
+                    [qasm, "-n",
+                     f"--device=hw:{str(mixdevice)}"],
+                    shell=False).pid
         widget.set_active_id("none")
         widget.set_sensitive(True)
-
 
     def pavucontrol_cb(self, button):
         '''callback for pulse control button, opens pavucontrol'''
         pvc = shutil.which("pavucontrol")
-        if pvc == None:
+        if pvc is None:
             pvc = shutil.which("pavucontrol-qt")
-        if pvc == None:
+        if pvc is None:
             print("pavucontrol not installed")
         else:
             subprocess.Popen([pvc], shell=False).pid
@@ -1479,7 +1529,7 @@ class StudioControls:
     def carla_cb(self, button):
         '''callback for carla button, opens carla'''
         crla = shutil.which("carla")
-        if crla == None:
+        if crla is None:
             button.set_label("Please Install Carla First")
         else:
             subprocess.Popen([crla], shell=False).pid
@@ -1487,7 +1537,7 @@ class StudioControls:
     def ray_cb(self, button):
         '''callback for raysession button, opens raysession'''
         rays = shutil.which("raysession")
-        if rays == None:
+        if rays is None:
             button.set_label("Please Install RaySession First")
         else:
             subprocess.Popen([rays], shell=False).pid
@@ -1495,7 +1545,7 @@ class StudioControls:
     def nsm_cb(self, button):
         '''callback for nsm button, opens New Session Manager'''
         ns = shutil.which("nsm-legacy-gui")
-        if ns == None:
+        if ns is None:
             button.set_label("Please Install New Session Manager First")
         else:
             subprocess.Popen([ns], shell=False).pid
@@ -1503,7 +1553,7 @@ class StudioControls:
     def agordejo_cb(self, button):
         '''callback for agordejo button, opens agordejo'''
         agdo = shutil.which("agordejo")
-        if agdo == None:
+        if agdo is None:
             button.set_label("Please Install Agordejo First")
         else:
             subprocess.Popen([agdo], shell=False).pid
@@ -1542,7 +1592,8 @@ class StudioControls:
         self.jackdb['period'] = int(self.combo_periods.get_active_id())
         self.jackdb['connect-mode'] = str(self.jk_connect_mode.get_active_id())
         self.jackdb['cap-latency'] = int(self.cap_lat_spin.get_value_as_int())
-        self.jackdb['play-latency'] = int(self.play_lat_spin.get_value_as_int())
+        self.jackdb['play-latency'] = int(
+            self.play_lat_spin.get_value_as_int())
 
         self.extra['a2j'] = self.jack_midi_check.get_active()
         self.extra['a2j_u'] = self.jack_midi_u.get_active()
@@ -1560,10 +1611,9 @@ class StudioControls:
             if not os.path.isdir(c_dir):
                 os.makedirs(c_dir)
         with open(c_file, 'w') as json_file:
-            json.dump(self.conf_db, json_file, indent = 4)
+            json.dump(self.conf_db, json_file, indent=4)
             json_file.write("\n")
             return
-
 
     def signal_autojack(self, signal):
         global autojack
@@ -1578,9 +1628,12 @@ class StudioControls:
                 # first tell any old autojack to die
                 self.sendbs.signal('quit')
                 # do it
-                subprocess.Popen([f"{install_path}/bin/autojack"], stdin=subprocess.DEVNULL, stdout=subprocess.DEVNULL,
-                                 stderr=subprocess.STDOUT, shell=False).pid
-
+                subprocess.Popen(
+                    [f"{install_path}/bin/autojack"],
+                    stdin=subprocess.DEVNULL,
+                    stdout=subprocess.DEVNULL,
+                    stderr=subprocess.STDOUT,
+                    shell=False).pid
 
     def on_button_help_ok_clicked(self, button):
         self.window_help.hide()
@@ -1610,7 +1663,7 @@ class StudioControls:
         global lock_file
         if jack_alive:
             jack_client.close()
-        #self.window_main = builder.get_object('window_main')
+        # self.window_main = builder.get_object('window_main')
         if self.not_applied:
             dialog = Gtk.MessageDialog(
                 transient_for=self.window_main,
@@ -1638,6 +1691,7 @@ class StudioControls:
                 if new_pid == old_pid:
                     os.remove(lock_file)
         Gtk.main_quit()
+
 
 us = StudioControls()
 us.window_main.show_all()

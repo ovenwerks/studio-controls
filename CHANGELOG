@@ -8,6 +8,7 @@ studio-controls version 2.3.2
  - Autojack uses module for device scan
  - Fix pke spelling (lp #1969827)
  - Fix missing globals
+ - Make python scripts coding style work with pep8
 
 studio-controls version 2.3.1
 

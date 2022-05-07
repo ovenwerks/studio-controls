@@ -1,6 +1,7 @@
 #!/usr/bin/python3 -u
 
-# autojack - Monitors dbus for added audio devices (hot plugged USB audio intefaces)
+# autojack - Monitors dbus for added audio devices
+# (hot plugged USB audio intefaces)
 # on detect it does one of three things:
 # makes it the jack device
 # makes it a jack client (via zita-ajbridge)
@@ -16,7 +17,9 @@
 
 import alsaaudio
 import copy
-import dbus, dbus.service, dbus.exceptions
+import dbus
+import dbus.service
+import dbus.exceptions
 import dbus.mainloop.glib
 import glob
 import jack
@@ -30,35 +33,38 @@ import signal
 import subprocess
 import sys
 import time
-
-global install_path
-install_path = os.path.abspath(f"{sys.path[0]}/..")
-sys.path.insert(1,f"{install_path}/lib/python3/dist-packages")
-import auto_jack
-
 from gi.repository import GLib
 from os.path import expanduser
+
 
 global name_base
 global control_interface_name
 global configure_interface_name
 global service_name
+global install_path
+install_path = os.path.abspath(f"{sys.path[0]}/..")
+sys.path.insert(1, f"{install_path}/lib/python3/dist-packages")
+import auto_jack
+
 name_base = 'org.jackaudio'
 control_interface_name = name_base + '.JackControl'
 configure_interface_name = name_base + '.Configure'
 service_name = name_base + '.service'
 
+
 class sendbus(dbus.service.Object):
     def __init__(self):
         dbus.service.Object.__init__(self, dbus.SessionBus(), "/")
 
-    @dbus.service.signal(dbus_interface="org.studio.control.command", signature="s")
+    @dbus.service.signal(dbus_interface="org.studio.control.command",
+                         signature="s")
     def signal(self, sg):
         logging.log(7, f"sent signal {sg}")
         print(f"sent it {sg}")
         pass
 
-    @dbus.service.signal(dbus_interface="org.studio.control.state", signature="ss")
+    @dbus.service.signal(dbus_interface="org.studio.control.state",
+                         signature="ss")
     def state(self, vr, st):
         logging.log(7, f"sent state ver: {vr} status: {st}")
         pass
@@ -106,11 +112,15 @@ def extra_devices():
     for dev in conf_db['devices']:
         rawdev = conf_db['devices'][dev]['raw']
         numst = conf_db['devices'][dev]['number']
-        usb = bool(conf_db['devices'][dev]['usb'] and conf_db['extra']['usbauto'])
+        usb = bool(conf_db['devices'][dev]['usb']
+                   and conf_db['extra']['usbauto'])
         for sub in conf_db['devices'][dev]['sub']:
             fullname = f"{dev},{sub},0"
             sub_db = conf_db['devices'][dev]['sub'][sub]
-            logging.debug(f"checking: {fullname} channel counts: {sub_db['play-chan']} {sub_db['cap-chan']} card: {numst}")
+            logging.debug(
+                f"checking: {fullname} channel counts: "
+                f"{sub_db['play-chan']} "
+                f"{sub_db['cap-chan']} card: {numst}")
             if sub_db['hide'] or int(conf_db['devices'][dev]['number']) == -1:
                 if sub_db['cap-pid'] or sub_db['play-pid']:
                     kill_slave(fullname)
@@ -141,14 +151,21 @@ def net_bridge():
         return
         # no use checking anything else
     kla = shutil.which("killall")
-    if kla == None:
+    if kla is None:
         logging.warning("unable to kill old bridges missing killall")
     else:
         cp = subprocess.run([kla, "zita-n2j"],
-                            universal_newlines=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=False)
+                            universal_newlines=True,
+                            stdout=subprocess.PIPE,
+                            stderr=subprocess.STDOUT,
+                            shell=False)
         cp1 = subprocess.run([kla, "zita-j2n"],
-                            universal_newlines=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=False)
-        logging.debug(f"kill old zita-njbridge: {cp.stdout.strip()}{cp1.stdout.strip()}")
+                             universal_newlines=True,
+                             stdout=subprocess.PIPE,
+                             stderr=subprocess.STDOUT,
+                             shell=False)
+        logging.debug(
+            f"kill old zita-njbridge: {cp.stdout.strip()}{cp1.stdout.strip()}")
 
     for bridge in conf_db['znet']:
         br_db = conf_db['znet'][bridge]
@@ -171,12 +188,14 @@ def net_bridge():
             logging.warning(f"audio network bridge {bridge} invalid")
             continue
         fcmd = shutil.which(cmd)
-        if fcmd == None:
-            logging.warning(f"command {cmd} not found, bridge: {bridge} can not be started")
+        if fcmd is None:
+            logging.warning(
+                f"command {cmd} not found, bridge: "
+                f"{bridge} can not be started")
             continue
-        cmd = f"{fcmd} --jname {bridge} {cnt_str} {late_bits} {br_db['ip']} {str(br_db['port'])}"
+        cmd = f"{fcmd} --jname {bridge} {cnt_str} "
+        f"{late_bits} {br_db['ip']} {str(br_db['port'])}"
         subprocess.Popen(shlex.split(cmd), shell=False).pid
-
 
     logging.debug("updating network audio bridges complete")
 
@@ -193,7 +212,7 @@ def import_config(caller):
     logging.log(7, f"import_config called by: {caller}")
 
     conf_db = auto_jack.convert()
-    #logging.log(7, json.dumps(conf_db, indent = 4))
+    # logging.log(7, json.dumps(conf_db, indent = 4))
     # print(json.dumps(conf_db, indent = 4))
     devices = conf_db['devices']
     for this_dev in devices:
@@ -202,21 +221,23 @@ def import_config(caller):
 
     for pout in conf_db['pulse']['outputs']:
         if conf_db['pulse']['outputs'][pout]['connection'] == "monitor":
-            conf_db['pulse']['outputs'][pout]['connection'] = conf_db['extra']['monitor']
+            conf_db['pulse']['outputs'][
+                pout]['connection'] = conf_db['extra']['monitor']
 
     if conf_db['jack']['driver'] == 'firewire':
-        #we don't save this, but treat usbdev as none
+        # we don't save this, but treat usbdev as none
         conf_db['jack']['usbdev'] = 'none'
     logger = logging.getLogger()
     logger.setLevel(int(conf_db['log-level']))
     logging.log(7, f"log level: {str(conf_db['log-level'])}")
     if caller == "config_start" or caller == "reconfig":
-        logging.log(7, json.dumps(conf_db, indent = 4))
+        logging.log(7, json.dumps(conf_db, indent=4))
 
 
 def reconfig():
-    '''reads values from configuration file and changes run to match. This tries
-    to do this without stopping jack if not needed'''
+    '''reads values from configuration file and changes run
+    to match. This tries to do this without stopping jack
+    if not needed'''
     global phones
     global conf_db
     global last_master
@@ -228,14 +249,21 @@ def reconfig():
     ol_jkdb = old_conf_db['jack']
     jackdb = conf_db['jack']
 
-    old_jack = [ol_jkdb['on'], ol_jkdb['driver'], ol_jkdb['dev'],
-            ol_jkdb['rate'], ol_jkdb['frame'], ol_jkdb['period'],
-            ol_jkdb['connect-mode'], ol_jkdb['chan-in'], ol_jkdb['chan-out'],
-            ol_jkdb['usbdev'], ol_jkdb['cap-latency'], ol_jkdb['play-latency']]
+    old_jack = [ol_jkdb['on'], ol_jkdb['driver'],
+                ol_jkdb['dev'],
+                ol_jkdb['rate'], ol_jkdb['frame'],
+                ol_jkdb['period'],
+                ol_jkdb['connect-mode'], ol_jkdb['chan-in'],
+                ol_jkdb['chan-out'],
+                ol_jkdb['usbdev'], ol_jkdb['cap-latency'],
+                ol_jkdb['play-latency']]
     new_jack = [jackdb['on'], jackdb['driver'], jackdb['dev'],
-            jackdb['rate'], jackdb['frame'], jackdb['period'],
-            jackdb['connect-mode'], jackdb['chan-in'], jackdb['chan-out'],
-            jackdb['usbdev'], jackdb['cap-latency'], jackdb['play-latency']]
+                jackdb['rate'], jackdb['frame'],
+                jackdb['period'],
+                jackdb['connect-mode'], jackdb['chan-in'],
+                jackdb['chan-out'],
+                jackdb['usbdev'], jackdb['cap-latency'],
+                jackdb['play-latency']]
     if old_jack != new_jack:
         logging.debug("change requires restart")
         config_start()
@@ -245,48 +273,97 @@ def reconfig():
         # no use checking anything else
 
     pulse_dirty = False
-    if [old_conf_db['pulse']['inputs'], old_conf_db['pulse']['outputs']] != [conf_db['pulse']['inputs'], conf_db['pulse']['outputs']]:
+    if [old_conf_db['pulse']['inputs'],
+        old_conf_db[
+            'pulse']['outputs']] != [
+                conf_db['pulse']['inputs'],
+                conf_db['pulse']['outputs']]:
         pc = shutil.which("pactl")
-        if pc == None:
-            logging.warning("pactl is missing... unable to control pulseaudio\n reconfigure failed")
+        if pc is None:
+            logging.warning(
+                "pactl is missing... unable to control"
+                "pulseaudio\n reconfigure failed")
             return
 
         pulse_dirty = True
         logging.debug("reconfiguring pulse bridges")
 
-        if len(conf_db['pulse']['inputs']) or len(conf_db['pulse']['outputs']):
-            cp = subprocess.run(["/usr/bin/pactl", "unload-module", "module-udev-detect"],
-                                universal_newlines=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=False)
+        if len(conf_db[
+                'pulse']['inputs']) or len(conf_db['pulse']['outputs']):
+            cp = subprocess.run(["/usr/bin/pactl",
+                                 "unload-module",
+                                 "module-udev-detect"],
+                                universal_newlines=True,
+                                stdout=subprocess.PIPE,
+                                stderr=subprocess.STDOUT,
+                                shell=False)
             logging.debug(f"remove module-udev-detect: {cp.stdout.strip()}")
-            cp = subprocess.run(["/usr/bin/pactl", "unload-module", "module-alsa-card"],
-                                universal_newlines=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=False)
+            cp = subprocess.run(["/usr/bin/pactl",
+                                 "unload-module",
+                                 "module-alsa-card"],
+                                universal_newlines=True,
+                                stdout=subprocess.PIPE,
+                                stderr=subprocess.STDOUT,
+                                shell=False)
             logging.debug(f"remove module-alsa-card: {cp.stdout.strip()}")
         else:
-            cp = subprocess.run(["/usr/bin/pactl", "load-module", "module-udev-detect"],
-                                universal_newlines=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=False)
-            logging.debug(f"load module-udev-detect: {cp.stdout.strip()}")
+            cp = subprocess.run(["/usr/bin/pactl",
+                                 "load-module",
+                                 "module-udev-detect"],
+                                universal_newlines=True,
+                                stdout=subprocess.PIPE,
+                                stderr=subprocess.STDOUT,
+                                shell=False)
+            logging.debug("load module-udev-detect: "
+                          f"{cp.stdout.strip()}")
 
         if old_conf_db['pulse']['inputs'] != conf_db['pulse']['inputs']:
-            cp = subprocess.run(["/usr/bin/pactl", "unload-module", "module-jack-source"],
-                                universal_newlines=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=False)
+            cp = subprocess.run(["/usr/bin/pactl",
+                                 "unload-module",
+                                 "module-jack-source"],
+                                universal_newlines=True,
+                                stdout=subprocess.PIPE,
+                                stderr=subprocess.STDOUT,
+                                shell=False)
             logging.debug(f"remove jackd_source: {cp.stdout.strip()}")
             for bridge in conf_db['pulse']['inputs']:
-                this_count = str(conf_db['pulse']['inputs'][bridge]['count'])
-                cp = subprocess.run(["/usr/bin/pactl", "load-module", "module-jack-source", f"client_name={bridge}",
-                                    f"channels={this_count}", "connect=no"],
-                                    universal_newlines=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=False)
+                this_count = str(
+                    conf_db['pulse']['inputs'][bridge]['count'])
+                cp = subprocess.run(["/usr/bin/pactl",
+                                     "load-module",
+                                     "module-jack-source",
+                                     f"client_name={bridge}",
+                                     f"channels={this_count}",
+                                     "connect=no"],
+                                    universal_newlines=True,
+                                    stdout=subprocess.PIPE,
+                                    stderr=subprocess.STDOUT,
+                                    shell=False)
                 logging.debug(f"Load jackd_source: {cp.stdout.strip()}")
 
         if old_conf_db['pulse']['outputs'] != conf_db['pulse']['outputs']:
             logging.debug("reconfiguring pulse bridges")
-            cp = subprocess.run(["/usr/bin/pactl", "unload-module", "module-jack-sink"],
-                                universal_newlines=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=False)
+            cp = subprocess.run(["/usr/bin/pactl",
+                                 "unload-module",
+                                 "module-jack-sink"],
+                                universal_newlines=True,
+                                stdout=subprocess.PIPE,
+                                stderr=subprocess.STDOUT,
+                                shell=False)
             logging.debug(f"PA unload jack-sink: {cp.stdout.strip()}")
             for bridge in conf_db['pulse']['outputs']:
-                this_count = str(conf_db['pulse']['outputs'][bridge]['count'])
-                cp = subprocess.run(["/usr/bin/pactl", "load-module", "module-jack-sink", f"client_name={bridge}",
-                                f"channels={this_count}", "connect=no"], universal_newlines=True, stdout=subprocess.PIPE,
-                                stderr=subprocess.STDOUT, shell=False)
+                this_count = str(
+                    conf_db['pulse']['outputs'][bridge]['count'])
+                cp = subprocess.run(["/usr/bin/pactl",
+                                     "load-module",
+                                     "module-jack-sink",
+                                     f"client_name={bridge}",
+                                     f"channels={this_count}",
+                                     "connect=no"],
+                                    universal_newlines=True,
+                                    stdout=subprocess.PIPE,
+                                    stderr=subprocess.STDOUT,
+                                    shell=False)
                 logging.debug(f"PA load jack-sink: {cp.stdout.strip()}")
 
     if old_conf_db['extra']['a2j'] != conf_db['extra']['a2j']:
@@ -299,57 +376,74 @@ def reconfig():
                 logging.debug(f"kill a2jmidid failed")
                 try:
                     os.kill(int(sub_db['cap-pid']), 9)
-                except:
+                except Exception:
                     print("")
 
         if conf_db['extra']['a2j']:
-            # Can't add logging for background processes. Will show up in syslog
+            # Can't add logging for background processes.
+            # Will show up in syslog
             ajc = shutil.which("a2jmidid")
-            if ajc == None:
-                logging.Warning("a2jmidid not found, is it installed? Starting MIDI-JACK bridge failed.")
+            if ajc is None:
+                logging.Warning(
+                    "a2jmidid not found, is it installed? "
+                    "Starting MIDI-JACK bridge failed.")
             else:
                 up = ""
                 if 'a2j_u' in conf_db['extra']:
                     if conf_db['extra']['a2j_u']:
                         up = "-u"
                     cmd = f"{ajc} -e {up}"
-                    midiproc = subprocess.Popen(shlex.split(cmd), shell=False)
+                    midiproc = subprocess.Popen(
+                        shlex.split(cmd),
+                        shell=False)
 
-    if [old_conf_db['mnet']['count'], old_conf_db['mnet']['type']] != [conf_db['mnet']['count'], conf_db['mnet']['type']]:
+    if [old_conf_db['mnet']['count'],
+        old_conf_db['mnet']['type']] != [conf_db['mnet']['count'],
+                                         conf_db['mnet']['type']]:
         logging.debug("reconfiguring MIDI network")
-        cp = subprocess.run(["/usr/bin/killall", "qmidinet"],
-                            universal_newlines=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=False)
+        cp = subprocess.run(["/usr/bin/killall",
+                             "qmidinet"],
+                            universal_newlines=True,
+                            stdout=subprocess.PIPE,
+                            stderr=subprocess.STDOUT,
+                            shell=False)
         logging.debug(f"kill old qmidinet: {cp.stdout.strip()}")
         if conf_db['mnet']['count']:
             mint = shutil.which("qmidinet")
-            if mint == None:
-                logging.Warning("qmidinet not found, is it installed? Starting networked midi failed.")
+            if mint is None:
+                logging.Warning(
+                    "qmidinet not found, is it installed?"
+                    "Starting networked midi failed.")
             else:
                 mtype = ""
                 if conf_db['mnet']['type'] == 'jack':
                     mtype = "--alsa-midi=no --jack-midi=yes"
-                cmd = f"{mint} --num-ports={str(conf_db['mnet']['count'])} --no-gui {mtype}"
+                cmd = f"{mint} --num-ports={str(conf_db['mnet']['count'])}"
+                f"--no-gui {mtype}"
                 subprocess.Popen(shlex.split(cmd), shell=False).pid
-
 
     # extra devices compares what is to config and fixes things
     logging.debug("Check extra devices")
     extra_devices()
     net_bridge()
 
-    if conf_db['extra']['phone-device'] != old_conf_db['extra']['phone-device']:
+    if conf_db['extra'][
+        'phone-device'] != old_conf_db[
+            'extra']['phone-device']:
         logging.debug("reconfigure Headphones setup")
         phones = False
         phones_check()
     if conf_db['extra']['monitor'][:7] != "system:" and not phones:
         logging.debug("Check main outputs")
         mon_dev, ldev, temp = conf_db['extra']['monitor'].split('-')
-        if not conf_db['devices'][mon_dev]['sub'][ldev] and conf_db['jack']['driver']  != "alsa" or mon_dev != last_master:
+        if not conf_db['devices'][
+            mon_dev]['sub'][ldev] and conf_db[
+                'jack']['driver'] != "alsa" or mon_dev != last_master:
             start_slave(mon_dev)
             con_dirty = True
 
     if pulse_dirty:
-        #do this last after all bridges are created
+        # do this last after all bridges are created
         connect_pa()
 
 
@@ -383,7 +477,10 @@ def config_start():
     if os.path.isfile(fpath) and os.access(fpath, os.X_OK):
         logging.debug("Found prestop script")
         cp = subprocess.run([fpath],
-                    universal_newlines=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=True)
+                            universal_newlines=True,
+                            stdout=subprocess.PIPE,
+                            stderr=subprocess.STDOUT,
+                            shell=True)
         logging.debug(f"Running script: {fpath}")
     if 'midiproc' in globals():
         midiproc.send_signal(signal.SIGINT)
@@ -393,27 +490,30 @@ def config_start():
             logging.debug(f"kill a2jmidid failed")
             try:
                 os.kill(int(sub_db['cap-pid']), 9)
-            except:
+            except Exception:
                 print("")
 
     bus = dbus.SessionBus()
     controller = bus.get_object(service_name, "/org/jackaudio/Controller")
     control_iface = dbus.Interface(controller, control_interface_name)
-    #configure_iface = dbus.Interface(controller, configure_interface_name)
+    # configure_iface = dbus.Interface(controller, configure_interface_name)
 
     try:
         control_iface.StopServer()
-    except:
+    except Exception:
         print("stop failed")
     time.sleep(2)
 
     # Stop jack if running
     kla = shutil.which("killall")
-    if kla == None:
+    if kla is None:
         logging.warning("killall not found, audio controls may fail to work")
     else:
         cp = subprocess.run([kla, "-q", "-9", "jackdbus", "jackd", "a2jmidid"],
-                            universal_newlines=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=False)
+                            universal_newlines=True,
+                            stdout=subprocess.PIPE,
+                            stderr=subprocess.STDOUT,
+                            shell=False)
         logging.debug(f"Kill old Procs: {cp.stdout.strip()}")
 
     jack_stat("Stopped")
@@ -423,54 +523,90 @@ def config_start():
     if os.path.isfile(fpath) and os.access(fpath, os.X_OK):
         logging.debug("Found poststop script")
         cp = subprocess.run([fpath],
-                    universal_newlines=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=True)
+                            universal_newlines=True,
+                            stdout=subprocess.PIPE,
+                            stderr=subprocess.STDOUT,
+                            shell=True)
         logging.debug(f"Running script: {fpath}")
 
     if (conf_db['jack']['driver'] == "firewire") or fw_exists:
         time.sleep(3)
         # this is a firewire device, A busreset makes for stability
         ftst = shutil.which("ffado-test")
-        if ftst == None:
-            logging.warning("ffado-test not found, fire wire device may lock up. ffado-tools not installed?")
+        if ftst is None:
+            logging.warning(
+                "ffado-test not found, fire wire device may"
+                "lock up. ffado-tools not installed?")
         else:
             cp = subprocess.run([ftst, "BusReset"],
-                            universal_newlines=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=False)
+                                universal_newlines=True,
+                                stdout=subprocess.PIPE,
+                                stderr=subprocess.STDOUT,
+                                shell=False)
             logging.debug(f"reset firewire bus: {cp.stdout.strip()}")
             time.sleep(3)
 
-        if kla == None:
-            logging.warning("killall not found, audio controls may fail to work")
+        if kla is None:
+            logging.warning(
+                "killall not found, audio controls may fail to work")
         else:
-            cp = subprocess.run([kla, "-q", "ffado-dbus-server", "ffado-mixer"],
-                            universal_newlines=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=False)
-            logging.debug(f"Kill ffado mixer because busreset needed: {cp.stdout.strip()}")
+            cp = subprocess.run([kla,
+                                 "-q", "ffado-dbus-server",
+                                 "ffado-mixer"],
+                                universal_newlines=True,
+                                stdout=subprocess.PIPE,
+                                stderr=subprocess.STDOUT,
+                                shell=False)
+            logging.debug(
+                "Kill ffado mixer because busreset needed:"
+                f"{cp.stdout.strip()}")
 
     if not conf_db['jack']['on']:
         pa = shutil.which("pulseaudio")
         # restart Pulse
-        if pa == None:
-            logging.warning("pulseaudio not found, audio controls may fail to work")
+        if pa is None:
+            logging.warning(
+                "pulseaudio not found, audio controls may fail to work")
         else:
             cp = subprocess.run([pa, "-k"],
-                        universal_newlines=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=False)
-            logging.debug(f"JACK is {str(conf_db['jack']['on'])} restart pulse: {cp.stdout.strip()}")
+                                universal_newlines=True,
+                                stdout=subprocess.PIPE,
+                                stderr=subprocess.STDOUT,
+                                shell=False)
+            logging.debug(
+                f"JACK is {str(conf_db['jack']['on'])} "
+                f"restart pulse: {cp.stdout.strip()}")
         return
     logging.debug(f"JACK is {str(conf_db['jack']['on'])} start up jack")
     jack_stat("Config Pulse")
 
     # Assume start of session where pulse may be fully loaded
     # get rid of anything that can automatically interfere
-    cp = subprocess.run(["/usr/bin/pactl", "unload-module", "module-jackdbus-detect"],
-                        universal_newlines=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=False)
+    cp = subprocess.run(["/usr/bin/pactl",
+                         "unload-module",
+                         "module-jackdbus-detect"],
+                        universal_newlines=True,
+                        stdout=subprocess.PIPE,
+                        stderr=subprocess.STDOUT, shell=False)
     logging.debug(f"remove jackdbus_detect: {cp.stdout.strip()}")
     # these should be moved
     if 0:
         # this effectively commented out for testing
-        cp = subprocess.run(["/usr/bin/pactl", "unload-module", "module-udev-detect"],
-                            universal_newlines=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=False)
+        cp = subprocess.run(["/usr/bin/pactl",
+                             "unload-module",
+                             "module-udev-detect"],
+                            universal_newlines=True,
+                            stdout=subprocess.PIPE,
+                            stderr=subprocess.STDOUT,
+                            shell=False)
         logging.debug(f"remove module-udev-detect: {cp.stdout.strip()}")
-        cp = subprocess.run(["/usr/bin/pactl", "unload-module", "module-alsa-card"],
-                            universal_newlines=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=False)
+        cp = subprocess.run(["/usr/bin/pactl",
+                             "unload-module",
+                             "module-alsa-card"],
+                            universal_newlines=True,
+                            stdout=subprocess.PIPE,
+                            stderr=subprocess.STDOUT,
+                            shell=False)
         logging.debug(f"remove module-alsa-card: {cp.stdout.strip()}")
 
     fpath = expanduser('~/.config/autojack/prestart')
@@ -478,13 +614,16 @@ def config_start():
         logging.debug("Found prestart script")
         jack_stat("Prestart running")
         cp = subprocess.run([fpath],
-                    universal_newlines=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=True)
+                            universal_newlines=True,
+                            stdout=subprocess.PIPE,
+                            stderr=subprocess.STDOUT,
+                            shell=True)
         logging.debug(f"Running script: {fpath}")
 
     jack_stat("Configuring...")
     rn = 'none'
     if conf_db['jack']['usbdev'] != "none":
-        #mdev = conf_db['jack']['usbdev']
+        # mdev = conf_db['jack']['usbdev']
         rn = get_db(conf_db['jack']['usbdev'])['raw']
     if os.path.exists(f"/proc/asound/{rn}"):
         mdev = get_raw(conf_db['jack']['usbdev'])
@@ -503,18 +642,29 @@ def config_start():
     if conf_db['jack']['connect-mode'] != 'n':
         bus = dbus.SessionBus()
         controller = bus.get_object(service_name, "/org/jackaudio/Controller")
-        #control_iface = dbus.Interface(controller, control_interface_name)
+        # control_iface = dbus.Interface(controller, control_interface_name)
         configure_iface = dbus.Interface(controller, configure_interface_name)
-        configure_iface.SetParameterValue(['engine', 'self-connect-mode'],
+        configure_iface.SetParameterValue(
+            ['engine',
+             'self-connect-mode'],
             dbus.Byte(ord(conf_db['jack']['connect-mode'])))
 
     if conf_db['jack']['driver'] == "firewire":
         cp = subprocess.run(["/usr/bin/ffado-test", "BusReset"],
-                        universal_newlines=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=False)
+                            universal_newlines=True,
+                            stdout=subprocess.PIPE,
+                            stderr=subprocess.STDOUT,
+                            shell=False)
         logging.debug(f"reset firewire bus: {cp.stdout.strip()}")
-        cp = subprocess.run(["/usr/bin/killall", "-q", "ffado-dbus-server", "ffado-mixer"],
-                        universal_newlines=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=False)
-        logging.debug(f"Kill ffado mixer because busreset needed: {cp.stdout.strip()}")
+        cp = subprocess.run(["/usr/bin/killall",
+                             "-q", "ffado-dbus-server",
+                             "ffado-mixer"],
+                            universal_newlines=True,
+                            stdout=subprocess.PIPE,
+                            stderr=subprocess.STDOUT,
+                            shell=False)
+        logging.debug(
+            f"Kill ffado mixer because busreset needed: {cp.stdout.strip()}")
         time.sleep(3)
 
     bus = dbus.SessionBus()
@@ -522,7 +672,8 @@ def config_start():
     control_iface = dbus.Interface(controller, control_interface_name)
     configure_iface = dbus.Interface(controller, configure_interface_name)
 
-    configure_iface.SetParameterValue(['engine', 'driver'], str(conf_db['jack']['driver']))
+    configure_iface.SetParameterValue(
+        ['engine', 'driver'], str(conf_db['jack']['driver']))
     logging.debug(f"JACK driver set to: {conf_db['jack']['driver']}")
     time.sleep(.4)
     if conf_db['jack']['driver'] == "alsa":
@@ -531,38 +682,51 @@ def config_start():
         logging.debug(f"JACK device set to: {mdev}")
         if mdev_db['firewire'] and conf_db['jack']['frame'] < 256:
             conf_db['jack']['frame'] = 256
-            logging.info(f"Firewire device using ALSA drivers, JACK buffer set to: 256")
+            logging.info(
+                f"Firewire device using ALSA drivers, JACK buffer set to: 256")
 
     time.sleep(.2)
-    configure_iface.SetParameterValue(['driver', 'rate'], dbus.UInt32(conf_db['jack']['rate']))
+    configure_iface.SetParameterValue(
+        ['driver', 'rate'], dbus.UInt32(conf_db['jack']['rate']))
     time.sleep(.2)
-    configure_iface.SetParameterValue(['driver', 'period'], dbus.UInt32(conf_db['jack']['frame']))
+    configure_iface.SetParameterValue(
+        ['driver', 'period'], dbus.UInt32(conf_db['jack']['frame']))
     time.sleep(.2)
     if conf_db['jack']['driver'] != "dummy":
-        configure_iface.SetParameterValue(['driver', 'nperiods'],
-            dbus.UInt32(conf_db['jack']['period']))
+        configure_iface.SetParameterValue(['driver',
+                                           'nperiods'],
+                                          dbus.UInt32(conf_db[
+                                              'jack']['period']))
         time.sleep(.2)
-        configure_iface.SetParameterValue(['driver', 'input-latency'],
+        configure_iface.SetParameterValue(
+            ['driver', 'input-latency'],
             dbus.UInt32(conf_db['jack']['cap-latency']))
         time.sleep(.2)
-        configure_iface.SetParameterValue(['driver', 'output-latency'],
-            dbus.UInt32(conf_db['jack']['play-latency']))
+        configure_iface.SetParameterValue(['driver',
+                                           'output-latency'],
+                                          dbus.UInt32(conf_db['jack'][
+                                              'play-latency']))
 
     else:
         configure_iface.SetParameterValue(['driver', 'capture'],
-            dbus.UInt32(conf_db['jack']['chan-in']))
+                                          dbus.UInt32(conf_db[
+                                              'jack']['chan-in']))
         time.sleep(.2)
-        configure_iface.SetParameterValue(['driver', 'playback'],
+        configure_iface.SetParameterValue([
+            'driver', 'playback'],
             dbus.UInt32(conf_db['jack']['chan_out']))
         time.sleep(.2)
         configure_iface.SetParameterValue(['driver', 'monitor'], True)
-    logging.debug(f"JACK rate/period/nperiods set to: {conf_db['jack']['rate']}/{conf_db['jack']['frame']}/{conf_db['jack']['period']}")
+    logging.debug(
+        "JACK rate/period/nperiods set to: "
+        f"{conf_db['jack']['rate']}/"
+        f"{conf_db['jack']['frame']}/{conf_db['jack']['period']}")
     time.sleep(3)
     jack_stat("Starting...")
 
     try:
         control_iface.StartServer()
-    except:
+    except Exception:
         logging.debug("JACK start failed")
         jack_stat("Start Failed")
         return
@@ -578,7 +742,10 @@ def config_start():
     if os.path.isfile(fpath) and os.access(fpath, os.X_OK):
         logging.debug("Found poststart script")
         cp = subprocess.run([fpath],
-                    universal_newlines=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=True)
+                            universal_newlines=True,
+                            stdout=subprocess.PIPE,
+                            stderr=subprocess.STDOUT,
+                            shell=True)
         logging.debug(f"Running script: {fpath}")
 
     start_jack_client()
@@ -586,31 +753,43 @@ def config_start():
 
     jack_stat("Adding Bridges")
     pc = shutil.which("pactl")
-    if pc == None:
-        logging.warning("pactl is missing... unable to control pulseaudio\n configure failed")
+    if pc is None:
+        logging.warning(
+            "pactl is missing... unable to control"
+            "pulseaudio\n configure failed")
     else:
         if len(conf_db['pulse']['inputs']) or len(conf_db['pulse']['outputs']):
             cp = subprocess.run([pc, "unload-module", "module-udev-detect"],
-                                universal_newlines=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=False)
+                                universal_newlines=True,
+                                stdout=subprocess.PIPE,
+                                stderr=subprocess.STDOUT, shell=False)
             logging.debug(f"remove module-udev-detect: {cp.stdout.strip()}")
             time.sleep(1)
             cp = subprocess.run([pc, "unload-module", "module-alsa-card"],
-                                universal_newlines=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=False)
+                                universal_newlines=True,
+                                stdout=subprocess.PIPE,
+                                stderr=subprocess.STDOUT, shell=False)
             logging.debug(f"remove module-alsa-card: {cp.stdout.strip()}")
             time.sleep(1)
 
         for bridge in conf_db['pulse']['inputs']:
             this_count = str(conf_db['pulse']['inputs'][bridge]['count'])
             cp = subprocess.run([pc, "load-module", "module-jack-source",
-                    f"client_name={bridge}", f"channels={this_count}", "connect=no"],
-                    universal_newlines=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=False)
+                                 f"client_name={bridge}",
+                                 f"channels={this_count}", "connect=no"],
+                                universal_newlines=True,
+                                stdout=subprocess.PIPE,
+                                stderr=subprocess.STDOUT, shell=False)
             logging.debug(f"Pulseaudio: {cp.stdout.strip()}")
             time.sleep(1)
         for bridge in conf_db['pulse']['outputs']:
             this_count = str(conf_db['pulse']['outputs'][bridge]['count'])
             cp = subprocess.run([pc, "load-module", "module-jack-sink",
-                    f"client_name={bridge}", f"channels={this_count}", "connect=no"],
-                    universal_newlines=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=False)
+                                 f"client_name={bridge}",
+                                 f"channels={this_count}", "connect=no"],
+                                universal_newlines=True,
+                                stdout=subprocess.PIPE,
+                                stderr=subprocess.STDOUT, shell=False)
             logging.debug(f"Pulseaudio: {cp.stdout.strip()}")
             time.sleep(1)
 
@@ -619,7 +798,7 @@ def config_start():
 
     # check if phones device exists
     ph_dev = conf_db['extra']['phone-device'].split(',')[0]
-    if not ph_dev in conf_db['devices']:
+    if ph_dev not in conf_db['devices']:
         phones = False
     if phones:
         if conf_db['extra']['phone-device'] != last_master:
@@ -637,8 +816,10 @@ def config_start():
 
     if conf_db['extra']['a2j']:
         ajc = shutil.which("a2jmidid")
-        if ajc == None:
-            logging.Warning("a2jmidid not found, is it installed? Starting MIDI-JACK bridge failed.")
+        if ajc is None:
+            logging.Warning(
+                "a2jmidid not found, is it installed?"
+                " Starting MIDI-JACK bridge failed.")
         else:
             up = ""
             if 'a2j_u' in conf_db['extra']:
@@ -646,17 +827,20 @@ def config_start():
                     up = "-u"
                 cmd = f"{ajc} -e {up}"
                 midiproc = subprocess.Popen(shlex.split(cmd), shell=False)
-                #logging not possible without extra thread
+                # logging not possible without extra thread
 
     if conf_db['mnet']['count']:
         mint = shutil.which("qmidinet")
-        if mint == None:
-            logging.Warning("qmidinet not found, is it installed? Starting networked midi failed.")
+        if mint is None:
+            logging.Warning(
+                "qmidinet not found, is it installed?"
+                " Starting networked midi failed.")
         else:
             mtype = ""
             if conf_db['mnet']['type'] == 'jack':
                 mtype = "--alsa-midi=no --jack-midi=yes"
-            cmd = f"{mint} --num-ports={str(conf_db['mnet']['count'])} --no-gui {mtype}"
+            cmd = f"{mint} --num-ports={str(conf_db['mnet']['count'])} "
+            f"--no-gui {mtype}"
             subprocess.Popen(shlex.split(cmd), shell=False).pid
 
     jack_stat("Postbridge")
@@ -664,7 +848,9 @@ def config_start():
     if os.path.isfile(fpath) and os.access(fpath, os.X_OK):
         logging.debug("Found poststart script")
         cp = subprocess.run([fpath],
-                    universal_newlines=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=True)
+                            universal_newlines=True,
+                            stdout=subprocess.PIPE,
+                            stderr=subprocess.STDOUT, shell=True)
         logging.debug(f"Running script: {fpath}")
     jack_stat("Running")
 
@@ -679,7 +865,8 @@ def start_jack_client():
     jack.set_error_function(callback=jack_error)
     jack.set_info_function(callback=jack_info)
     try:
-        jack_client = jack.Client('AutoJack', use_exact_name=False, no_start_server=True)
+        jack_client = jack.Client(
+            'AutoJack', use_exact_name=False, no_start_server=True)
     except jack.JackError:
         logging.warning("Unable to create jack client")
         jack_died = True
@@ -731,7 +918,8 @@ def jack_con_det(a, b, connect):
         if so and phones == True move to phones port'''
     global con_dirty
     global conf_db
-    if connect and (phones or (conf_db['extra']['monitor'] != "system:playback_1")):
+    if connect and (phones or (conf_db['extra']['monitor']
+                    != "system:playback_1")):
         con_dirty = True
 
 
@@ -761,11 +949,14 @@ def check_jack_status(user_data):
             for old_idx in range(5, -1, -1):
                 if old_idx:
                     if os.path.isfile(f"{logfile}.{str(old_idx)}"):
-                        os.replace(f"{logfile}.{str(old_idx)}", f"{logfile}.{str(old_idx + 1)}")
+                        os.replace(f"{logfile}.{str(old_idx)}",
+                                   f"{logfile}.{str(old_idx + 1)}")
                 else:
                     logging.shutdown()
                     os.replace(logfile, f"{logfile}.1")
-                    logging.basicConfig(filename=logfile, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
+                    logging.basicConfig(filename=logfile,
+                                        format='%(asctime)s - %(name)s'
+                                        ' - %(levelname)s - %(message)s',
                                         level=conf_db['log-level'])
             logging.debug("Log File rotated")
         logfile = expanduser("~/.log/jack/jackdbus.log")
@@ -774,7 +965,8 @@ def check_jack_status(user_data):
             for old_idx in range(5, -1, -1):
                 if old_idx:
                     if os.path.isfile(f"{logfile}.{str(old_idx)}"):
-                        os.replace(f"{logfile}.{str(old_idx)}", f"{logfile}.{str(old_idx + 1)}")
+                        os.replace(f"{logfile}.{str(old_idx)}",
+                                   f"{logfile}.{str(old_idx + 1)}")
                 else:
                     os.replace(logfile, f"{logfile}.1")
             logging.debug("JACK Log File rotated")
@@ -798,7 +990,8 @@ def switch_outputs(left_old, left_new):
     pair. example: system:playback_1'''
     global jack_client
     global jack_alive
-    logging.debug(f"moving connections from {str(left_old)} to {str(left_new)}")
+    logging.debug(
+        f"moving connections from {str(left_old)} to {str(left_new)}")
     if not jack_alive:
         logging.debug("Jack not running")
         return
@@ -837,16 +1030,19 @@ def get_next_port(left_port_ask):
         return ""
 
     right = False
-    # For firewire backend, the ports are labeled firewire_pcm:something<num>_in or _out
-    # but have an alias of system:<direction>_<num>. We have to find the real port name
-    # for left_port
+    # For firewire backend, the ports are labeled
+    # firewire_pcm:something<num>_in or _out
+    # but have an alias of system:<direction>_<num>.
+    # We have to find the real port name for left_port
     left_port = jack_client.get_port_by_name(left_port_ask)
     logging.debug(f"Real left port name: {str(left_port.name)}")
     right_port = left_port.name
     if left_port.is_input:
-        ports = jack_client.get_ports(f"{left_port.name.split(':')[0]}*", is_audio=True, is_input=True)
+        ports = jack_client.get_ports(
+            f"{left_port.name.split(':')[0]}*", is_audio=True, is_input=True)
     else:
-        ports = jack_client.get_ports(f"{left_port.name.split(':')[0]}*", is_audio=True, is_output=True)
+        ports = jack_client.get_ports(
+            f"{left_port.name.split(':')[0]}*", is_audio=True, is_output=True)
     for next_port in ports:
         if next_port.name == left_port.name:
             logging.log(8, f"{str(next_port.name)} == {str(left_port.name)}")
@@ -874,7 +1070,8 @@ def connect_pa():
         if connection != 'none':
             prevport = ""
             nextport = connection
-            pulselist = jack_client.get_ports(f"{bridge}:*", is_audio=True, is_input=True)
+            pulselist = jack_client.get_ports(
+                f"{bridge}:*", is_audio=True, is_input=True)
             for pport in pulselist:
                 # apparently reg ex with : doesn't find : so sort it here
                 if pport.name.split(':')[0] != bridge:
@@ -883,7 +1080,7 @@ def connect_pa():
                     logging.debug(f"jack connect {nextport} to {pport.name}")
                     try:
                         jack_client.connect(nextport, pport)
-                    except:
+                    except Exception:
                         logging.log(8, "already connected skipping")
                     prevport = nextport
                     nextport = get_next_port(prevport)
@@ -895,7 +1092,8 @@ def connect_pa():
             nextport = connection
             if connection == "monitor":
                 nextport = conf_db['extra']['MONITOR']
-            pulselist = jack_client.get_ports(f"{bridge}:*", is_audio=True, is_output=True)
+            pulselist = jack_client.get_ports(
+                f"{bridge}:*", is_audio=True, is_output=True)
             for pport in pulselist:
                 if pport.name.split(':')[0] != bridge:
                     continue
@@ -903,7 +1101,7 @@ def connect_pa():
                     logging.debug(f"jack connect {pport.name} to {nextport}")
                     try:
                         jack_client.connect(pport, nextport)
-                    except:
+                    except Exception:
                         logging.log(8, "already connected skipping")
                     prevport = nextport
                     nextport = get_next_port(prevport)
@@ -925,13 +1123,15 @@ def disconnect_pa(our_config):
         if p_in_db[bridge]['connection'] != 'none':
             prevport = ""
             nextport = p_in_db[bridge]['connection']
-            pulselist = jack_client.get_ports(f"{bridge}:*", is_audio=True, is_input=True)
+            pulselist = jack_client.get_ports(
+                f"{bridge}:*", is_audio=True, is_input=True)
             for pport in pulselist:
                 if nextport != prevport:
-                    logging.debug(f"jack disconnect {nextport} from {pport.name}")
+                    logging.debug(
+                        f"jack disconnect {nextport} from {pport.name}")
                     try:
                         jack_client.disconnect(nextport, pport)
-                    except:
+                    except Exception:
                         logging.log(8, "already connected skipping")
                     prevport = nextport
                     nextport = get_next_port(prevport)
@@ -943,13 +1143,15 @@ def disconnect_pa(our_config):
                 nextport = our_config['extra']['monitor']
             else:
                 nextport = p_out_db[bridge]['connection']
-            pulselist = jack_client.get_ports(f"{bridge}:*", is_audio=True, is_output=True)
+            pulselist = jack_client.get_ports(
+                f"{bridge}:*", is_audio=True, is_output=True)
             for pport in pulselist:
                 if nextport != prevport:
-                    logging.debug(f"jack disconnect {pport.name} from {nextport}")
+                    logging.debug(
+                        f"jack disconnect {pport.name} from {nextport}")
                     try:
                         jack_client.disconnect(pport, nextport)
-                    except:
+                    except Exception:
                         logging.log(8, "already connected skipping")
                     prevport = nextport
                     nextport = get_next_port(prevport)
@@ -990,28 +1192,31 @@ def msg_cb_new(*args, **kwargs):
             # we only care about usb devices that are plugged in and have audio
             if dev_db['usb'] and dev_db['number'] != -1 and len(dev_db['sub']):
                 # check if it was not in db before or "card number" has changed
-                if not dev_name in old_devs_db or dev_db['number'] != old_devs_db[dev_name]['number']:
-                    # tell gui devicelist has changed so it can up date device dropdowns
+                if dev_name not in old_devs_db or dev_db[
+                        'number'] != old_devs_db[dev_name]['number']:
+                    # tell gui devicelist has changed so it can up date
+                    # device dropdowns
                     sendbs.state(version, 'usb')
                     logging.debug(f"USB device {dev_name} has been plugged in")
 
                     for subn in dev_db['sub']:
                         subname = f"{dev_name},{str(subn)},0"
                         if subname == last_master:
-                            #this device is current master maybe jack did a reset?
+                            # this device is current master
+                            # maybe jack did a reset?
                             continue
                         sub_db = dev_db['sub'][subn]
-                        #logging.debug(f" device = {subname} play:{str(sub_db['playback'])}"
-                        #            f" capture:{str(sub_db['capture'])}")
-                        if (conf_db['jack']['driver'] == "alsa") and (conf_db['jack']['usbdev'] == subname):
-                            logging.debug(f"Changing jack master to: {subname}")
+                        if (conf_db['jack']['driver'] == "alsa") and (
+                                conf_db['jack']['usbdev'] == subname):
+                            logging.debug(
+                                f"Changing jack master to: {subname}")
                             config_start()
                             return
                         if sub_db['play-pid'] or sub_db['cap-pid']:
                             # device in use already
                             continue
                         if conf_db['extra']['usbauto']:
-                            #extra_devices()
+                            # extra_devices()
                             start_slave(subname)
                             if subname == conf_db['extra']['phone-device']:
                                 phones_switch(True)
@@ -1049,8 +1254,10 @@ def msg_cb_removed(*args, **kwargs):
             # we only care about usb devices that are unplugged and have audio
             if dev_db['usb'] and dev_db['number'] == -1 and len(dev_db['sub']):
                 # check if it was not in db before or "card number" has changed
-                if dev_name in old_devs_db or dev_db['number'] != old_devs_db[dev_name]['number']:
-                    # tell gui devicelist has changed so it can up date device dropdowns
+                if dev_name in old_devs_db or dev_db[
+                        'number'] != old_devs_db[dev_name]['number']:
+                    # tell gui devicelist has changed
+                    # so it can up date device dropdowns
                     sendbs.state(version, 'usb')
                     logging.debug(f"USB device {dev_name} has been unplugged")
 
@@ -1058,8 +1265,9 @@ def msg_cb_removed(*args, **kwargs):
                         subname = f"{dev_name},{str(subn)},0"
                         if conf_db['jack']['usbdev'] == subname:
                             # must get rid of our jack client
-                            #jack_died = True
-                            if last_master == get_raw(conf_db['jack']['usbdev']):
+                            # jack_died = True
+                            if last_master == get_raw(
+                                    conf_db['jack']['usbdev']):
                                 kill_slave(conf_db['jack']['dev'])
                                 time.sleep(1)
                                 config_start()
@@ -1077,14 +1285,17 @@ def get_card_rate(rtdev):
     rtdev = f"{dev_db['raw']},{l_dev},{sub}"
     desired_rate = str(dev_db['sub'][l_dev]['rate'])
     backup_rate = ""
-    if os.path.isfile(f"/proc/asound/{dev_db['raw']}/pcm{l_dev}p/sub{sub}/hw_params"):
+    if os.path.isfile(f"/proc/asound/{dev_db['raw']}"
+                      f"/pcm{l_dev}p/sub{sub}/hw_params"):
         p_file = f"/proc/asound/{dev_db['raw']}/pcm{l_dev}p/sub{sub}/hw_params"
         dtype = 0
-    elif os.path.isfile(f"/proc/asound/{dev_db['raw']}/pcm{l_dev}c/sub{sub}/hw_params"):
+    elif os.path.isfile(f"/proc/asound/{dev_db['raw']}"
+                        f"/pcm{l_dev}c/sub{sub}/hw_params"):
         p_file = f"/proc/asound/{dev_db['raw']}/pcm{l_dev}c/sub{sub}/hw_params"
         dtype = 1
     else:
-        logging.warning(f"missing info file for: {rtdev} adding client may fail.")
+        logging.warning(
+            f"missing info file for: {rtdev} adding client may fail.")
         return desired_rate
 
     adev_h = alsaaudio.PCM(type=dtype, device=f"hw:{rtdev}")
@@ -1096,7 +1307,8 @@ def get_card_rate(rtdev):
                 fnd_rate = line.split()[1]
                 backup_rate = fnd_rate
                 if fnd_rate == desired_rate:
-                    logging.debug(f"Good supports desired rate: {desired_rate}")
+                    logging.debug(
+                        f"Good supports desired rate: {desired_rate}")
                     adev_h.close()
                     return fnd_rate
     adev_h.close()
@@ -1113,10 +1325,10 @@ def get_card_rate(rtdev):
         adev_h.close()
 
     if backup_rate:
-        #adev_h.close()
+        # adev_h.close()
         return backup_rate
     logging.debug(f"Unable to confirm working rate, using: {desired_rate}")
-    #adev_h.close()
+    # adev_h.close()
     return desired_rate
 
 
@@ -1133,15 +1345,16 @@ def start_slave(ldev):
     sub_db = dev_db['sub'][l_dev]
 
     if sub_db['hide']:
-        #don't start a slave blacklisted device
+        # don't start a slave blacklisted device
         logging.debug(f"Blacklisted: {ldev} don't start")
         return
 
     raw_xp = f"{dev_db['raw']},{l_dev},{sub}"
     buff_size = sub_db['frame']
-    #should do play and capture separately
+    # should do play and capture separately
     if sub_db['play-pid'] or sub_db['cap-pid']:
-        logging.debug(f" Device {ldev} already bridged or in use by other application")
+        logging.debug(
+            f" Device {ldev} already bridged or in use by other application")
         return
 
     if dev_db['hdmi']:
@@ -1154,7 +1367,8 @@ def start_slave(ldev):
     # we found it and it seems to have this sub
     if sub_db['playback']:
         if not sub_db['play-pid']:
-            #this should detect if the user has manually set either in or out numbers
+            # this should detect if the user has manually set
+            # either in or out numbers
             channels = 0
             if sub_db['play-chan'] or sub_db['cap-chan']:
                 channels = sub_db['play-chan']
@@ -1163,7 +1377,8 @@ def start_slave(ldev):
             elif ldev == conf_db['extra']['phone-device']:
                 channels = 2
             if channels:
-                cmd = f"/usr/bin/zita-j2a -j {sub_db['name']}-out -d hw:{raw_xp} -r {dsr} -p {buff_size}"
+                cmd = f"/usr/bin/zita-j2a -j {sub_db['name']}-out "
+                f"-d hw:{raw_xp} -r {dsr} -p {buff_size}"
                 cmd = f"{cmd} -n {str(sub_db['nperiods'])} -c {str(channels)}"
                 cmd = f"{cmd} -O {str(sub_db['play-latency'])}"
                 logging.debug(f"device bridging comand line: {cmd}")
@@ -1173,7 +1388,9 @@ def start_slave(ldev):
                 procs.append(procout)
                 sub_db['play-pid'] = pidout
         else:
-            logging.debug(f" Device {ldev} playback already bridged or in use by other application")
+            logging.debug(
+                f" Device {ldev} playback already bridged or "
+                "in use by other application")
     if sub_db['capture']:
         if not sub_db['cap-pid']:
             chanels = 0
@@ -1182,7 +1399,8 @@ def start_slave(ldev):
             elif dev_db['usb']:
                 channels = 100
             if channels:
-                cmd = f"/usr/bin/zita-a2j -j {sub_db['name']}-in -d hw:{raw_xp} -r {dsr} -p {buff_size}"
+                cmd = f"/usr/bin/zita-a2j -j {sub_db['name']}-in "
+                f"-d hw:{raw_xp} -r {dsr} -p {buff_size}"
                 cmd = f"{cmd} -n {str(sub_db['nperiods'])} -c {str(channels)}"
                 cmd = f"{cmd} -I {str(sub_db['cap-latency'])}"
                 logging.debug(f"Device input comand line: {cmd}")
@@ -1192,7 +1410,9 @@ def start_slave(ldev):
                 procs.append(procin)
                 sub_db['cap-pid'] = pidin
         else:
-            logging.debug(f" Device {ldev} capture already bridged or in use by other application")
+            logging.debug(
+                f" Device {ldev} capture already bridged or "
+                "in use by other application")
     time.sleep(1)
     import_config("start_slave")
 
@@ -1207,35 +1427,47 @@ def kill_slave(ldev):
     dev_db = conf_db['devices'][dname]
     if len(dev_db['sub']):
         sub_db = dev_db['sub'][l_dev]
-        logging.debug(f"{dname} has {str(len(dev_db['sub']))} sub devices, want sub device {l_dev}")
+        logging.debug(
+            f"{dname} has {str(len(dev_db['sub']))} sub devices, "
+            f"want sub device {l_dev}")
         if sub_db['play-pid']:
-            logging.debug(f"{ldev} found Playback bridge to kill. PID: {str(sub_db['play-pid'])}")
+            logging.debug(
+                f"{ldev} found Playback bridge to kill. "
+                f"PID: {str(sub_db['play-pid'])}")
             for i, pr in enumerate(procs):
                 if pr.pid == sub_db['play-pid']:
-                    logging.debug(f"kill {str(dname)} sub: {str(l_dev)} PID: {str(sub_db['play-pid'])}")
+                    logging.debug(
+                        f"kill {str(dname)} sub: {str(l_dev)} "
+                        f"PID: {str(sub_db['play-pid'])}")
                     pr.send_signal(signal.SIGINT)
                     try:
                         rt = pr.wait(timeout=15)
                     except subprocess.TimeoutExpired:
-                        logging.debug(f"kill PID: {str(sub_db['play-pid'])} failed")
+                        logging.debug(
+                            f"kill PID: {str(sub_db['play-pid'])} failed")
                         pr.terminate()
                         outs, errs = pr.communicate()
                     del procs[i]
         else:
             logging.debug(f"{ldev} no Playback bridge found")
         if sub_db['cap-pid']:
-            logging.debug(f"{ldev} found Capture bridge to kill. PID: {str(sub_db['cap-pid'])}")
+            logging.debug(
+                f"{ldev} found Capture bridge to kill. "
+                f"PID: {str(sub_db['cap-pid'])}")
             for i, pr in enumerate(procs):
                 if pr.pid == sub_db['cap-pid']:
-                    logging.info(f"kill {str(dname)} sub: {str(l_dev)} PID: {str(sub_db['cap-pid'])}")
+                    logging.info(
+                        f"kill {str(dname)} sub: {str(l_dev)} "
+                        f"PID: {str(sub_db['cap-pid'])}")
                     pr.send_signal(signal.SIGINT)
                     try:
                         rt = pr.wait(timeout=15)
                     except subprocess.TimeoutExpired:
-                        logging.debug(f"kill PID: {str(sub_db['cap-pid'])} failed")
+                        logging.debug(
+                            f"kill PID: {str(sub_db['cap-pid'])} failed")
                         try:
                             os.kill(int(sub_db['cap-pid']), 9)
-                        except:
+                        except Exception:
                             print("")
                     del procs[i]
         else:
@@ -1253,14 +1485,18 @@ def we_die():
             logging.debug(f"kill a2jmidid failed")
             try:
                 os.kill(int(sub_db['cap-pid']), 9)
-            except:
+            except Exception:
                 print("")
-    cp = subprocess.run(["/usr/bin/killall", "-9", "jackdbus", "jackd", "a2jmidid"],
-                        universal_newlines=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=False)
+    cp = subprocess.run(["/usr/bin/killall",
+                        "-9", "jackdbus", "jackd", "a2jmidid"],
+                        universal_newlines=True,
+                        stdout=subprocess.PIPE,
+                        stderr=subprocess.STDOUT, shell=False)
     jack_stat("Stopped")
     logging.debug(f"Kill jack and friends: {cp.stdout.strip()}")
     cp = subprocess.run(["/usr/bin/pulseaudio", "-k"],
-                        universal_newlines=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=False)
+                        universal_newlines=True, stdout=subprocess.PIPE,
+                        stderr=subprocess.STDOUT, shell=False)
     logging.debug(f"Restart PA: {cp.stdout.strip()}")
     if os.path.isfile(lock_file):
         new_pid = str(os.getpid())
@@ -1288,7 +1524,8 @@ def phones_switch(plugged):
         return
     out_L = "system:playback_1"
     out_R = "system:playback_2"
-    logging.debug(f"Headphone phone action = {str(conf_db['extra']['phone-action'])}")
+    logging.debug(
+        f"Headphone phone action = {str(conf_db['extra']['phone-action'])}")
     dname, l_dev, sub = conf_db['extra']['phone-device'].split(",", 2)
     dev_db = conf_db['devices'][dname]
     sub_db = dev_db['sub'][l_dev]
@@ -1297,7 +1534,8 @@ def phones_switch(plugged):
         logging.debug("Switching outputs")
         if dev_db['internal']:
             spkr = ""
-            logging.debug("Headphone device is internal change it's mixer settings")
+            logging.debug(
+                "Headphone device is internal change it's mixer settings")
             my_mixers = alsaaudio.mixers(device=f"hw:{dname}")
             if "Front" in my_mixers:
                 spkr = "Front"
@@ -1322,20 +1560,27 @@ def phones_switch(plugged):
             logging.debug(f"Headphone jack is: {phone_port}")
             # USB device?
             if not plugged:
-                port_list = jack_client.get_ports(name_pattern=f'{dname}*', is_audio=True, is_input=True, is_physical=True)
+                port_list = jack_client.get_ports(
+                    name_pattern=f'{dname}*', is_audio=True,
+                    is_input=True, is_physical=True)
                 for this_port in port_list:
                     if this_port.name == phone_port:
                         switch_outputs(phone_port, conf_db['extra']['monitor'])
                 if (not sub_db['play-chan']) and (not dev_db['usb']):
-                    logging.debug("Headphone device had no jack port ... kill unneeded bridge")
+                    logging.debug(
+                        "Headphone device had no jack port ... "
+                        "kill unneeded bridge")
                     kill_slave(conf_db['extra']['phone-device'])
             else:
                 if not sub_db['play-pid'] and (not dev_db['usb']):
-                    logging.debug("Headphone device has no jack port ... create bridge")
+                    logging.debug(
+                        "Headphone device has no jack port ... create bridge")
                     # we have to start a zita proc
                     start_slave(conf_db['extra']['phone-device'])
                     time.sleep(1)
-                port_list = jack_client.get_ports(name_pattern=f'{dname}*', is_audio=True, is_input=True, is_physical=True)
+                port_list = jack_client.get_ports(
+                    name_pattern=f'{dname}*', is_audio=True,
+                    is_input=True, is_physical=True)
                 for this_port in port_list:
                     if this_port.name == phone_port:
                         switch_outputs("system:playback_1", phone_port)
@@ -1346,7 +1591,9 @@ def phones_switch(plugged):
         fpath = expanduser('~/.config/autojack/headphone')
         if os.path.isfile(fpath) and os.access(fpath, os.X_OK):
             cp = subprocess.run([fpath, str(plugged)],
-                        universal_newlines=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=True)
+                                universal_newlines=True,
+                                stdout=subprocess.PIPE,
+                                stderr=subprocess.STDOUT, shell=True)
             logging.debug(f"Running script: {fpath} {str(plugged)}")
     else:
         logging.debug("No action chosen")
@@ -1377,22 +1624,26 @@ def phones_check():
             phones_switch(True)
             return
         else:
-            logging.warning(f"Headphone device {conf_db['extra']['phone-device']} appears to have no outputs")
+            logging.warning(
+                f"Headphone device {conf_db['extra']['phone-device']} "
+                "appears to have no outputs")
     elif dev_db['internal']:
         # this is internal we can use amixer
         logging.debug("Checking for phones with internal device")
         try:
             my_mixers = alsaaudio.mixers(device=f"hw:{dname}")
-        except:
+        except Exception:
             logging.info(f"Phones device: {dname} mixer not accessable")
             return
         hp_sw = ""
         if "Front" in my_mixers:
             hp_sw = "Front "
-        cmd = f"/usr/bin/amixer -D hw:{dname} cget iface=CARD,name='{hp_sw}Headphone Jack'"
+        cmd = f"/usr/bin/amixer -D hw:{dname} cget "
+        f"iface=CARD,name='{hp_sw}Headphone Jack'"
         logging.debug(f"amixer command: {cmd}")
         cp = subprocess.run(shlex.split(cmd), universal_newlines=True,
-                stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=False)
+                            stdout=subprocess.PIPE,
+                            stderr=subprocess.STDOUT, shell=False)
         for line in cp.stdout.split(":"):
             logging.debug(f"amixer line: {line.strip()}")
             if line.strip() == "values=on":
@@ -1413,7 +1664,7 @@ def phones_plug(*args, **kwargs):
     dname, ddev, dsub = conf_db['extra']['phone-device'].split(',')
     dev_db = conf_db['devices'][dname]
     if int(dev_db['number']) > -1 and dev_db['internal']:
-            phones_switch(True)
+        phones_switch(True)
     else:
         logging.info("Ignored phone plug: not correct device")
 
@@ -1531,7 +1782,10 @@ def main():
     if not os.path.exists(logpath):
         os.makedirs(logpath)
     logfile = expanduser("~/.log/autojack.log")
-    logging.basicConfig(filename=logfile, format='%(asctime)s - AutoJack - %(levelname)s - %(message)s', level=logging.DEBUG)
+    logging.basicConfig(
+        filename=logfile,
+        format='%(asctime)s - AutoJack - %(levelname)s - %(message)s',
+        level=logging.DEBUG)
     logging.info('Autojack started: logging started')
     print("logging started")
 
@@ -1557,13 +1811,12 @@ def main():
             print("old lock file found, killing old pid")
             try:
                 os.kill(int(old_pid), 9)
-            except:
+            except Exception:
                 print("")
             time.sleep(1)
     with open(lock_file, "w") as lk_file:
         lk_file.write(new_pid)
         print("Lock file created")
-
 
     phones_check()
     signal.signal(signal.SIGHUP, handler)
@@ -1574,7 +1827,7 @@ def main():
     signal.signal(signal.SIGABRT, handler)
     signal.signal(signal.SIGBUS, handler)
     signal.signal(signal.SIGFPE, handler)
-    #signal.signal(signal.SIGKILL, handler) unhandlable  :)
+    # signal.signal(signal.SIGKILL, handler) unhandlable  :)
     signal.signal(signal.SIGUSR1, handler)
     signal.signal(signal.SIGSEGV, handler)
     signal.signal(signal.SIGUSR2, handler)
@@ -1583,16 +1836,22 @@ def main():
     signal.signal(signal.SIGTERM, handler)
 
     system_bus = dbus.SystemBus()
-    system_bus.add_signal_receiver(msg_cb_new, dbus_interface='org.freedesktop.systemd1.Manager', signal_name='UnitNew')
-    system_bus.add_signal_receiver(msg_cb_removed, dbus_interface='org.freedesktop.systemd1.Manager',
-                                   signal_name='UnitRemoved')
-    system_bus.add_signal_receiver(phones_plug, dbus_interface='org.studio.control.event',
-                                signal_name='plug_signal')
-    system_bus.add_signal_receiver(phones_unplug, dbus_interface='org.studio.control.event',
-                                signal_name='unplug_signal')
+    system_bus.add_signal_receiver(
+        msg_cb_new, dbus_interface='org.freedesktop.systemd1.Manager',
+        signal_name='UnitNew')
+    system_bus.add_signal_receiver(
+        msg_cb_removed, dbus_interface='org.freedesktop.systemd1.Manager',
+        signal_name='UnitRemoved')
+    system_bus.add_signal_receiver(
+        phones_plug, dbus_interface='org.studio.control.event',
+        signal_name='plug_signal')
+    system_bus.add_signal_receiver(
+        phones_unplug, dbus_interface='org.studio.control.event',
+        signal_name='unplug_signal')
     user_bus = dbus.SessionBus()
-    user_bus.add_signal_receiver(ses_cb_command, dbus_interface='org.studio.control.command',
-                                 signal_name='signal')
+    user_bus.add_signal_receiver(
+        ses_cb_command, dbus_interface='org.studio.control.command',
+        signal_name='signal')
 
     sendbs.signal('start')
 
