@@ -7,6 +7,7 @@ studio-controls version 2.3.2
  - Studio-controls uses module device scan (issue #75)
  - Autojack uses module for device scan
  - Fix pke spelling (lp #1969827)
+ - Fix missing globals
 
 studio-controls version 2.3.1
 

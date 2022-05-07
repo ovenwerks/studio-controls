@@ -64,21 +64,6 @@ class sendbus(dbus.service.Object):
         pass
 
 
-def import_device_array():
-    '''creates an array of device structures as per get_dev_info(), from
-    device 0 to the highest number device currently on the system.'''
-    global conf_db
-    conf_db = auto_jack.check_devices(conf_db)
-    ### should we be saving the new db at this point?
-    # maybe create a new auto_jack call that includes save
-    # only to use with new usb device detection
-    # would it hurt to use convert in that case?
-    devices = conf_db['devices']
-    for this_dev in devices:
-        if devices[this_dev]['firewire']:
-            fw_exists = True
-
-
 def get_raw(device):
     ''' given a USB*,*,* device name return a
     true (raw) dev,*,* string'''
@@ -116,7 +101,7 @@ def extra_devices():
     if not conf_db['jack']['on']:
         return
         # no use checking anything else
-    import_device_array()
+    import_config("extra_devices")
     # a few loops
     for dev in conf_db['devices']:
         rawdev = conf_db['devices'][dev]['raw']
@@ -202,30 +187,18 @@ def import_config(caller):
     global config_path
     global config_file
     global conf_db
+    global fw_exists
     global install_path
 
     logging.log(7, f"import_config called by: {caller}")
 
-    '''config_path = "~/.config/autojack"
-    config_file = f"{config_path}/autojack.json"'''
-
-    default_device = auto_jack.get_default_dev()
-    # not sure we need this at all if auto_jack.convert loads conf_db
-
-    '''# read in autojack config file
-    c_file = expanduser(config_file)
-    if not os.path.isfile(c_file):
-        # no config file, make one
-        cp = subprocess.run([f"{install_path}/bin/convert-studio-controls"],
-            universal_newlines=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=False)
-        logging.debug(f"convert config file: {cp.stdout.strip()} error: {cp.stderr.strip()}")
-
-    # config file exists, read it in
-    with open(c_file) as f:
-        conf_db = json.load(f)'''
     conf_db = auto_jack.convert()
     #logging.log(7, json.dumps(conf_db, indent = 4))
     # print(json.dumps(conf_db, indent = 4))
+    devices = conf_db['devices']
+    for this_dev in devices:
+        if devices[this_dev]['firewire']:
+            fw_exists = True
 
     for pout in conf_db['pulse']['outputs']:
         if conf_db['pulse']['outputs'][pout]['connection'] == "monitor":
@@ -237,9 +210,8 @@ def import_config(caller):
     logger = logging.getLogger()
     logger.setLevel(int(conf_db['log-level']))
     logging.log(7, f"log level: {str(conf_db['log-level'])}")
-    # the next line should go away with using auto_jack.convert
-    # import_device_array()
-    logging.log(7, json.dumps(conf_db, indent = 4))
+    if caller == "config_start" or caller == "reconfig":
+        logging.log(7, json.dumps(conf_db, indent = 4))
 
 
 def reconfig():
@@ -1011,7 +983,7 @@ def msg_cb_new(*args, **kwargs):
                 cards_f = my_cards_f
         # remake database
         old_devs_db = copy.deepcopy(conf_db['devices'])
-        import_device_array()
+        import_config("msg_cb_new")
         dev_db = {}
         for dev_name in conf_db['devices']:
             dev_db = conf_db['devices'][dev_name]
@@ -1070,7 +1042,7 @@ def msg_cb_removed(*args, **kwargs):
 
         # remake database
         old_devs_db = copy.deepcopy(conf_db['devices'])
-        import_device_array()
+        import_config("msg_cb_removed")
         dev_db = {}
         for dev_name in conf_db['devices']:
             dev_db = conf_db['devices'][dev_name]
@@ -1155,7 +1127,7 @@ def start_slave(ldev):
     global procs
 
     logging.debug(f"Start slave: {ldev}")
-    import_device_array()
+    import_config("start_slave")
     dname, l_dev, sub = ldev.split(",", 2)
     dev_db = conf_db['devices'][dname]
     sub_db = dev_db['sub'][l_dev]
@@ -1222,7 +1194,7 @@ def start_slave(ldev):
         else:
             logging.debug(f" Device {ldev} capture already bridged or in use by other application")
     time.sleep(1)
-    import_device_array()
+    import_config("start_slave")
 
 
 def kill_slave(ldev):
@@ -1389,7 +1361,6 @@ def phones_check():
     phones = False
 
     import_config("phones_check")
-    import_device_array()
 
     dname, ddev, dsub = conf_db['extra']['phone-device'].split(',')
     dev_db = conf_db['devices'][dname]
@@ -1569,7 +1540,6 @@ def main():
     if not os.path.isdir(config_path):
         os.makedirs(config_path)
     lock_file = f"{config_path}/autojack.lock"
-    # if os.path.isfile(lock_file): # this can be added in when 20.04 is EOL
     print("sending quit to any old autojack")
     dbus.mainloop.glib.DBusGMainLoop(set_as_default=True)
     sendbs = sendbus()
@@ -1594,7 +1564,6 @@ def main():
         lk_file.write(new_pid)
         print("Lock file created")
 
-    #auto_jack.convert() moved to get_config
 
     phones_check()
     signal.signal(signal.SIGHUP, handler)

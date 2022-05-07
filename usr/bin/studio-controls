@@ -634,6 +634,9 @@ class StudioControls:
         rates =[]
         def_rates = ['32000', '44100', '48000', '88200', '96000', '192000']
         frames = [16, 32, 64, 128, 256, 512, 1024, 2048, 4096]
+        if self.jackdb['driver'] == "firewire":
+            frames = [16, 32, 48, 64, 96, 128, 256, 512, 1024, 2048, 4096]
+            
 
         self.jack_usb_dev_combo.append("none", "No USB Master")
         if self.jackdb['usbdev'] == "" or self.jackdb['usbdev'] == "none":
@@ -657,7 +660,7 @@ class StudioControls:
                 sub_db = dev_db['sub'][this_sub]
                 d_type = ""
                 if sub_db['capture']:
-                    d_type = "capture "
+                    d_type = "capture"
                 if sub_db['playback']:
                     if d_type == "":
                         d_type = "playback"
@@ -666,27 +669,12 @@ class StudioControls:
                 next_id = ""
                 dname = ""
                 next_d = ""
-                if d_type != "":
-                    # we have an audio device (not MIDI)
-                    subpath = f"/proc/asound/{str(this_dev)}/pcm{str(this_sub)}{str(d_type[0])}/sub0/info"
-                    if os.path.exists(subpath):
-                        with open(subpath, "r") as info_file:
-                            for line in info_file:
-                                clean_line = line.rstrip()
-                                if re.match("^name:", clean_line):
-                                    line_list = clean_line.split(": ", 1)
-                                    if len(line_list) > 1:
-                                        dname = line_list[1]
                 next_id = f"{this_dev},{this_sub},0"
-                desc_base = ""
                 if dev_db['usb']:
-                    desc_base = f"{this_dev} {dev_db['id']} {dev_db['bus']} {dev_db['raw']},{this_sub},0"
-                else:
-                    desc_base = next_id
+                    dname = f"({dev_db['raw']})"
                 if dev_db['number'] == -1:
-                    dname = "unplugged"
-                #next_d = f"{next_id} {d_type} ({dname})"
-                next_d = f"{desc_base} {d_type} ({dname})"
+                    dname = "(unplugged)"
+                next_d = f"{next_id} {dname} {d_type} {sub_db['description']}"
                 if "Loopback" in [this_dev]:
                     self.xdev_select.append(next_id, next_d)
                 else:

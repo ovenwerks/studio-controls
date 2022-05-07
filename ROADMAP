@@ -6,27 +6,10 @@
 
 Fixes:
 
+
 TODO:
     - detect if pulse is pw
     - 
-
-Use module for db management:
-    - DONE -move convert to module
-    - DONE -convert should return loaded db
-    - DONE -convert should use a device scan of installed devices as well as
-        db devices
-    - DONE -autojack should use module's db
-    - DONE -studio-controls should use module's db
-    - SCRATCHED -db.devices should be refered to separately
-        - refered to first
-        - saved separately
-        - make separate file
-    - DONE -studio-controls should keep two copies of devce db
-        - one for keeping in sync with autojack (detect device plug)
-        - one for unapplied settings
-        - unplugged device should transfer card -1 to settings devices
-        - plugged should transfer either card no. or add new device to settings
-    - cleanup after the above, trouble shoot etc.
 
 Future Features:
 	- make help work with current tab

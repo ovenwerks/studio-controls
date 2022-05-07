@@ -1236,35 +1236,6 @@ Many FireWire devices will work with the ALSA Modules but using the FFADO module
                         <property name="valign">center</property>
                         <property name="row-homogeneous">True</property>
                         <child>
-                          <object class="GtkComboBoxText" id="xdev_select">
-                            <property name="visible">True</property>
-                            <property name="can-focus">False</property>
-                            <property name="active">0</property>
-                            <property name="active-id">none</property>
-                            <items>
-                              <item id="none" translatable="yes">none</item>
-                            </items>
-                            <signal name="changed" handler="xdev_select_cb" swapped="no"/>
-                          </object>
-                          <packing>
-                            <property name="left-attach">1</property>
-                            <property name="top-attach">0</property>
-                            <property name="width">2</property>
-                          </packing>
-                        </child>
-                        <child>
-                          <object class="GtkLabel">
-                            <property name="visible">True</property>
-                            <property name="can-focus">False</property>
-                            <property name="halign">end</property>
-                            <property name="label" translatable="yes">Select Device to Edit: </property>
-                          </object>
-                          <packing>
-                            <property name="left-attach">0</property>
-                            <property name="top-attach">0</property>
-                          </packing>
-                        </child>
-                        <child>
                           <object class="GtkCheckButton" id="hide_check">
                             <property name="label" translatable="yes">Hide this device (blacklist)</property>
                             <property name="visible">True</property>
@@ -1476,18 +1447,6 @@ Many FireWire devices will work with the ALSA Modules but using the FFADO module
                           </packing>
                         </child>
                         <child>
-                          <object class="GtkLabel">
-                            <property name="visible">True</property>
-                            <property name="can-focus">False</property>
-                            <property name="halign">end</property>
-                            <property name="label" translatable="yes">Headphone plug in Action: </property>
-                          </object>
-                          <packing>
-                            <property name="left-attach">0</property>
-                            <property name="top-attach">6</property>
-                          </packing>
-                        </child>
-                        <child>
                           <!-- n-columns=3 n-rows=3 -->
                           <object class="GtkGrid">
                             <property name="visible">True</property>
@@ -1591,38 +1550,6 @@ Many FireWire devices will work with the ALSA Modules but using the FFADO module
                           </packing>
                         </child>
                         <child>
-                          <object class="GtkComboBoxText" id="hp_action">
-                            <property name="visible">True</property>
-                            <property name="can-focus">False</property>
-                            <property name="tooltip-text" translatable="yes">If script is selected, The script at ~/.config/autojack/phones.sh with a param that is True for phones plugged in and False otherwise.</property>
-                            <property name="active">1</property>
-                            <items>
-                              <item id="none" translatable="yes">No Action</item>
-                              <item id="switch" translatable="yes">Switch outputs to Headphones</item>
-                              <item id="script" translatable="yes">User Script</item>
-                            </items>
-                            <signal name="changed" handler="hp_action_cb" swapped="no"/>
-                          </object>
-                          <packing>
-                            <property name="left-attach">1</property>
-                            <property name="top-attach">6</property>
-                            <property name="width">2</property>
-                          </packing>
-                        </child>
-                        <child>
-                          <object class="GtkComboBoxText" id="hp_device">
-                            <property name="visible">True</property>
-                            <property name="can-focus">False</property>
-                            <property name="tooltip-text" translatable="yes">Choose the device/ports where the headphones get plugged into.</property>
-                            <property name="active">0</property>
-                          </object>
-                          <packing>
-                            <property name="left-attach">1</property>
-                            <property name="top-attach">7</property>
-                            <property name="width">2</property>
-                          </packing>
-                        </child>
-                        <child>
                           <object class="GtkButton" id="hp_switch">
                             <property name="label" translatable="yes">Manual Headphones/Speakers Switch</property>
                             <property name="visible">True</property>
@@ -1634,18 +1561,6 @@ Many FireWire devices will work with the ALSA Modules but using the FFADO module
                           <packing>
                             <property name="left-attach">0</property>
                             <property name="top-attach">8</property>
-                          </packing>
-                        </child>
-                        <child>
-                          <object class="GtkLabel">
-                            <property name="visible">True</property>
-                            <property name="can-focus">False</property>
-                            <property name="halign">end</property>
-                            <property name="label" translatable="yes">Headphone Devce: </property>
-                          </object>
-                          <packing>
-                            <property name="left-attach">0</property>
-                            <property name="top-attach">7</property>
                           </packing>
                         </child>
                         <child>
@@ -1674,6 +1589,128 @@ Many FireWire devices will work with the ALSA Modules but using the FFADO module
                           <packing>
                             <property name="left-attach">0</property>
                             <property name="top-attach">4</property>
+                            <property name="width">3</property>
+                          </packing>
+                        </child>
+                        <child>
+                          <object class="GtkBox">
+                            <property name="visible">True</property>
+                            <property name="can-focus">False</property>
+                            <child>
+                              <object class="GtkLabel">
+                                <property name="visible">True</property>
+                                <property name="can-focus">False</property>
+                                <property name="halign">end</property>
+                                <property name="label" translatable="yes">Select Device to Edit: </property>
+                              </object>
+                              <packing>
+                                <property name="expand">False</property>
+                                <property name="fill">True</property>
+                                <property name="padding">8</property>
+                                <property name="position">0</property>
+                              </packing>
+                            </child>
+                            <child>
+                              <object class="GtkComboBoxText" id="xdev_select">
+                                <property name="visible">True</property>
+                                <property name="can-focus">False</property>
+                                <property name="active">0</property>
+                                <property name="active-id">none</property>
+                                <items>
+                                  <item id="none" translatable="yes">none</item>
+                                </items>
+                                <signal name="changed" handler="xdev_select_cb" swapped="no"/>
+                              </object>
+                              <packing>
+                                <property name="expand">True</property>
+                                <property name="fill">True</property>
+                                <property name="position">1</property>
+                              </packing>
+                            </child>
+                          </object>
+                          <packing>
+                            <property name="left-attach">0</property>
+                            <property name="top-attach">0</property>
+                            <property name="width">3</property>
+                          </packing>
+                        </child>
+                        <child>
+                          <object class="GtkBox">
+                            <property name="visible">True</property>
+                            <property name="can-focus">False</property>
+                            <child>
+                              <object class="GtkLabel">
+                                <property name="visible">True</property>
+                                <property name="can-focus">False</property>
+                                <property name="halign">end</property>
+                                <property name="label" translatable="yes">Headphone Devce: </property>
+                              </object>
+                              <packing>
+                                <property name="expand">False</property>
+                                <property name="fill">True</property>
+                                <property name="position">0</property>
+                              </packing>
+                            </child>
+                            <child>
+                              <object class="GtkComboBoxText" id="hp_device">
+                                <property name="visible">True</property>
+                                <property name="can-focus">False</property>
+                                <property name="tooltip-text" translatable="yes">Choose the device/ports where the headphones get plugged into.</property>
+                                <property name="active">0</property>
+                              </object>
+                              <packing>
+                                <property name="expand">True</property>
+                                <property name="fill">True</property>
+                                <property name="position">1</property>
+                              </packing>
+                            </child>
+                          </object>
+                          <packing>
+                            <property name="left-attach">0</property>
+                            <property name="top-attach">7</property>
+                            <property name="width">3</property>
+                          </packing>
+                        </child>
+                        <child>
+                          <object class="GtkBox">
+                            <property name="visible">True</property>
+                            <property name="can-focus">False</property>
+                            <child>
+                              <object class="GtkLabel">
+                                <property name="visible">True</property>
+                                <property name="can-focus">False</property>
+                                <property name="halign">end</property>
+                                <property name="label" translatable="yes">Headphone plug in Action: </property>
+                              </object>
+                              <packing>
+                                <property name="expand">False</property>
+                                <property name="fill">True</property>
+                                <property name="position">0</property>
+                              </packing>
+                            </child>
+                            <child>
+                              <object class="GtkComboBoxText" id="hp_action">
+                                <property name="visible">True</property>
+                                <property name="can-focus">False</property>
+                                <property name="tooltip-text" translatable="yes">If script is selected, The script at ~/.config/autojack/phones.sh with a param that is True for phones plugged in and False otherwise.</property>
+                                <property name="active">1</property>
+                                <items>
+                                  <item id="none" translatable="yes">No Action</item>
+                                  <item id="switch" translatable="yes">Switch outputs to Headphones</item>
+                                  <item id="script" translatable="yes">User Script</item>
+                                </items>
+                                <signal name="changed" handler="hp_action_cb" swapped="no"/>
+                              </object>
+                              <packing>
+                                <property name="expand">False</property>
+                                <property name="fill">True</property>
+                                <property name="position">1</property>
+                              </packing>
+                            </child>
+                          </object>
+                          <packing>
+                            <property name="left-attach">0</property>
+                            <property name="top-attach">6</property>
                             <property name="width">3</property>
                           </packing>
                         </child>

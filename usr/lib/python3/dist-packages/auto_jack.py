@@ -5,6 +5,7 @@ import getopt
 import glob
 import json
 import os
+import re
 import shutil
 import sys
 
@@ -22,11 +23,6 @@ config_path = "~/.config/autojack/"
 #config_path = "~/software/Studio/controls-debug/"
 new_name = f"{config_path}autojack.json"
 old_name = f"{config_path}/autojackrc"
-
-def hello():
-    ''' a quick test method to test module '''
-    print(f"This is a test of the module: {install_path} Hello")
-
 
 def version():
     ''' get the version we are running as. Used mostly to detect
@@ -115,6 +111,7 @@ def make_db():
     ''' read old config file. '''
     global config
     global def_config
+    global old_name
     global our_db
 
     print("set some reasonable defaults")
@@ -225,8 +222,7 @@ def make_db():
 
     extra_db = {'a2j': bool(def_config['a2j'] in ['True']), 'usbauto': bool(def_config['usbauto'] in ['True']),
                 'usb-single': bool(def_config['usb-single'] in ['True']), 'monitor': def_config['monitor'],
-                'phone-action': def_config['phone-action'], 'phone-device': def_config['phone-device'],
-                'usbnext': 1
+                'phone-action': def_config['phone-action'], 'phone-device': def_config['phone-device']
                 }
     our_db['jack'] = jack_db
     our_db['extra'] = extra_db
@@ -290,7 +286,6 @@ def make_db():
             if def_config['USBDEV'] != 'none' and dev == def_config['USBDEV'].split(',')[0]:
                 if 'USB1' not in devices_db:
                     devices_db['USB1'] = dev_db
-                    extra_db['usbnext'] = 2
                     dev_db['usb'] = True
                     un, ud, us = def_config['USBDEV'].split(',')
                     jack_db['usbdev'] = f"USB1,{ud},{us}"
@@ -337,6 +332,9 @@ def write_new():
     ''' write new config file '''
     print("write new config file")
     global our_db
+    global new_name
+    global config_path
+
     #print(json.dumps(our_db, indent = 4))
     c_file = expanduser(new_name)
     if not os.path.isfile(c_file):
@@ -358,19 +356,24 @@ def usb_duplicate(device):
     for good_dev in our_db['devices']:
         if len(good_dev) > 3 and good_dev[0:3] == 'USB' and good_dev[3].isdigit():
             good_db = our_db['devices'][good_dev]
-            if good_db['raw'] == check_db['raw']:
-                if check_db['id'] == 'none':
-                    return good_dev
-                if [good_db['id'], good_db['bus']] == [check_db['id'], check_db['bus']]:
-                    return good_dev
+            if check_db['id'] == 'none':
+                return good_dev
+            if [good_db['id'], good_db['bus']] == [check_db['id'], check_db['bus']]:
+                return good_dev
     return 'none'
 
 
-def save_devices(our_db):
-    ''' check devices then save changes'''
-    our_db = check_devices(our_db)
-    write_new()
-    return our_db
+def usb_number():
+    #get a free usb number
+    global our_db
+    numbers = []
+    for dev in our_db['devices']:
+        if len(dev) > 3 and dev[0:3] == 'USB' and dev[3].isdigit():
+            # this is usb
+            numbers.append(int(dev[3:]))
+    for n in range(1, 20):
+        if not n in numbers:
+            return n
 
 
 def check_devices(our_db):
@@ -391,8 +394,6 @@ def check_devices(our_db):
             dev_db['id'] = 'none'
         if not 'bus' in dev_db:
             dev_db['bus'] = 'none'
-        if not 'description' in dev_db:
-            dev_db['description'] = 'none'
         if not 'hdmi' in dev_db:
             dev_db['hdmi'] = False
         if not 'internal' in dev_db:
@@ -415,13 +416,12 @@ def check_devices(our_db):
             dev_db['min_latency'] = 32
             if len(device) < 4 or not (device[0:3] == 'USB' and device[3].isdigit()):
                 # check for duplicate
-                # dup means raw, id and bus match
+                # dup means id and bus match
                 if  not usb_duplicate(device) == 'none':
                     our_db['devices'].pop(device)
                     continue
                 else:
-                    new_dev = f"USB{our_db['extra']['usbnext']}"
-                    our_db['extra']['usbnext'] = our_db['extra']['usbnext'] + 1
+                    new_dev = f"USB{str(usb_number())}"
                     our_db['devices'][new_dev] = our_db['devices'].pop(device)
                     dev_db = our_db['devices'][new_dev]
                     if our_db['jack']['usbdev'] != 'none':
@@ -486,6 +486,8 @@ def check_devices(our_db):
                 sub_db['play-pid'] = 0
             if not 'cap-pid' in sub_db:
                 sub_db['cap-pid'] = 0
+            if not "description" in sub_db:
+                sub_db['description'] = "unknown"
 
     # now find the real number
     if os.path.exists("/proc/asound/cards"):
@@ -508,6 +510,7 @@ def check_devices(our_db):
         usb = False
         bus = 'none'
         d_id = 'none'
+        cdescription = 'unknown'
         # first get device raw name
         if os.path.exists(f"/proc/asound/card{str(x)}"):
             if os.path.isfile(f"/proc/asound/card{str(x)}/id"):
@@ -517,7 +520,10 @@ def check_devices(our_db):
                         cname = line.rstrip()
             else:
                 cname = str(x)
-        #print(f"cname: {cname} card: {str(x)}")
+        else:
+            # not all numbers may be used
+            break
+        print(f"cname: {cname} card: {str(x)}")
         # now check for USB device remembering to go by id/bus not raw name
         if os.path.exists(f"/proc/asound/card{str(x)}/usbid"):
             usb = True
@@ -536,7 +542,7 @@ def check_devices(our_db):
                             # example: C-Media Electronics Inc. USB PnP Sound Device at usb-0000:00:1d.0-1.1, full spe
                             prebus = line.strip().split(' at ')[1]
                             bus = line.strip().split(' at ')[1].split(', ')[0]
-                            description = line.strip().split(' at ')[0]
+                            cdescription = line.strip().split(' at ')[0]
                             line0 = False
                         if 'Rates:' in line:
                             fnd_rates = line.split()[1:]
@@ -544,6 +550,7 @@ def check_devices(our_db):
                                 rate = rate.split(',')[0]
                                 if not rate in drates:
                                     drates.append(rate)
+        # find this device in db or add to db
         found_name = ""
         for dev in our_db['devices']:
             dev_db = our_db['devices'][dev]
@@ -570,20 +577,18 @@ def check_devices(our_db):
                 found_name = dev
                 break
         if found_name == "":
-            #print ("device not found")
+            print ("device not found")
             if usb:
-                found_name = f"USB{our_db['extra']['usbnext']}"
+                found_name = f"USB{our_db['extra'][usb_number()]}"
                 our_db['devices'][found_name] = {'number': x, 'usb': True, "internal": False,
                 'hdmi': False, 'firewire': False,'min_latency': 32,
-                'rates': ['32000', '44100', '48000', '88200', '96000', '192000'],
-                'raw': cname, 'id': d_id, 'bus': bus, 'description': description, 'sub': {}}
-                our_db['extra']['usbnext'] += 1
+                'rates': drates, 'raw': cname, 'id': d_id, 'bus': bus, 'sub': {}}
             else:
                 found_name = cname
                 our_db['devices'][cname] = {'number': x, 'usb': False, "internal": False,
                 'hdmi': False, 'firewire': False,'min_latency': 16,
                 'rates': ['32000', '44100', '48000', '88200', '96000', '192000'],
-                'raw': cname, 'id': 'none', 'bus': 'none', 'description': 'none', 'sub': {}}
+                'raw': cname, 'id': 'none', 'bus': 'none', 'sub': {}}
 
         #print(f"{cname}")
             
@@ -602,7 +607,6 @@ def check_devices(our_db):
             dev_db['number'] = x
             dev_db['id'] = d_id
             dev_db['bus'] = bus
-            dev_db['description'] = description
             dev_db['min_latency'] = 32
         elif os.path.exists(f"/proc/asound/card{str(x)}/codec#0"):
             dev_db['internal'] = True
@@ -635,17 +639,46 @@ def check_devices(our_db):
         for y in range(0, 20):
             cap = False
             play = False
+            cap_pid = 0
+            play_pid = 0
+            dname = ""
             if os.path.exists(f"/proc/asound/card{str(x)}/pcm{str(y)}p"):
                 play = True
+                if os.path.exists(f"/proc/asound/card{str(x)}/pcm{str(y)}p/sub0"):
+                    with open(f"/proc/asound/card{str(x)}/pcm{str(y)}p/sub0/status", "r") as info_file:
+                        for line in info_file:
+                            if re.match("^owner_pid", line.rstrip()):
+                                play_pid = int(line.rstrip().split(": ", 1)[1])
+                    with open(f"/proc/asound/card{str(x)}/pcm{str(y)}p/sub0/info", "r") as info_file:
+                        for line in info_file:
+                            clean_line = line.rstrip()
+                            if re.match("^name:", clean_line):
+                                line_list = clean_line.split(": ", 1)
+                                if len(line_list) > 1:
+                                    dname = line_list[1]
 
             if os.path.exists(f"/proc/asound/card{str(x)}/pcm{str(y)}c"):
                 cap = True
-
+                if os.path.exists(f"/proc/asound/card{str(x)}/pcm{str(y)}c/sub0"):
+                    with open(f"/proc/asound/card{str(x)}/pcm{str(y)}c/sub0/status", "r") as info_file:
+                        for line in info_file:
+                            if re.match("^owner_pid", line.rstrip()):
+                                cap_pid = int(line.rstrip().split(": ", 1)[1])
+                    with open(f"/proc/asound/card{str(x)}/pcm{str(y)}c/sub0/info", "r") as info_file:
+                        for line in info_file:
+                            clean_line = line.rstrip()
+                            if re.match("^name:", clean_line):
+                                line_list = clean_line.split(": ", 1)
+                                if len(line_list) > 1:
+                                    dname = line_list[1]
+            #print(f"cap: {str(cap)}  play:{str(play)}")
             if cap or play:
                 if not str(y) in dev_db['sub']:
                     dev_db['sub'][str(y)] = {'playback': play, 'capture': cap}
 
                 sub_db = dev_db['sub'][str(y)]
+                sub_db['play-pid'] = play_pid
+                sub_db['cap-pid'] = cap_pid
                 if not 'playback' in sub_db:
                     sub_db['playback'] = play
                 if not 'capture' in sub_db:
@@ -661,9 +694,13 @@ def check_devices(our_db):
                     else:
                         sub_db['cap-chan'] = 0
                 if not "rate" in sub_db:
-                    sub_db['rate'] = 48000
-                    if (not '48000' in rates) and len(rates):
-                        sub_db['rate'] = int(rates[0])
+                    jackrate = str(our_db['jack']['rate'])
+                    if not jackrate in dev_db['rates']:
+                        sub_db['rate'] = 48000
+                        if (not '48000' in rates) and len(rates):
+                            sub_db['rate'] = int(rates[0])
+                    else:
+                        sub_db['rate'] = our_db['jack']['rate']
                 if not 'frame' in sub_db:
                     sub_db['frame'] = 1024
                     if 1024 < dev_db['min_latency']:
@@ -678,6 +715,10 @@ def check_devices(our_db):
                     sub_db['cap-latency'] = 0
                 if not "play-latency" in sub_db:
                     sub_db['play-latency'] = 0
+                if dev_db['usb']:
+                    sub_db['description'] = cdescription
+                else:
+                    sub_db['description'] = dname
     return our_db
 
 def check_new():
@@ -727,13 +768,7 @@ def check_db():
 
     extra_db = our_db['extra']
 
-    if not 'usbnext' in extra_db:
-        extra_db['usbnext'] = 1
-    else:
-        extra_db['usbnext'] = int(extra_db['usbnext'])
-
-    # check_devices should be universal. It should take db['devices'] as a
-    # parameter and return an updated version
+    # check_devices should be universal.
     our_db = check_devices(our_db)
     print(" Devices checked, continue data base check")
 
