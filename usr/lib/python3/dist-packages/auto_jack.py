@@ -19,8 +19,8 @@ vers = "not installed"
 global config_path
 global new_name
 global old_name
-config_path = "~/.config/autojack/"
-# config_path = "~/software/Studio/controls-debug/"
+#config_path = "~/.config/autojack/"
+config_path = "~/software/Studio/controls-debug/"
 new_name = f"{config_path}autojack.json"
 old_name = f"{config_path}/autojackrc"
 
@@ -618,7 +618,7 @@ def check_devices(our_db):
         if found_name == "":
             print("device not found")
             if usb:
-                found_name = f"USB{our_db['extra'][usb_number()]}"
+                found_name = f"USB{usb_number()}"
                 our_db['devices'][found_name] = {
                     'number': x, 'usb': True,
                     "internal": False,
@@ -772,8 +772,8 @@ def check_devices(our_db):
                     sub_db['nperiods'] = 2
                 if 'hide' not in sub_db:
                     sub_db['hide'] = False
-                if 'name' not in sub_db:
-                    sub_db['name'] = 'none'
+                if 'name' not in sub_db or sub_db['name'] == 'none':
+                    sub_db['name'] = f"{found_name},{str(y)},0"
                 if "cap-latency" not in sub_db:
                     sub_db['cap-latency'] = 0
                 if "play-latency" not in sub_db:
@@ -989,7 +989,6 @@ def convert():
         # - or use defaults and create one
         # - if force is True then use .bak on file name
 
-        read_old()
         make_db()
         check_db()
     return our_db

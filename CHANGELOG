@@ -9,6 +9,7 @@ studio-controls version 2.3.2
  - Fix pke spelling (lp #1969827)
  - Fix missing globals
  - Make python scripts coding style work with pep8
+ - Default zita-ajbridge name should not be none
 
 studio-controls version 2.3.1
 
