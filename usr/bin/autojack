@@ -1620,6 +1620,9 @@ def phones_check():
         logging.info(f"Phones device: {conf_db['extra']['phone-device']} invalid")
         return
     dname, ddev, dsub = conf_db['extra']['phone-device'].split(',')
+    if dname not in conf_db['devices']:
+        logging.info(f"Phones device: {conf_db['extra']['phone-device']} invalid")
+        return
     dev_db = conf_db['devices'][dname]
     sub_db = dev_db['sub'][ddev]
     logging.log(7, f"phonecheck: got device")
