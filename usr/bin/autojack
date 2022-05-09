@@ -1614,7 +1614,11 @@ def phones_check():
     phones = False
 
     import_config("phones_check")
+    # need to check if jack is running
 
+    if len(conf_db['extra']['phone-device'].split(',')) < 3:
+        logging.info(f"Phones device: {conf_db['extra']['phone-device']} invalid")
+        return
     dname, ddev, dsub = conf_db['extra']['phone-device'].split(',')
     dev_db = conf_db['devices'][dname]
     sub_db = dev_db['sub'][ddev]
@@ -1644,8 +1648,8 @@ def phones_check():
         hp_sw = ""
         if "Front" in my_mixers:
             hp_sw = "Front "
-        cmd = f"/usr/bin/amixer -D hw:{dname} cget "
-        f"iface=CARD,name='{hp_sw}Headphone Jack'"
+        cmd = f"/usr/bin/amixer -D hw:{dname} cget"
+        cmd = f"{cmd} iface=CARD,name='{hp_sw}Headphone Jack'"
         logging.debug(f"amixer command: {cmd}")
         cp = subprocess.run(shlex.split(cmd), universal_newlines=True,
                             stdout=subprocess.PIPE,
