@@ -208,10 +208,15 @@ def import_config(caller):
     global conf_db
     global fw_exists
     global install_path
+    global startup
 
     logging.log(7, f"import_config called by: {caller}")
 
-    conf_db = auto_jack.convert()
+    if startup:
+        conf_db = auto_jack.convert(False)
+        startup = False
+    else:
+        conf_db = auto_jack.convert()
     # logging.log(7, json.dumps(conf_db, indent = 4))
     # print(json.dumps(conf_db, indent = 4))
     devices = conf_db['devices']
@@ -1763,6 +1768,7 @@ def main():
     global phones
     global procs
     global sendbs
+    global startup
     global version
     cards_f = "none"
     con_dirty = False
@@ -1774,6 +1780,7 @@ def main():
     jack_died = False
     last_master = ""
     procs = []
+    startup = True
     print("starting up")
     print(f"install path: {install_path}")
     version = auto_jack.version()

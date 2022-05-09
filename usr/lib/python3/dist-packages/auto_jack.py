@@ -61,7 +61,8 @@ def get_default_dev():
     usb = "none"
     fw = "none"
     HDMI = 'none'
-    print("Try to figure out a good default device")
+    if log:
+        print("Try to figure out a good default device")
     for adir in glob.glob("/proc/asound/card*/"):
         tmpname = 'none'
         if os.path.isfile(f"{adir}/id"):
@@ -115,7 +116,8 @@ def make_db():
     global old_name
     global our_db
 
-    print("set some reasonable defaults")
+    if log:
+        print("set some reasonable defaults")
     config = configparser.ConfigParser()
     def_config = config['DEFAULT']
     usbdev = 'none'
@@ -154,7 +156,8 @@ def make_db():
         "MONITOR": 'system:playback_1'
     }
 
-    print("read old style file if it exists")
+    if log:
+        print("read old style file if it exists")
     c_file = expanduser(old_name)
     if os.path.isfile(c_file):
         # config file exists, read it in
@@ -209,7 +212,8 @@ def make_db():
         Devices:
             {}
     '''
-    print("make up to date config file")
+    if log:
+        print("make up to date config file")
     our_db = {'version': version()}
     our_db['log-level'] = int(def_config['log-level'])
     if def_config['usbdev'] == '':
@@ -276,7 +280,8 @@ def make_db():
     devices_db = {}
     our_db['devices'] = devices_db
     devicelist = []
-    print("adding devices to devicelist")
+    if log:
+        print("adding devices to devicelist")
     if default_device != 'none':
         devicelist.append(default_device)
     if def_config['DEV'] != 'none' and def_config['DEV'] not in devicelist:
@@ -287,17 +292,19 @@ def make_db():
     if def_config['PHONE-DEVICE'] != 'none' and def_config[
             'PHONE-DEVICE'] not in devicelist:
         devicelist.append(def_config['PHONE-DEVICE'])
-    print(
-        f"adding devices from xdev: "
-        "{ str(def_config['XDEV'].split())}"
-        "and blacklist: "
-        "{str(def_config['BLACKLIST'].split())}")
+    if log:
+        print(
+            f"adding devices from xdev: "
+            "{ str(def_config['XDEV'].split())}"
+            "and blacklist: "
+            "{str(def_config['BLACKLIST'].split())}")
     devicelist = devicelist + \
         def_config['XDEV'].split() + def_config['BLACKLIST'].split()
 
     for rdev in devicelist:
         rdev_l = rdev.split(',')
-        print(f"fleshing out device: {str(rdev_l)}")
+        if log:
+            print(f"fleshing out device: {str(rdev_l)}")
         if len(rdev_l) == 3:
             dev, sub, ssub = rdev_l
             dev_db = make_dev_temp()
@@ -357,7 +364,8 @@ def make_sub_temp():
 
 def write_new():
     ''' write new config file '''
-    print("write new config file")
+    if log:
+        print("write new config file")
     global our_db
     global new_name
     global config_path
@@ -557,7 +565,6 @@ def check_devices(our_db):
         else:
             # not all numbers may be used
             break
-        print(f"cname: {cname} card: {str(x)}")
         # now check for USB device remembering to go by id/bus not raw name
         if os.path.exists(f"/proc/asound/card{str(x)}/usbid"):
             usb = True
@@ -616,7 +623,8 @@ def check_devices(our_db):
                 found_name = dev
                 break
         if found_name == "":
-            print("device not found")
+            if log:
+                print("device not found")
             if usb:
                 found_name = f"USB{usb_number()}"
                 our_db['devices'][found_name] = {
@@ -788,7 +796,8 @@ def check_devices(our_db):
 def check_new():
     global new_name
     global our_db
-    print(f"checking config file for compatability with version {version()}")
+    if log:
+        print(f"checking config file for compatability with version {version()}")
     c_file = expanduser(new_name)
     if os.path.isfile(c_file):
         # config file exists, read it in
@@ -796,7 +805,6 @@ def check_new():
             our_db = json.load(f)
     else:
         print(f"Error, {c_file} not found.")
-        # set to 0 to not cause errors that stop something
         return
 
     if our_db['version'] != version():
@@ -807,8 +815,9 @@ def check_new():
                 f"{c_file}.{version()} Using it")
             shutil.copyfile(f"{c_file}.{version()}", c_file)
             return
-        print(f"config file is version: {our_db['version']} updating")
-        print(f"saving old config file to: {c_file}.{our_db['version']}")
+        if log:
+            print(f"config file is version: {our_db['version']} updating")
+            print(f"saving old config file to: {c_file}.{our_db['version']}")
         shutil.copyfile(c_file, f"{c_file}.{our_db['version']}")
     check_db()
 
@@ -816,7 +825,8 @@ def check_new():
 def check_db():
     global our_db
     # check all parameters for sanity
-    print("checking data base")
+    if log:
+        print("checking data base")
     our_db['version'] = version()
     if 'log-level' not in our_db:
         our_db['log-level'] = 15
@@ -837,7 +847,8 @@ def check_db():
 
     # check_devices should be universal.
     our_db = check_devices(our_db)
-    print(" Devices checked, continue data base check")
+    if log:
+        print(" Devices checked, continue data base check")
 
     jack_db = our_db['jack']
     if 'on' not in jack_db:
@@ -968,26 +979,26 @@ def check_db():
     write_new()
 
 
-def convert():
+def convert(quiet=True):
 
     global config_path
+    global install_path
+    global log
     global new_name
     global old_name
     global our_db
-    global install_path
 
+    log = bool(not quiet)
     c_file = expanduser(new_name)
-    print(f"Search for: {c_file}")
+    if log:
+        print(f"Search for: {c_file}")
     if os.path.isfile(c_file):
-        print("config file found, check it")
-        # Found a config file, test it
+        if log:
+            print("config file found, check it")
         check_new()
     else:
-        print("Config file not found, Create one")
-        # no usable config file found.
-        # - search for pre json config and convert
-        # - or use defaults and create one
-        # - if force is True then use .bak on file name
+        if log:
+            print("Config file not found, Create one")
 
         make_db()
         check_db()
