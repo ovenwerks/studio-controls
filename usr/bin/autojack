@@ -1553,37 +1553,38 @@ def phones_switch(plugged):
                 spkr_mix.setmute(0)
                 hp_mix.setvolume(0)
                 hp_mix.setmute(1)
-        if conf_db['extra']['phone-device'] != conf_db['jack']['dev']:
+        if (conf_db['jack']['driver'] != 'alsa') or (
+                conf_db['extra']['phone-device'] not in
+                [conf_db['jack']['dev'], conf_db['jack']['usbdev']]):
+            # if phone device is system we can't do any more
             logging.debug("Headphone device is not system")
             # set jack port names
-            phone_port = f"{conf_db['extra']['phone-device']}-out:playback_1"
+            phone_port = f"{sub_db['name']}-out:playback_1"
             logging.debug(f"Headphone jack is: {phone_port}")
-            # USB device?
             if not plugged:
                 port_list = jack_client.get_ports(
-                    name_pattern=f'{dname}*', is_audio=True,
+                    name_pattern=f"{sub_db['name']}*", is_audio=True,
                     is_input=True, is_physical=True)
                 for this_port in port_list:
                     if this_port.name == phone_port:
                         switch_outputs(phone_port, conf_db['extra']['monitor'])
-                if (not sub_db['play-chan']) and (not dev_db['usb']):
+                if not sub_db['play-chan']:
                     logging.debug(
                         "Headphone device had no jack port ... "
                         "kill unneeded bridge")
                     kill_slave(conf_db['extra']['phone-device'])
             else:
-                if not sub_db['play-pid'] and (not dev_db['usb']):
+                if not sub_db['play-pid']:
                     logging.debug(
                         "Headphone device has no jack port ... create bridge")
-                    # we have to start a zita proc
                     start_slave(conf_db['extra']['phone-device'])
                     time.sleep(1)
                 port_list = jack_client.get_ports(
-                    name_pattern=f'{dname}*', is_audio=True,
+                    name_pattern=f"{sub_db['name']}*", is_audio=True,
                     is_input=True, is_physical=True)
                 for this_port in port_list:
                     if this_port.name == phone_port:
-                        switch_outputs("system:playback_1", phone_port)
+                        switch_outputs(conf_db['extra']['monitor'], phone_port)
 
     elif conf_db['extra']['phone-action'] == "script":
         # run a script to perform this instead

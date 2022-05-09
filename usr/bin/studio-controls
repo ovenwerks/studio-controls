@@ -970,6 +970,8 @@ class StudioControls:
         self.xdev_nperiods_drop.set_active_id(str(sub_db['nperiods']))
         if sub_db['name'] == 'none':
             sub_db['name'] = next_device
+            if not self.dirty:
+                self.dirty = True
         self.xdev_name.set_text(sub_db['name'])
         self.xdev_cap_lat.set_value(sub_db['cap-latency'])
         self.xdev_play_lat.set_value(sub_db['cap-latency'])

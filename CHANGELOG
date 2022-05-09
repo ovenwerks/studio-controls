@@ -10,6 +10,7 @@ studio-controls version 2.3.2
  - Fix missing globals
  - Make python scripts coding style work with pep8
  - Default zita-ajbridge name should not be none
+ - Fix headphone switching for non-default setup
 
 studio-controls version 2.3.1
 
