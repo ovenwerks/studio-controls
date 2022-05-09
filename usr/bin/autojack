@@ -215,10 +215,12 @@ def import_config(caller):
     # logging.log(7, json.dumps(conf_db, indent = 4))
     # print(json.dumps(conf_db, indent = 4))
     devices = conf_db['devices']
-    for this_dev in devices:
-        if devices[this_dev]['firewire']:
-            fw_exists = True
-
+    if os.path.exists("/etc/modprobe.d/blacklist-studio.conf"):
+        fw_exists = True
+    else:
+        for this_dev in devices:
+            if devices[this_dev]['firewire']:
+                fw_exists = True
     for pout in conf_db['pulse']['outputs']:
         if conf_db['pulse']['outputs'][pout]['connection'] == "monitor":
             conf_db['pulse']['outputs'][
@@ -1377,8 +1379,8 @@ def start_slave(ldev):
             elif ldev == conf_db['extra']['phone-device']:
                 channels = 2
             if channels:
-                cmd = f"/usr/bin/zita-j2a -j {sub_db['name']}-out "
-                f"-d hw:{raw_xp} -r {dsr} -p {buff_size}"
+                cmd = f"/usr/bin/zita-j2a -j {sub_db['name']}-out"
+                cmd = f"{cmd} -d hw:{raw_xp} -r {dsr} -p {buff_size}"
                 cmd = f"{cmd} -n {str(sub_db['nperiods'])} -c {str(channels)}"
                 cmd = f"{cmd} -O {str(sub_db['play-latency'])}"
                 logging.debug(f"device bridging comand line: {cmd}")
@@ -1399,8 +1401,8 @@ def start_slave(ldev):
             elif dev_db['usb']:
                 channels = 100
             if channels:
-                cmd = f"/usr/bin/zita-a2j -j {sub_db['name']}-in "
-                f"-d hw:{raw_xp} -r {dsr} -p {buff_size}"
+                cmd = f"/usr/bin/zita-a2j -j {sub_db['name']}-in"
+                cmd = f"{cmd} -d hw:{raw_xp} -r {dsr} -p {buff_size}"
                 cmd = f"{cmd} -n {str(sub_db['nperiods'])} -c {str(channels)}"
                 cmd = f"{cmd} -I {str(sub_db['cap-latency'])}"
                 logging.debug(f"Device input comand line: {cmd}")
@@ -1522,8 +1524,6 @@ def phones_switch(plugged):
     if (not conf_db['jack']['on']) or not jack_alive:
         # we can't do anything up to pulse (I think)
         return
-    out_L = "system:playback_1"
-    out_R = "system:playback_2"
     logging.debug(
         f"Headphone phone action = {str(conf_db['extra']['phone-action'])}")
     dname, l_dev, sub = conf_db['extra']['phone-device'].split(",", 2)
@@ -1751,6 +1751,7 @@ def main():
     global cards_f
     global config_path
     global con_dirty
+    global fw_exists
     global install_path
     global jack_alive
     global jack_client
@@ -1764,6 +1765,7 @@ def main():
     global version
     cards_f = "none"
     con_dirty = False
+    fw_exists = False
     phones = False
     jack_alive = False
     jack_client = 0

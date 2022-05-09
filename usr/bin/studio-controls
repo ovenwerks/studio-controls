@@ -133,7 +133,9 @@ class RTSetup:
 
 class StudioControls:
     global lock_file
-    config_path = "~/.config/autojack/"
+    # config_path = "~/software/Studio/controls-debug/"
+    # config_path = "~/.config/autojack/"
+    config_path = auto_jack.config_path
     config_file = f"{config_path}autojack.json"
 
     def __init__(self):
