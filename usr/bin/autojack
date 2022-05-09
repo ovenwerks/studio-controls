@@ -893,7 +893,7 @@ def kill_jack_client():
     global jack_alive
     global jack_died
 
-    if jack_client:
+    if jack_client in globals():
         jack_client.deactivate()
         jack_client.close()
     jack.set_error_function()
