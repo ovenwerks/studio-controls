@@ -92,8 +92,6 @@ install:
 	# make links
 	ln -s $(DESTDIR)$(LIBDIR)/systemd/system/studio-system.service \
 		$(DESTDIR)$(LIBDIR)/systemd/system/multi-user.target.wants/studio-system.service
-	ln -s $(DESTDIR)$(LIBDIR)/systemd/user/studio.service \
-		$(DESTDIR)$(LIBDIR)/systemd/user/default.target.wants/studio.service
 	ln -s $(DESTDIR)$(LIBDIR)/systemd/user/session-monitor.service \
 		$(DESTDIR)$(LIBDIR)/systemd/user/indicator-messages.service.wants/session-monitor.service
 
@@ -134,7 +132,5 @@ uninstall:
 	rm -f $(DESTDIR)$(LIBDIR)/systemd/system/multi-user.target.wants/studio-system.service
 
 	rm -f $(DESTDIR)$(LIBDIR)/systemd/user/session-monitor.service
-	rm -f $(DESTDIR)$(LIBDIR)/systemd/user/studio.service
-	rm -f $(DESTDIR)$(LIBDIR)/systemd/user/default.target.wants/studio.service
 	rm -f $(DESTDIR)$(LIBDIR)/systemd/user/indicator-messages.service.wants/session-monitor.service
 
