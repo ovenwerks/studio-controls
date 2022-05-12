@@ -11,6 +11,7 @@ studio-controls version 2.3.2
  - Make python scripts coding style work with pep8
  - Default zita-ajbridge name should not be none
  - Fix headphone switching for non-default setup
+ -Change startuo to xdg autostart (lp #1972896)
 
 studio-controls version 2.3.1
 

@@ -570,19 +570,12 @@ def config_start():
 
     if not conf_db['jack']['on']:
         pa = shutil.which("pulseaudio")
-        # restart Pulse
-        if pa is None:
-            logging.warning(
-                "pulseaudio not found, audio controls may fail to work")
-        else:
-            cp = subprocess.run([pa, "-k"],
-                                universal_newlines=True,
-                                stdout=subprocess.PIPE,
-                                stderr=subprocess.STDOUT,
-                                shell=False)
-            logging.debug(
-                f"JACK is {str(conf_db['jack']['on'])} "
-                f"restart pulse: {cp.stdout.strip()}")
+        # restart Pulse to reload default modules which we may have removed
+        # bus = dbus.SessionBus() # bus already set above
+        systemd1 = bus.get_object('org.freedesktop.systemd1', '/org/freedesktop/systemd1')
+        manager = dbus.Interface(systemd1, 'org.freedesktop.systemd1.Manager')
+        job = manager.RestartUnit('pulseaudio.service', 'fail')
+        logging.debug(f"JACK is {str(conf_db['jack']['on'])} restart pulse: {job.strip()}")
         return
     logging.debug(f"JACK is {str(conf_db['jack']['on'])} start up jack")
     jack_stat("Config Pulse")
@@ -1501,10 +1494,11 @@ def we_die():
                         stderr=subprocess.STDOUT, shell=False)
     jack_stat("Stopped")
     logging.debug(f"Kill jack and friends: {cp.stdout.strip()}")
-    cp = subprocess.run(["/usr/bin/pulseaudio", "-k"],
-                        universal_newlines=True, stdout=subprocess.PIPE,
-                        stderr=subprocess.STDOUT, shell=False)
-    logging.debug(f"Restart PA: {cp.stdout.strip()}")
+    bus = dbus.SessionBus()
+    systemd1 = bus.get_object('org.freedesktop.systemd1', '/org/freedesktop/systemd1')
+    manager = dbus.Interface(systemd1, 'org.freedesktop.systemd1.Manager')
+    job = manager.RestartUnit('pulseaudio.service', 'fail')
+    logging.debug(f"Restart PA: {job.strip()}")
     if os.path.isfile(lock_file):
         new_pid = str(os.getpid())
         if os.path.isfile(lock_file):

@@ -1,0 +1,11 @@
+[Desktop Entry]
+Version=1.0
+Name=AutoJACK
+Comment=Start the AutoJACK Sound System
+Exec=autojack
+Terminal=false
+Type=Application
+X-GNOME-Autostart-Phase=Initialization
+X-GNOME-HiddenUnderSystemd=true
+X-KDE-autostart-phase=1
+NoDisplay=true

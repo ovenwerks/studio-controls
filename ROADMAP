@@ -5,6 +5,89 @@
  things)
 
 Fixes:
+autojack
+---------------8<-------------
+Traceback (most recent call last):
+  File "/usr/bin/autojack", line 994, in check_jack_status
+    new_l = phone_port
+NameError: name 'phone_port' is not defined
+ - phone_port is global, make sure it is something at startup
+ - check for not none before using
+----------------8<------------
+
+--------------8<----------------
+Traceback (most recent call last):
+  File "/usr/bin/autojack", line 1829, in <module>
+    main()
+  File "/usr/bin/autojack", line 1789, in main
+    phones_check()
+  File "/usr/bin/autojack", line 1572, in phones_check
+    import_config("phones_check")
+  File "/usr/bin/autojack", line 408, in import_config
+    conf_db = json.load(f)
+  File "/usr/lib/python3.10/json/__init__.py", line 293, in load
+    return loads(fp.read(),
+  File "/usr/lib/python3.10/json/__init__.py", line 346, in loads
+    return _default_decoder.decode(s)
+  File "/usr/lib/python3.10/json/decoder.py", line 337, in decode
+    obj, end = self.raw_decode(s, idx=_w(s, 0).end())
+  File "/usr/lib/python3.10/json/decoder.py", line 355, in raw_decode
+    raise JSONDecodeError("Expecting value", s, err.value) from None
+json.decoder.JSONDecodeError: Expecting value: line 1 column 1 (char 0)
+ - this should have been moved to auto_jack.py
+ - expanduser problem? print file name maybe first line as well?
+-------------------8<---------------
+Traceback (most recent call last):
+  File "/usr/bin/autojack", line 1829, in <module>
+    main()
+  File "/usr/bin/autojack", line 1815, in main
+    user_bus.add_signal_receiver(ses_cb_command, dbus_interface='org.studio.control.command',
+  File "/usr/lib/python3/dist-packages/dbus/bus.py", line 162, in add_signal_receiver
+    self.add_match_string(str(match))
+  File "/usr/lib/python3/dist-packages/dbus/bus.py", line 399, in add_match_string
+    self.call_blocking(BUS_DAEMON_NAME, BUS_DAEMON_PATH,
+  File "/usr/lib/python3/dist-packages/dbus/connection.py", line 652, in call_blocking
+    reply_message = self.send_message_with_reply_and_block(
+dbus.exceptions.DBusException: org.freedesktop.DBus.Error.Disconnected: Connection was disconnected before a reply was received
+ - use try/except? line splitting? works here though.
+------------------8<--------------------
+
+-----------------------------------------
+Traceback (most recent call last):
+  File "/usr/bin/autojack", line 1829, in <module>
+    main()
+  File "/usr/bin/autojack", line 1789, in main
+    phones_check()
+  File "/usr/bin/autojack", line 1575, in phones_check
+    dname, ddev, dsub = conf_db['extra']['phone-device'].split(',')
+ValueError: not enough values to unpack (expected 3, got 1)
+ - may be already fixed - check len()
+------------------------------------------
+
+
+convert->auto_jack.py
+-----------------8<-----------------
+Traceback (most recent call last):
+  File "/usr/bin/convert-studio-controls", line 720, in <module>
+    main(sys.argv[1:])
+  File "/usr/bin/convert-studio-controls", line 706, in main
+    check_new(use_bk)
+  File "/usr/bin/convert-studio-controls", line 493, in check_new
+    our_db = json.load(f)
+  File "/usr/lib/python3.10/json/__init__.py", line 293, in load
+    return loads(fp.read(),
+  File "/usr/lib/python3.10/json/__init__.py", line 346, in loads
+    return _default_decoder.decode(s)
+  File "/usr/lib/python3.10/json/decoder.py", line 337, in decode
+    obj, end = self.raw_decode(s, idx=_w(s, 0).end())
+  File "/usr/lib/python3.10/json/decoder.py", line 355, in raw_decode
+    raise JSONDecodeError("Expecting value", s, err.value) from None
+json.decoder.JSONDecodeError: Expecting value: line 1 column 1 (char 0)
+ - file read problem, check file name and length. maybe studio-controls
+	has not finished writing? maybe auto_jack.py has not?
+ - do we need a lockfile?
+-------------------8<--------------------
+
 
 
 TODO:
