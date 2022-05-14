@@ -1,0 +1,80 @@
+#!/usr/bin/python3 -u
+
+
+import dbus, dbus.service, dbus.exceptions
+import dbus.mainloop.glib
+import json
+import os
+import sys
+import time
+
+from gi.repository import GLib
+from os.path import expanduser
+
+global name_base
+global control_interface_name
+global configure_interface_name
+global service_name
+name_base = 'org.jackaudio'
+control_interface_name = name_base + '.JackControl'
+configure_interface_name = name_base + '.Configure'
+service_name = name_base + '.service'
+
+class sendbus(dbus.service.Object):
+    def __init__(self):
+        dbus.service.Object.__init__(self, dbus.SessionBus(), "/")
+
+    @dbus.service.signal(dbus_interface="org.studio.control.command", signature="s")
+    def signal(self, sg):
+        pass
+
+
+def set_db(jack):
+    global conf_db
+    config_path = "~/.config/autojack"
+    config_file = f"{config_path}/autojack.json"
+    # read in autojack config file
+    c_file = expanduser(config_file)
+    if not os.path.isfile(c_file):
+        sys.exit("Configuration file not created, Please run Studio Controls first")
+    # config file exists, read it in
+    with open(c_file) as f:
+        conf_db = json.load(f)
+    conf_db['jack']['on'] = jack
+    with open(c_file, 'w') as json_file:
+        json.dump(conf_db, json_file, indent = 4)
+        json_file.write("\n")
+        return
+
+
+def goodbye(dummy):
+    sys.exit()
+
+
+def main(argv):
+    ''' Control-cl takes either start or stop as a command line
+        parameter to send to auto jack '''
+    dbus.mainloop.glib.DBusGMainLoop(set_as_default=True)
+    sendbs = sendbus()
+    if len(sys.argv) == 2:
+        command = sys.argv[1]
+        if command == "start":
+            jack = True
+        elif command == "stop":
+            jack = False
+        else:
+            print("invalid argument")
+            sys.exit(2)
+    else:
+        print("invalid argument")
+        sys.exit(2)
+    set_db(jack)
+    sendbs.signal(command)
+
+    timeout_id = GLib.timeout_add(100, goodbye, None)
+
+    loop = GLib.MainLoop()
+    loop.run()
+
+if __name__ == '__main__':
+    main(sys.argv[1:])

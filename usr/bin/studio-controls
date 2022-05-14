@@ -133,8 +133,6 @@ class RTSetup:
 
 class StudioControls:
     global lock_file
-    # config_path = "~/software/Studio/controls-debug/"
-    # config_path = "~/.config/autojack/"
     config_path = auto_jack.config_path
     config_file = f"{config_path}autojack.json"
 
@@ -354,7 +352,7 @@ class StudioControls:
         jack.set_info_function(callback=self.jack_info)
 
         # read in autojack config file
-        c_file = expanduser(self.config_file)
+        # c_file = expanduser(self.config_file)
         self.conf_db = auto_jack.convert()
         self.jackdb = self.conf_db['jack']
         self.extra = self.conf_db['extra']
@@ -624,7 +622,7 @@ class StudioControls:
         '''this call refreshes the device lists for all drop
         downs that use devices. If backend is not "alsa" then
         the jack master and USB master are set to default and
-        no usb master. However, all all alsa devices will
+        no usb master. However, all alsa devices will
         still be available for bridging and as output
         device.'''
         temp_db = auto_jack.check_devices(self.conf_db)
@@ -678,8 +676,6 @@ class StudioControls:
         rates = []
         def_rates = ['32000', '44100', '48000', '88200', '96000', '192000']
         frames = [16, 32, 64, 128, 256, 512, 1024, 2048, 4096]
-        if self.jackdb['driver'] == "firewire":
-            frames = [16, 32, 48, 64, 96, 128, 256, 512, 1024, 2048, 4096]
 
         self.jack_usb_dev_combo.append("none", "No USB Master")
         if self.jackdb['usbdev'] == "" or self.jackdb['usbdev'] == "none":
@@ -771,7 +767,10 @@ class StudioControls:
                 tplt = " For lower latency Use the FFADO kernal modules."
             if frame >= minlat:
                 self.combobox_late.append(str(frame), f"{str(frame)}{tplt}")
-        self.combobox_late.set_active_id(str(self.jackdb['frame']))
+        if self.jackdb['frame'] in frames and self.jackdb['frame'] >= minlat:
+            self.combobox_late.set_active_id(str(self.jackdb['frame']))
+        else:
+            self.combobox_late.set_active_id(str(minlat))
 
         self.mixer_start.set_sensitive(True)
         self.jack_rate_combo.set_sensitive(True)

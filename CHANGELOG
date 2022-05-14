@@ -11,7 +11,11 @@ studio-controls version 2.3.2
  - Make python scripts coding style work with pep8
  - Default zita-ajbridge name should not be none
  - Fix headphone switching for non-default setup
- -Change startuo to xdg autostart (lp #1972896)
+ - Change startup to xdg autostart (lp #1972896)
+ - Don't switch to jack port unless it is there
+ - Don't error out if connection already exists
+ - Make sure jack latency dropdown has valid selection
+ - Add commandline utility for some operations
 
 studio-controls version 2.3.1
 

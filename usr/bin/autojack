@@ -973,7 +973,7 @@ def check_jack_status(user_data):
 
     if con_dirty and jack_alive:
         logging.debug("Connection changed")
-        if phones:
+        if phones and 'phone_port' in globals():
             new_l = phone_port
             logging.debug(f"change it to phones port: {new_l}")
         else:
@@ -998,6 +998,14 @@ def switch_outputs(left_old, left_new):
     if left_old == left_new:
         logging.debug("both ports are the same, no move done")
         return
+    # check first that left_new is in the list of ports
+    play_ports = jack_client.get_ports("", is_audio=True, is_input=True)
+    if left_old not in play_ports:
+        logging.debug(f"Jack port: {left_old} not found")
+        return
+    if left_new not in play_ports:
+        logging.debug(f"Jack port: {left_new} not found, can't move connections")
+        return
     right_old = get_next_port(left_old)
     right_new = get_next_port(left_new)
     l_old_con = jack_client.get_all_connections(left_old)
@@ -1005,12 +1013,18 @@ def switch_outputs(left_old, left_new):
     # first connect all output to new device
     for raw_p in l_old_con:
         s_port = str(raw_p).split("'")[1]
-        jack_client.connect(s_port, left_new)
+        try:
+            jack_client.connect(s_port, left_new)
+        except Exception:
+            logging.debug(f"Jack port {s_port} could not be connected to {left_new}")
     r_old_con = jack_client.get_all_connections(right_old)
     logging.log(8, f"old right connections {str(r_old_con)}")
     for raw_p in r_old_con:
         s_port = str(raw_p).split("'")[1]
-        jack_client.connect(s_port, right_new)
+        try:
+            jack_client.connect(s_port, right_new)
+        except Exception:
+            logging.debug(f"Jack port {s_port} could not be connected to {right_new}")
     # then disconnect old ones
     for raw_p in l_old_con:
         s_port = str(raw_p).split("'")[1]
@@ -1733,6 +1747,7 @@ def ses_cb_command(*args, **kwargs):
         we_die()
         return
     if 'phones' in args:
+        # Should be split to phones and monitor
         logging.info("Got phones signal.")
         if phones:
             phones_switch(False)

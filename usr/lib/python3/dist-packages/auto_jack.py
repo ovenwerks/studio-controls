@@ -465,9 +465,13 @@ def check_devices(our_db):
                     our_db['devices'][new_dev] = our_db['devices'].pop(device)
                     dev_db = our_db['devices'][new_dev]
                     if our_db['jack']['usbdev'] != 'none':
-                        un, ud, us = our_db['jack']['usbdev'].split(',')
-                        if un == device:
-                            our_db['jack']['usbdev'] = f"{new_dev},{ud},{us}"
+                        usb_split = our_db['jack']['usbdev'].split(',')
+                        if len(usb_split) == 3:
+                            un, ud, us = usb_split
+                            if un == device:
+                                our_db['jack']['usbdev'] = f"{new_dev},{ud},{us}"
+                        else:
+                            our_db['jack']['usbdev'] = 'none'
         for sub in dev_db['sub']:
             sub_db = dev_db['sub'][sub]
             if 'playback' not in sub_db:
@@ -874,7 +878,7 @@ def check_db():
     else:
         jack_db['rate'] = int(jack_db['rate'])
 
-    if 'frame' not in jack_db:
+    if 'frame' not in jack_db or not str(jack_db['frame']).isnumeric():
         jack_db['frame'] = 1024
     else:
         jack_db['frame'] = int(jack_db['frame'])
