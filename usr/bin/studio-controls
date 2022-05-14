@@ -534,6 +534,12 @@ class StudioControls:
         global jackstate
         global jackstring
 
+        bus = dbus.SessionBus()
+        controller = bus.get_object(
+            "org.jackaudio.service", "/org/jackaudio/Controller")
+        control_iface = dbus.Interface(
+            controller, "org.jackaudio.JackControl")
+
         if jackstate:
             self.jack_state.set_text(f" {jackstring}")
             if jack_alive:
@@ -564,12 +570,7 @@ class StudioControls:
             jack_ports_changed = False
             self.refresh_pulse_io()
 
-        if jack_alive:
-            bus = dbus.SessionBus()
-            controller = bus.get_object(
-                "org.jackaudio.service", "/org/jackaudio/Controller")
-            control_iface = dbus.Interface(
-                controller, "org.jackaudio.JackControl")
+        if int(control_iface.IsStarted()):
             xrun_count = control_iface.GetXruns()
             self.xrun_lab.set_text(f" {str(xrun_count)}")
             load = control_iface.GetLoad()

@@ -170,6 +170,7 @@ TypeError: int() argument must be a string, a bytes-like object or a real number
  - value may be outside of allowable for device (lower)
     check for this and set to minimum for device
  ----------------8<----------------------
+FIXED
 Traceback (most recent call last):
   File "/usr/bin/studio-controls", line 769, in check_jack_status
     load = control_iface.GetLoad()
@@ -179,6 +180,7 @@ Traceback (most recent call last):
     reply_message = self.send_message_with_reply_and_block(
 dbus.exceptions.DBusException: org.jackaudio.Error.ServerNotRunning: Can't execute method 'GetLoad' with stopped JACK server
  - need to check and track jack status
+ - Used direct query to jackdbus to check running
 ------------------8<--------------------
 Traceback (most recent call last):
   File "/usr/bin/studio-controls", line 1879, in <module>

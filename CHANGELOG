@@ -16,6 +16,7 @@ studio-controls version 2.3.2
  - Don't error out if connection already exists
  - Make sure jack latency dropdown has valid selection
  - Add commandline utility for some operations
+ - Use direct query to jackdbus to check for Running
 
 studio-controls version 2.3.1
 
