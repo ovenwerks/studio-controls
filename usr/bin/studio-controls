@@ -143,6 +143,7 @@ class StudioControls:
         global lock_file
         global install_path
         global version
+        auto_jack.check_user()  # don't run as system or root
         print(f"install path: {install_path}")
         self.sysinfo = SysInfo()
         c_dir = expanduser(self.config_path)

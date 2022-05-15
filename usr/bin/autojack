@@ -1539,7 +1539,11 @@ def phones_switch(plugged):
         return
     logging.debug(
         f"Headphone phone action = {str(conf_db['extra']['phone-action'])}")
-    dname, l_dev, sub = conf_db['extra']['phone-device'].split(",", 2)
+    pdev_list = conf_db['extra']['phone-device'].split(",", 2)
+    if len(pdev_list) != 3:
+        logging.debug(f"Phone device: {conf_db['extra']['phone-device']} not valid ")
+        return
+    dname, l_dev, sub = pdev_list
     dev_db = conf_db['devices'][dname]
     sub_db = dev_db['sub'][l_dev]
 
@@ -1609,6 +1613,8 @@ def phones_switch(plugged):
                                 stdout=subprocess.PIPE,
                                 stderr=subprocess.STDOUT, shell=True)
             logging.debug(f"Running script: {fpath} {str(plugged)}")
+        else:
+            logging.info("headphone script not found or not executable")
     else:
         logging.debug("No action chosen")
 
@@ -1786,6 +1792,7 @@ def main():
     global sendbs
     global startup
     global version
+    auto_jack.check_user()  # don't run as system or root
     cards_f = "none"
     con_dirty = False
     fw_exists = False

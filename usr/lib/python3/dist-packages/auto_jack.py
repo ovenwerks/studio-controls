@@ -43,6 +43,17 @@ def version():
                     return vers
     return vers
 
+def check_user():
+    """ Check that user is a human and is not root
+    """
+    uid = os.getuid()
+    if uid == 0:
+        print("JACK should never be run as root: goodbye")
+        os._exit(0)
+    elif uid < 1000:
+        print("Studio controls is not meant to be run as a system process")
+        os._exit(0)
+
 
 def get_default_dev():
     # Ideally, this is the HDA device

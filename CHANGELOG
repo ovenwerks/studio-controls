@@ -17,6 +17,7 @@ studio-controls version 2.3.2
  - Make sure jack latency dropdown has valid selection
  - Add commandline utility for some operations
  - Use direct query to jackdbus to check for Running
+ - Don't allow running as system or root
 
 studio-controls version 2.3.1
 
