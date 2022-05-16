@@ -10,7 +10,11 @@ import time
 
 from gi.repository import GLib
 from os.path import expanduser
+global install_path
+install_path = os.path.abspath(f"{sys.path[0]}/..")
+sys.path.insert(1, f"{install_path}/lib/python3/dist-packages")
 
+import auto_jack
 global name_base
 global control_interface_name
 global configure_interface_name
@@ -31,23 +35,22 @@ class sendbus(dbus.service.Object):
 
 def set_db(jack):
     global conf_db
-    config_path = "~/.config/autojack"
-    config_file = f"{config_path}/autojack.json"
-    # read in autojack config file
-    c_file = expanduser(config_file)
+    c_file = expanduser(auto_jack.new_name)
+    print(c_file)
     if not os.path.isfile(c_file):
         sys.exit("Configuration file not created, Please run Studio Controls first")
     # config file exists, read it in
-    with open(c_file) as f:
-        conf_db = json.load(f)
-    conf_db['jack']['on'] = jack
-    with open(c_file, 'w') as json_file:
-        json.dump(conf_db, json_file, indent = 4)
-        json_file.write("\n")
-        return
+    auto_jack.check_new(True)
+    auto_jack.our_db['jack']['on'] = jack
+    auto_jack.write_new()
+    time.sleep(.5)
 
 
 def goodbye(dummy):
+    """ This is because we have to run a mainloop to send dbus
+        messages so we wait some time to allow message to be sent
+        and then this is called to exit the mainloop
+    """
     sys.exit()
 
 
@@ -60,16 +63,20 @@ def main(argv):
         command = sys.argv[1]
         if command == "start":
             jack = True
+            set_db(jack)
+            sendbs.signal(command)
         elif command == "stop":
             jack = False
+            set_db(jack)
+            sendbs.signal(command)
+        elif command == "phones" or command == "monitor":
+            sendbs.signal(command)
         else:
             print("invalid argument")
             sys.exit(2)
     else:
         print("invalid argument")
         sys.exit(2)
-    set_db(jack)
-    sendbs.signal(command)
 
     timeout_id = GLib.timeout_add(100, goodbye, None)
 

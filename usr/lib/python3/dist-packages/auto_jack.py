@@ -1,6 +1,7 @@
 
 # common calls for both autojack and studio-controls
 import configparser
+import fcntl
 import getopt
 import glob
 import json
@@ -8,6 +9,7 @@ import os
 import re
 import shutil
 import sys
+import time
 
 from os.path import expanduser
 
@@ -17,13 +19,16 @@ global vers
 vers = "not installed"
 
 global config_path
+global log
 global new_name
 global old_name
-#config_path = "~/.config/autojack/"
-config_path = "~/software/Studio/controls-debug/"
+global temp_name
+# config_path = "~/software/Studio/controls-debug/"
+config_path = "~/.config/autojack/"
 new_name = f"{config_path}autojack.json"
 old_name = f"{config_path}/autojackrc"
-
+temp_name = f"{config_path}/temp_aj.json"
+# log = False
 
 def version():
     ''' get the version we are running as. Used mostly to detect
@@ -66,6 +71,7 @@ def get_default_dev():
     # none
     # if none, and usbdev unset or empty
     # 1st USB should be appended
+    global log
     tmpname = 'none'
     internal = "none"
     pci = "none"
@@ -126,6 +132,7 @@ def make_db():
     global def_config
     global old_name
     global our_db
+    global log
 
     if log:
         print("set some reasonable defaults")
@@ -380,19 +387,37 @@ def write_new():
     global our_db
     global new_name
     global config_path
-
+    global temp_name
     # print(json.dumps(our_db, indent = 4))
     c_file = expanduser(new_name)
-    if not os.path.isfile(c_file):
-        # either first run or old version
-        c_dir = expanduser(config_path)
-        if not os.path.isdir(c_dir):
-            os.makedirs(c_dir)
-
-    with open(c_file, 'w') as json_file:
+    ck_file = expanduser(temp_name)
+    count = 0
+    while count < 10:
+        if not os.path.isfile(ck_file):
+            break
+        # someone is writing, wait
+        if log:
+            print("File is being written don't write yet")
+        time.sleep(.5)
+        count += 1
+    c_dir = expanduser(config_path)
+    if not os.path.isdir(c_dir):
+        os.makedirs(c_dir)
+    with open(ck_file, 'w') as json_file:
+        if json_file.writable():
+            fcntl.lockf(json_file, fcntl.LOCK_EX)
         json.dump(our_db, json_file, indent=4)
         json_file.write("\n")
-    return
+        json_file.flush()
+        os.fsync(json_file.fileno())
+        # Release the lock on the file.
+        if json_file.writable():
+            fcntl.lockf(json_file, fcntl.LOCK_UN)
+        if os.path.exists(c_file):
+            os.remove(c_file)
+        os.rename(ck_file, c_file)
+
+
 
 
 def usb_duplicate(device):
@@ -431,6 +456,7 @@ def check_devices(our_db):
     otherwsie card is set to current card number (so we don't duplicate it)
     if there are devices not in the list they are added according
     to settings'''
+    global log
 
     dev_list = list(our_db['devices'])
     for device in dev_list:
@@ -808,18 +834,33 @@ def check_devices(our_db):
     return our_db
 
 
-def check_new():
+def check_new(no_check=False):
+    global log
     global new_name
     global our_db
+    global temp_name
     if log:
         print(f"checking config file for compatability with version {version()}")
     c_file = expanduser(new_name)
-    if os.path.isfile(c_file):
+    ck_file = expanduser(temp_name)
+    count = 0
+    while count < 10:
+        if not os.path.isfile(ck_file):
+            break
+        # someone is writing, wait
+        if log:
+            print("File is being written don't read yet")
+        time.sleep(.5)
+        count += 1
+    time.sleep(.5)
+    if os.path.isfile(c_file) and os.path.getsize(c_file) > 100:
         # config file exists, read it in
         with open(c_file) as f:
             our_db = json.load(f)
     else:
-        print(f"Error, {c_file} not found.")
+        print(f"Error, {c_file} not found. Make one.")
+        make_db()
+        check_db()
         return
 
     if our_db['version'] != version():
@@ -834,6 +875,8 @@ def check_new():
             print(f"config file is version: {our_db['version']} updating")
             print(f"saving old config file to: {c_file}.{our_db['version']}")
         shutil.copyfile(c_file, f"{c_file}.{our_db['version']}")
+    if no_check:
+        return
     check_db()
 
 
@@ -994,7 +1037,7 @@ def check_db():
     write_new()
 
 
-def convert(quiet=True):
+def convert(quiet=False):
 
     global config_path
     global install_path

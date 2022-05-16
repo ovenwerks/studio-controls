@@ -1551,7 +1551,7 @@ Many FireWire devices will work with the ALSA Modules but using the FFADO module
                         </child>
                         <child>
                           <object class="GtkButton" id="hp_switch">
-                            <property name="label" translatable="yes">Manual Headphones/Speakers Switch</property>
+                            <property name="label" translatable="yes">Switch to Headphones Output</property>
                             <property name="visible">True</property>
                             <property name="can-focus">True</property>
                             <property name="receives-default">True</property>
@@ -1715,7 +1715,17 @@ Many FireWire devices will work with the ALSA Modules but using the FFADO module
                           </packing>
                         </child>
                         <child>
-                          <placeholder/>
+                          <object class="GtkButton" id="switchtomon">
+                            <property name="label" translatable="yes">Switch to Monitor Output</property>
+                            <property name="visible">True</property>
+                            <property name="can-focus">True</property>
+                            <property name="receives-default">True</property>
+                            <signal name="clicked" handler="switchtomon_cb" swapped="no"/>
+                          </object>
+                          <packing>
+                            <property name="left-attach">1</property>
+                            <property name="top-attach">8</property>
+                          </packing>
                         </child>
                         <child>
                           <placeholder/>

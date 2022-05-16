@@ -244,7 +244,7 @@ class StudioControls:
         # phones
         self.hp_action = builder.get_object('hp_action')
         self.hp_device = builder.get_object('hp_device')
-        self.hp_switch = builder.get_object('hp_switch')
+        # self.hp_switch = builder.get_object('hp_switch')
 
         # pulse tab
         self.pj_combo = builder.get_object('pj_combo')
@@ -455,6 +455,7 @@ class StudioControls:
             "usb_plug_cb": self.usb_plug_cb,
             "hp_action_cb": self.hp_action_cb,
             "hp_switch_cb": self.hp_switch_cb,
+            "switchtomon_cb": self.switchtomon_cb,
 
             "pj_combo_cb": self.pj_combo_cb,
             "pj_add_cb": self.pj_add_cb,
@@ -1000,6 +1001,9 @@ class StudioControls:
 
     def hp_switch_cb(self, button):
         self.signal_autojack("phones")
+
+    def switchtomon_cb(self, button):
+        self.signal_autojack("monitor")
 
     def jack_device_changed(self, button):
         if not button.get_sensitive():
@@ -1607,18 +1611,9 @@ class StudioControls:
         self.extra['phone-action'] = str(self.hp_action.get_active_id())
         self.extra['phone-device'] = str(self.hp_device.get_active_id())
 
-        c_file = expanduser(self.config_file)
-        if not os.path.isfile(c_file):
-            # either first run or old version
-            # this should not be needed any more as convert does this
-            # that is we should never get here
-            c_dir = expanduser(self.config_path)
-            if not os.path.isdir(c_dir):
-                os.makedirs(c_dir)
-        with open(c_file, 'w') as json_file:
-            json.dump(self.conf_db, json_file, indent=4)
-            json_file.write("\n")
-            return
+        auto_jack.our_db = self.conf_db
+        auto_jack.write_new()
+        return
 
     def signal_autojack(self, signal):
         global autojack

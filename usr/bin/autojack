@@ -998,14 +998,17 @@ def switch_outputs(left_old, left_new):
     if left_old == left_new:
         logging.debug("both ports are the same, no move done")
         return
-    # check first that left_new is in the list of ports
-    play_ports = jack_client.get_ports("", is_audio=True, is_input=True)
-    if left_old not in play_ports:
+    try:
+        jack_client.get_port_by_name(str(left_old))
+    except jack.JackError:
         logging.debug(f"Jack port: {left_old} not found")
         return
-    if left_new not in play_ports:
-        logging.debug(f"Jack port: {left_new} not found, can't move connections")
+    try:
+        jack_client.get_port_by_name(str(left_new))
+    except jack.JackError:
+        logging.debug(f"Jack port: {left_new} not found")
         return
+
     right_old = get_next_port(left_old)
     right_new = get_next_port(left_new)
     l_old_con = jack_client.get_all_connections(left_old)
@@ -1753,14 +1756,15 @@ def ses_cb_command(*args, **kwargs):
         we_die()
         return
     if 'phones' in args:
-        # Should be split to phones and monitor
         logging.info("Got phones signal.")
-        if phones:
-            phones_switch(False)
-            phones = False
-        else:
-            phones_switch(True)
-            phones = True
+        phones_switch(True)
+        phones = True
+        logging.debug(f"Manual phones switch to: {str(phones)}")
+        return
+    if 'monitor' in args:
+        logging.info("Got monitor signal.")
+        phones_switch(False)
+        phones = False
         logging.debug(f"Manual phones switch to: {str(phones)}")
         return
 

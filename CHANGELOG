@@ -18,6 +18,7 @@ studio-controls version 2.3.2
  - Add commandline utility for some operations
  - Use direct query to jackdbus to check for Running
  - Don't allow running as system or root
+ - Use file locking to make sure a read get the whole database
 
 studio-controls version 2.3.1
 
