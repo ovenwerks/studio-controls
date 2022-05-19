@@ -1,3 +1,8 @@
+studio-controls version 2.3.3
+
+ [ Len Ovens ]
+ - Use dbus calls to detect jack state
+
 studio-controls version 2.3.2
 
  [ Len Ovens ]

@@ -134,7 +134,6 @@ class RTSetup:
 class StudioControls:
     global lock_file
     config_path = auto_jack.config_path
-    config_file = f"{config_path}autojack.json"
 
     def __init__(self):
         '''Activate the SysInfo class'''
@@ -146,7 +145,7 @@ class StudioControls:
         auto_jack.check_user()  # don't run as system or root
         print(f"install path: {install_path}")
         self.sysinfo = SysInfo()
-        c_dir = expanduser(self.config_path)
+        c_dir = expanduser(auto_jack.config_path)
         if not os.path.isdir(c_dir):
             os.makedirs(c_dir)
         lock_file = expanduser(f"{self.config_path}/studio-controls.lock")
@@ -278,6 +277,12 @@ class StudioControls:
         user_bus.add_signal_receiver(
             self.db_state_cb, dbus_interface='org.studio.control.state',
             signal_name='state')
+        user_bus.add_signal_receiver(
+            self.new_jack_port, dbus_interface='org.jackaudio.JackPatchbay',
+            signal_name='PortAppeared')
+        user_bus.add_signal_receiver(
+            self.new_jack_port, dbus_interface='org.jackaudio.JackPatchbay',
+            signal_name='PortDisappeared')
         self.sendbs = sendbus()
 
         # Set default window icon for window managers
@@ -333,18 +338,14 @@ class StudioControls:
         global autojack
         global newusb
         global jack_alive
-        global jack_died
         global jack_ports_changed
-        global jack_time
         global jackstate
         global jackstring
         jackstring = "unknown"
         jackstate = False
-        jack_time = 3
         autojack = True
         newusb = False
         jack_alive = False
-        jack_died = False
         jack_ports_changed = True
         self.jack_error_mesg = ""
         self.jack_info_mesg = ""
@@ -354,7 +355,6 @@ class StudioControls:
         jack.set_info_function(callback=self.jack_info)
 
         # read in autojack config file
-        # c_file = expanduser(self.config_file)
         self.conf_db = auto_jack.convert()
         self.jackdb = self.conf_db['jack']
         self.extra = self.conf_db['extra']
@@ -534,9 +534,7 @@ class StudioControls:
         global newusb
         global jack_client
         global jack_alive
-        global jack_died
         global jack_ports_changed
-        global jack_time
         global jackstate
         global jackstring
 
@@ -546,25 +544,42 @@ class StudioControls:
         control_iface = dbus.Interface(
             controller, "org.jackaudio.JackControl")
 
-        if jackstate:
+        jack_check = False
+        if jackstring[0:4] == "Stop":
+            jack_check = False
+        else:
+            jack_check = True
+
+        if jackstate: # This signal comes from autojack
             self.jack_state.set_text(f" {jackstring}")
-            if jack_alive:
-                if jackstring in ["Stopping...", "Stopped",
-                                  "Config Pulse",
-                                  "Configuring...",
-                                  "Starting...",
-                                  "Start Failed"]:
-                    jack_died = True
             jackstate = False
 
-        # sent by jackdied() callback
-        if jack_died:
-            jack_client.deactivate()
-            jack_client.close()
-            self.refresh_pulse_io()
-            self.dirty = True
-            jack_died = False
-            jack_alive = False
+        if int(control_iface.IsStarted()) and jack_check:
+            xrun_count = control_iface.GetXruns()
+            self.xrun_lab.set_text(f" {str(xrun_count)}")
+            load = control_iface.GetLoad()
+            self.dsp_label.set_text(f"DSP: {str(load)[0:4]}%")
+            if not jack_alive:
+                try:
+                    jack_client = jack.Client(
+                        'controls', use_exact_name=False, no_start_server=True)
+                except jack.JackError:
+                    self.xrun_lab.set_text(" 0")
+                    return True
+                jack_client.activate()
+                jack_alive = True
+                jack_ports_changed = True
+                self.refresh_pulse_tab(self.pj_bridge)
+        else:
+            if jack_alive: # Jack has just stopped
+                jack_client.deactivate()
+                jack_client.close()
+                jack_check = True
+                jack_alive = False
+                self.dirty = True
+                self.refresh_pulse_io()
+            self.dsp_label.set_text("DSP: 0%")
+            self.xrun_lab.set_text(" 0")
 
         # device changed, update GUI
         if self.dirty or newusb:
@@ -576,43 +591,9 @@ class StudioControls:
             jack_ports_changed = False
             self.refresh_pulse_io()
 
-        if int(control_iface.IsStarted()):
-            xrun_count = control_iface.GetXruns()
-            self.xrun_lab.set_text(f" {str(xrun_count)}")
-            load = control_iface.GetLoad()
-            self.dsp_label.set_text(f"DSP: {str(load)[0:4]}%")
-        else:
-            self.dsp_label.set_text("DSP: 0%")
-            self.xrun_lab.set_text(" 0")
-            if jackstring in ["Running",
-                              "Poststart",
-                              "Adding Bridges",
-                              "Postbridge"]:
-                try:
-                    jack_client = jack.Client(
-                        'controls', use_exact_name=False, no_start_server=True)
-                except jack.JackError:
-                    self.xrun_lab.set_text(" 0")
-                    return True
-                # if jack is shutting down we need to know
-                jack_client.set_shutdown_callback(self.jackdied)
-                # get notified if a new port is created
-                jack_client.set_port_registration_callback(self.new_jack_port)
-                jack_client.activate()
-                jack_alive = True
-                jack_ports_changed = True
-                self.refresh_pulse_tab(self.pj_bridge)
         return True
 
-    def jackdied(state, why, extra):
-        '''gets called by jack if it is exiting, we can't clean up
-        here... so tell the world jack died with a flag instead'''
-        global jack_alive
-        global jack_died
-        jack_died = True
-        jack_alive = False
-
-    def new_jack_port(port_id, new, extra):
+    def new_jack_port(*args, **kwargs):
         ''' jack has added a port tell someone '''
         global jack_ports_changed
         jack_ports_changed = True
