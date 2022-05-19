@@ -117,6 +117,7 @@ uninstall:
 	rm -f $(DESTDIR)$(DATADIR)/icons/hicolor/scalable/apps/studio-controls.svg
 
 	rm -f $(DESTDIR)$(DATADIR)/man/man1/studio-controls.*
+	rm -f $(DESTDIR)$(DATADIR)/man/man1/studio-cmd.*
 	rm -f $(DESTDIR)$(DATADIR)/man/man2/autojack.*
 	rm -f $(DESTDIR)$(DATADIR)/man/man2/studio-system.*
 
@@ -125,7 +126,7 @@ uninstall:
 	rm -rf $(DESTDIR)$(DATADIR)/studio-controls
 
 	rm -f $(DESTDIR)$(BINDIR)/autojack
-	rm -f $(DESTDIR)$(BINDIR)/autojack-start
+	rm -f $(DESTDIR)$(BINDIR)/studio-cmd
 	rm -f $(DESTDIR)$(BINDIR)/studio-controls
 
 	rm -f $(DESTDIR)$(SBINDIR)/studio-system

@@ -202,13 +202,14 @@ def net_bridge():
 
 def import_config(caller):
     ''' sets default parmeters, then reads values from configuration file'''
-    global config
     global config_path
     global config_file
     global conf_db
     global fw_exists
     global install_path
+    global phone_port
     global startup
+    phone_port = 'none'
 
     logging.log(7, f"import_config called by: {caller}")
 
@@ -234,11 +235,27 @@ def import_config(caller):
     if conf_db['jack']['driver'] == 'firewire':
         # we don't save this, but treat usbdev as none
         conf_db['jack']['usbdev'] = 'none'
+    if 'phone-device' in conf_db['extra']:
+        if 'phone-left' not in conf_db['extra']:
+            conf_db['extra']['phone-left'] = "1"
+        hp_lft = conf_db['extra']['phone-left']
+        hp_d_l = conf_db['extra']['phone-device'].split(',', 2)
+        if len(hp_d_l) == 3:
+            dnm, dnum, sub = hp_d_l
+            if dnm in conf_db['devices']:
+                hp_db = conf_db['devices'][dnm]
+                if dnum in hp_db['sub']:
+                    hp_sub_db = hp_db['sub'][dnum]
+                    phone_port = f"{hp_sub_db['name']}-out:"
+                    phone_port = f"{phone_port}playback_{hp_lft}"
+        elif conf_db['extra']['phone-device'] == 'system':
+            phone_port = f"system:playback_{hp_lft}"
     logger = logging.getLogger()
     logger.setLevel(int(conf_db['log-level']))
-    logging.log(7, f"log level: {str(conf_db['log-level'])}")
     if caller == "config_start" or caller == "reconfig":
+        logging.log(7, f"log level: {str(conf_db['log-level'])}")
         logging.log(7, json.dumps(conf_db, indent=4))
+        logging.debug(f"phone port set to: {phone_port}")
 
 
 def reconfig():
@@ -589,25 +606,6 @@ def config_start():
                         stdout=subprocess.PIPE,
                         stderr=subprocess.STDOUT, shell=False)
     logging.debug(f"remove jackdbus_detect: {cp.stdout.strip()}")
-    # these should be moved
-    if 0:
-        # this effectively commented out for testing
-        cp = subprocess.run(["/usr/bin/pactl",
-                             "unload-module",
-                             "module-udev-detect"],
-                            universal_newlines=True,
-                            stdout=subprocess.PIPE,
-                            stderr=subprocess.STDOUT,
-                            shell=False)
-        logging.debug(f"remove module-udev-detect: {cp.stdout.strip()}")
-        cp = subprocess.run(["/usr/bin/pactl",
-                             "unload-module",
-                             "module-alsa-card"],
-                            universal_newlines=True,
-                            stdout=subprocess.PIPE,
-                            stderr=subprocess.STDOUT,
-                            shell=False)
-        logging.debug(f"remove module-alsa-card: {cp.stdout.strip()}")
 
     fpath = expanduser('~/.config/autojack/prestart')
     if os.path.isfile(fpath) and os.access(fpath, os.X_OK):
@@ -623,7 +621,6 @@ def config_start():
     jack_stat("Configuring...")
     rn = 'none'
     if conf_db['jack']['usbdev'] != "none":
-        # mdev = conf_db['jack']['usbdev']
         rn = get_db(conf_db['jack']['usbdev'])['raw']
     if os.path.exists(f"/proc/asound/{rn}"):
         mdev = get_raw(conf_db['jack']['usbdev'])
@@ -907,7 +904,6 @@ def jackdied(state, why):
 
 
 def jack_stat(status):
-    global config_path
     global last_status
     last_status = status
     sendbs.state(version, status)
@@ -973,7 +969,7 @@ def check_jack_status(user_data):
 
     if con_dirty and jack_alive:
         logging.debug("Connection changed")
-        if phones and 'phone_port' in globals():
+        if phones and 'phone_port' in globals() and phone_port != 'none':
             new_l = phone_port
             logging.debug(f"change it to phones port: {new_l}")
         else:
@@ -1356,6 +1352,11 @@ def start_slave(ldev):
     global procs
 
     logging.debug(f"Start slave: {ldev}")
+    if len(ldev.split(",", 2)) != 3:
+        logging.debug(
+            f"Device {ldev} missing device number or sub device")
+        return
+
     import_config("start_slave")
     dname, l_dev, sub = ldev.split(",", 2)
     dev_db = conf_db['devices'][dname]
@@ -1387,12 +1388,12 @@ def start_slave(ldev):
             # this should detect if the user has manually set
             # either in or out numbers
             channels = 0
-            if sub_db['play-chan'] or sub_db['cap-chan']:
+            if sub_db['play-chan']:
                 channels = sub_db['play-chan']
             elif dev_db['usb'] and not conf_db['extra']['usb-single']:
                 channels = 100
             elif ldev == conf_db['extra']['phone-device']:
-                channels = 2
+                channels = 100
             if channels:
                 cmd = f"/usr/bin/zita-j2a -j {sub_db['name']}-out"
                 cmd = f"{cmd} -d hw:{raw_xp} -r {dsr} -p {buff_size}"
@@ -1411,7 +1412,7 @@ def start_slave(ldev):
     if sub_db['capture']:
         if not sub_db['cap-pid']:
             chanels = 0
-            if sub_db['play-chan'] or sub_db['cap-chan']:
+            if sub_db['cap-chan']:
                 channels = sub_db['cap-chan']
             elif dev_db['usb']:
                 channels = 100
@@ -1537,22 +1538,34 @@ def phones_switch(plugged):
     global jack_alive
     phones = plugged
     logging.debug(f"Changing Headphone to plugged in = {str(plugged)}")
+    logging.debug(f"Headphone port: {str(phone_port)}")
     if (not conf_db['jack']['on']) or not jack_alive:
         # we can't do anything up to pulse (I think)
         return
+    if  'phone_port' not in globals() or (phone_port == 'none'):
+        logging.debug("phone device and port not set: setting phones to False")
+        phones = False
+        return
     logging.debug(
         f"Headphone phone action = {str(conf_db['extra']['phone-action'])}")
-    pdev_list = conf_db['extra']['phone-device'].split(",", 2)
-    if len(pdev_list) != 3:
-        logging.debug(f"Phone device: {conf_db['extra']['phone-device']} not valid ")
-        return
-    dname, l_dev, sub = pdev_list
-    dev_db = conf_db['devices'][dname]
-    sub_db = dev_db['sub'][l_dev]
+    pdev_list = []
+    if conf_db['extra']['phone-device'] == 'system' and conf_db['jack']['driver'] == 'alsa':
+        if conf_db['jack']['usbdev'] != 'none':
+            pdev_list = conf_db['jack']['usbdev'].split(",", 2)
+        else:
+            pdev_list = conf_db['jack']['dev'].split(",", 2)
+    else:
+        pdev_list = conf_db['extra']['phone-device'].split(",", 2)
+    alsadev = False
+    if len(pdev_list) == 3:
+        dname, l_dev, sub = pdev_list
+        dev_db = conf_db['devices'][dname]
+        sub_db = dev_db['sub'][l_dev]
+        alsadev = True
 
     if conf_db['extra']['phone-action'] == "switch":
         logging.debug("Switching outputs")
-        if dev_db['internal']:
+        if alsadev and dev_db['internal']:
             spkr = ""
             logging.debug(
                 "Headphone device is internal change it's mixer settings")
@@ -1573,38 +1586,30 @@ def phones_switch(plugged):
                 spkr_mix.setmute(0)
                 hp_mix.setvolume(0)
                 hp_mix.setmute(1)
-        if (conf_db['jack']['driver'] != 'alsa') or (
-                conf_db['extra']['phone-device'] not in
-                [conf_db['jack']['dev'], conf_db['jack']['usbdev']]):
-            # if phone device is system we can't do any more
-            logging.debug("Headphone device is not system")
-            # set jack port names
-            phone_port = f"{sub_db['name']}-out:playback_1"
-            logging.debug(f"Headphone jack is: {phone_port}")
-            if not plugged:
-                port_list = jack_client.get_ports(
-                    name_pattern=f"{sub_db['name']}*", is_audio=True,
-                    is_input=True, is_physical=True)
-                for this_port in port_list:
-                    if this_port.name == phone_port:
-                        switch_outputs(phone_port, conf_db['extra']['monitor'])
-                if not sub_db['play-chan']:
-                    logging.debug(
-                        "Headphone device had no jack port ... "
-                        "kill unneeded bridge")
-                    kill_slave(conf_db['extra']['phone-device'])
-            else:
-                if not sub_db['play-pid']:
-                    logging.debug(
-                        "Headphone device has no jack port ... create bridge")
-                    start_slave(conf_db['extra']['phone-device'])
-                    time.sleep(1)
-                port_list = jack_client.get_ports(
-                    name_pattern=f"{sub_db['name']}*", is_audio=True,
-                    is_input=True, is_physical=True)
-                for this_port in port_list:
-                    if this_port.name == phone_port:
-                        switch_outputs(conf_db['extra']['monitor'], phone_port)
+        logging.debug(f"Headphone jack is: {phone_port}")
+        hp_search = f"{phone_port.split(':', 1)[0]}*"
+        port_list = jack_client.get_ports(
+            name_pattern=hp_search, is_audio=True,
+            is_input=True, is_physical=True)
+        if not plugged: # switch to monitor
+            switch_outputs(phone_port, conf_db['extra']['monitor'])
+            # BUG sub_db may not exist if not alsadev
+            if alsadev and not sub_db['play-chan']:
+                logging.debug(
+                    "Headphone device had no jack port ... "
+                    "kill unneeded bridge")
+                kill_slave(conf_db['extra']['phone-device'])
+        else: # switch to phone port
+            if alsadev and port_list == []:
+                logging.debug(
+                    "Headphone device has no jack port ... create bridge")
+                start_slave(conf_db['extra']['phone-device'])
+                time.sleep(1)
+            mn_search = f"{conf_db['extra']['monitor'].split(':', 1)[0]}*"
+            port_list = jack_client.get_ports(
+                name_pattern=mn_search, is_audio=True,
+                is_input=True, is_physical=True)
+            switch_outputs(conf_db['extra']['monitor'], phone_port)
 
     elif conf_db['extra']['phone-action'] == "script":
         # run a script to perform this instead
@@ -1619,7 +1624,7 @@ def phones_switch(plugged):
         else:
             logging.info("headphone script not found or not executable")
     else:
-        logging.debug("No action chosen")
+        logging.debug("No headphone action chosen")
 
 
 def phones_check():

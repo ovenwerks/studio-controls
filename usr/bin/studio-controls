@@ -244,6 +244,7 @@ class StudioControls:
         # phones
         self.hp_action = builder.get_object('hp_action')
         self.hp_device = builder.get_object('hp_device')
+        self.hp_left_pt = builder.get_object('hp_left_pt')
         # self.hp_switch = builder.get_object('hp_switch')
 
         # pulse tab
@@ -387,6 +388,9 @@ class StudioControls:
         self.jack_midi_u.set_active(self.extra['a2j_u'])
         # Fill Extra devices widgets
         self.usb_plug_check.set_active(self.extra['usbauto'])
+        if 'phone-left' not in self.extra:
+            self.extra['phone-left'] = '1'
+        self.hp_left_pt.set_value(int(self.extra['phone-left']))
 
         # pulse bridge defaults
         self.pj_direction.set_sensitive(False)
@@ -624,12 +628,14 @@ class StudioControls:
     def refresh_dropdowns(self):
         '''this call refreshes the device lists for all drop
         downs that use devices. If backend is not "alsa" then
-        the jack master and USB master are set to default and
-        no usb master. However, all alsa devices will
-        still be available for bridging and as output
-        device.'''
-        temp_db = auto_jack.check_devices(self.conf_db)
+        the jack master and USB master are set but not changable
+        However, all alsa devices will still be available for
+        bridging and as output device.
+        '''
+        temp_db = auto_jack.check_devices(self.conf_db) # refresh devices
         for temp_dev in temp_db['devices']:
+            # transfer current device info into db without changing
+            # settings that may not yet be saved
             dev_db = self.conf_db['devices'][temp_dev]
             check_db = temp_db['devices'][temp_dev]
             if temp_dev in self.conf_db['devices']:
@@ -689,6 +695,9 @@ class StudioControls:
         self.hp_device.append(
             self.extra['phone-device'], self.extra['phone-device'])
         self.hp_device.set_active_id(self.extra['phone-device'])
+        if self.extra['phone-device'] != 'system':
+            self.hp_device.append(
+                'system', 'JACK Master (system:*)')
 
         for this_dev in self.conf_db['devices']:
             dev_db = self.conf_db['devices'][this_dev]
@@ -1571,14 +1580,12 @@ class StudioControls:
 
     def cb_jack_start(self, button):
         ''' call back for Jack (re)start button'''
-        global autojack
         self.jackdb['on'] = True
         self.config_save()
         self.not_applied = False
         self.signal_autojack("start")
 
     def cb_jack_stop(self, button):
-        global autojack
         self.jackdb['on'] = False
         self.config_save()
         self.not_applied = False
@@ -1586,13 +1593,12 @@ class StudioControls:
 
     def cb_audio_apply(self, button):
         '''callback for audio tab apply button'''
-        global autojack
         self.config_save()
         self.not_applied = False
         self.signal_autojack("config")
 
     def config_save(self):
-        ''' Write audio setting to ~/.config/autojack/autojackrc'''
+        ''' Write audio setting to ~/.config/autojack/autojack.json'''
 
         self.jackdb['chan-in'] = int(self.chan_in_spin.get_value_as_int())
         self.jackdb['chan-out'] = int(self.chan_out_spin.get_value_as_int())
@@ -1610,9 +1616,11 @@ class StudioControls:
         self.extra['monitor'] = str(self.monitor_combo.get_active_id())
         self.extra['phone-action'] = str(self.hp_action.get_active_id())
         self.extra['phone-device'] = str(self.hp_device.get_active_id())
+        self.extra['phone-left'] = str(self.hp_left_pt.get_value_as_int())
 
         auto_jack.our_db = self.conf_db
         auto_jack.write_new()
+        time.sleep(1)
         return
 
     def signal_autojack(self, signal):

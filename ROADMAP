@@ -5,34 +5,9 @@
  things)
 
 Fixes:
+
+These things need to be looked for in 2.3.2
 autojack
----------------8<-------------
-Traceback (most recent call last):
-  File "/usr/bin/autojack", line 994, in check_jack_status
-    new_l = phone_port
-NameError: name 'phone_port' is not defined
- - This is fixed
-----------------8<------------
-The above makes it clear phones is not set up right.
-Phones should take both device and port number
-----------------8<----------
-##### Not worth tracing at this point may be a dbus fail
-Traceback (most recent call last):
-  File "/usr/bin/autojack", line 1829, in <module>
-    main()
-  File "/usr/bin/autojack", line 1815, in main
-    user_bus.add_signal_receiver(ses_cb_command, dbus_interface='org.studio.control.command',
-  File "/usr/lib/python3/dist-packages/dbus/bus.py", line 162, in add_signal_receiver
-    self.add_match_string(str(match))
-  File "/usr/lib/python3/dist-packages/dbus/bus.py", line 399, in add_match_string
-    self.call_blocking(BUS_DAEMON_NAME, BUS_DAEMON_PATH,
-  File "/usr/lib/python3/dist-packages/dbus/connection.py", line 652, in call_blocking
-    reply_message = self.send_message_with_reply_and_block(
-dbus.exceptions.DBusException: org.freedesktop.DBus.Error.Disconnected: Connection was disconnected before a reply was received
- - human user, with wayland and without
- - use try/except? line splitting? works here though.
-    Can't use try/except because autojack will not work without
-    LEAVE this for now as it does seem to work for most people
 ------------------8<--------------------
 DONE for now
 Traceback (most recent call last):
@@ -47,129 +22,9 @@ KeyError: 'USB'
  - Maybe unupdated config file
  - I think this has been solved by auto_jack.py
 -----------------------------------------
-FIXED
-Traceback (most recent call last):
-  File "/usr/bin/autojack", line 1829, in <module>
-    main()
-  File "/usr/bin/autojack", line 1789, in main
-    phones_check()
-  File "/usr/bin/autojack", line 1575, in phones_check
-    dname, ddev, dsub = conf_db['extra']['phone-device'].split(',')
-ValueError: not enough values to unpack (expected 3, got 1)
- - already fixed - check len() !<3
-------------------------------------------
-FIXED
-Traceback (most recent call last):
-  File "/usr/bin/autojack", line 998, in check_jack_status
-    switch_outputs("system:playback_1", new_l)
-  File "/usr/bin/autojack", line 1018, in switch_outputs
-    right_new = get_next_port(left_new)
-  File "/usr/bin/autojack", line 1052, in get_next_port
-    left_port = jack_client.get_port_by_name(left_port_ask)
-  File "/usr/lib/python3/dist-packages/jack.py", line 1533, in get_port_by_name
-    raise JackError('Port {0!r} not available'.format(name))
-jack.JackError: Port 'PCH,0,0-out:playback_1' not available
- - maybe find in list first
- ----------------------8<--------------------
-LEAVE
- Traceback (most recent call last):
-  File "/usr/bin/autojack", line 1829, in <module>
-    main()
-  File "/usr/bin/autojack", line 1789, in main
-    phones_check()
-  File "/usr/bin/autojack", line 1572, in phones_check
-    import_config("phones_check")
-  File "/usr/bin/autojack", line 422, in import_config
-    import_device_array()
-  File "/usr/bin/autojack", line 255, in import_device_array
-    get_dev_info(x)
-  File "/usr/bin/autojack", line 102, in get_dev_info
-    if conf_db['devices'][ddev]['raw'] == cname:
-KeyError: 'raw'
- - should already be fixed with move to auto_jack.py
-------------------------8<------------------
-FIXED
-Traceback (most recent call last):
-  File "/usr/bin/autojack", line 998, in check_jack_status
-    switch_outputs("system:playback_1", new_l)
-  File "/usr/bin/autojack", line 1029, in switch_outputs
-    jack_client.connect(s_port, right_new)
-  File "/usr/lib/python3/dist-packages/jack.py", line 495, in connect
-    raise JackErrorCode('Connection {0!r} -> {1!r} '
-jack.JackErrorCode: Connection 'Bitwig Studio:Speakers-R' -> 'system:playback_3' already exists (17) 
- - Catch and ignore or check? Used Try/except
-------------------------8<------------------
-
-
-convert->auto_jack.py
------------------8<-----------------
-Traceback (most recent call last):
-  File "/usr/bin/convert-studio-controls", line 720, in <module>
-    main(sys.argv[1:])
-  File "/usr/bin/convert-studio-controls", line 706, in main
-    check_new(use_bk)
-  File "/usr/bin/convert-studio-controls", line 493, in check_new
-    our_db = json.load(f)
-  File "/usr/lib/python3.10/json/__init__.py", line 293, in load
-    return loads(fp.read(),
-  File "/usr/lib/python3.10/json/__init__.py", line 346, in loads
-    return _default_decoder.decode(s)
-  File "/usr/lib/python3.10/json/decoder.py", line 337, in decode
-    obj, end = self.raw_decode(s, idx=_w(s, 0).end())
-  File "/usr/lib/python3.10/json/decoder.py", line 355, in raw_decode
-    raise JSONDecodeError("Expecting value", s, err.value) from None
-json.decoder.JSONDecodeError: Expecting value: line 1 column 1 (char 0)
- - human user
- - file read problem, check file name and length. maybe studio-controls
-	has not finished writing? maybe auto_jack.py has not?
- - do we need a lockfile?
--------------------8<--------------------
-FIXED
-Traceback (most recent call last):
-  File "/usr/bin/convert-studio-controls", line 720, in <module>
-    main(sys.argv[1:])
-  File "/usr/bin/convert-studio-controls", line 706, in main
-    check_new(use_bk)
-  File "/usr/bin/convert-studio-controls", line 508, in check_new
-    check_db()
-  File "/usr/bin/convert-studio-controls", line 539, in check_db
-    check_devices()
-  File "/usr/bin/convert-studio-controls", line 418, in check_devices
-    un, ud, us = our_db['jack']['usbdev'].split(',')
-ValueError: not enough values to unpack (expected 3, got 1)
- -human user, 
----------------------8<-------------------
-SKIP
-Traceback (most recent call last):
-  File "/usr/bin/convert-studio-controls", line 720, in <module>
-    main(sys.argv[1:])
-  File "/usr/bin/convert-studio-controls", line 716, in main
-    check_db()
-  File "/usr/bin/convert-studio-controls", line 659, in check_db
-    write_new()
-  File "/usr/bin/convert-studio-controls", line 343, in write_new
-    os.makedirs(c_dir)
-  File "/usr/lib/python3.10/os.py", line 225, in makedirs
-    mkdir(name, mode)
-PermissionError: [Errno 13] Permission denied: '/home/boss/.config/autojack/'
- - human user, tag: uec-images (running on cloud)
- - Can we detect running on cloud?
----------------------8<-------------------
-
 
 IN Studio-controls:
-----------------------8<------------------
-FIXED
-Traceback (most recent call last):
-  File "/usr/bin/studio-controls", line 1768, in cb_audio_apply
-    self.config_save()
-  File "/usr/bin/studio-controls", line 1778, in config_save
-    self.jackdb['frame'] = int(self.combobox_late.get_active_id())
-TypeError: int() argument must be a string, a bytes-like object or a real number, not 'NoneType'
- - need to make sure value is set to reasonable value
- - value may be outside of allowable for device (lower)
-    check for this and set to minimum for device
- ----------------8<----------------------
+
 FIXED
 Traceback (most recent call last):
   File "/usr/bin/studio-controls", line 769, in check_jack_status
@@ -184,47 +39,7 @@ dbus.exceptions.DBusException: org.jackaudio.Error.ServerNotRunning: Can't execu
 ------------------8<--------------------
 In general change all jack_client.* calls to jackdbus queries
 ------------------8<--------------------
-Traceback (most recent call last):
-  File "/usr/bin/studio-controls", line 1879, in <module>
-    us = StudioControls()
-  File "/usr/bin/studio-controls", line 563, in __init__
-    self.conf_db = json.load(f)
-  File "/usr/lib/python3.10/json/__init__.py", line 293, in load
-    return loads(fp.read(),
-  File "/usr/lib/python3.10/json/__init__.py", line 346, in loads
-    return _default_decoder.decode(s)
-  File "/usr/lib/python3.10/json/decoder.py", line 337, in decode
-    obj, end = self.raw_decode(s, idx=_w(s, 0).end())
-  File "/usr/lib/python3.10/json/decoder.py", line 355, in raw_decode
-    raise JSONDecodeError("Expecting value", s, err.value) from None
-json.decoder.JSONDecodeError: Expecting value: line 1 column 1 (char 0)
- - similar above (in convert and autojack)
-------------------8<--------------------
-FIXED
-Traceback (most recent call last):
-  File "/usr/bin/studio-controls", line 767, in check_jack_status
-    xrun_count = control_iface.GetXruns()
-  File "/usr/lib/python3/dist-packages/dbus/proxies.py", line 72, in __call__
-    return self._proxy_method(*args, **keywords)
-  File "/usr/lib/python3/dist-packages/dbus/proxies.py", line 141, in __call__
-    return self._connection.call_blocking(self._named_service,
-  File "/usr/lib/python3/dist-packages/dbus/connection.py", line 652, in call_blocking
-    reply_message = self.send_message_with_reply_and_block(
-dbus.exceptions.DBusException: org.freedesktop.DBus.Error.ServiceUnknown: The name :1.108 was not provided by any .service files
- - jackdbus may have hung/quit
- - We now check for jackdbus running just before this
-------------------8<--------------------
-FIXED
-Traceback (most recent call last):
-  File "/usr/bin/studio-controls", line 784, in check_jack_status
-    jack_client.activate()
-  File "/usr/lib/python3/dist-packages/jack.py", line 430, in activate
-    _check(_lib.jack_activate(self._ptr), 'Error activating JACK client')
-  File "/usr/lib/python3/dist-packages/jack.py", line 3026, in _check
-    raise JackErrorCode(msg, error_code)
-jack.JackErrorCode: Error activating JACK client (-1)
- - make sure jack is running
-------------------8<--------------------
+
 
 
 TODO:

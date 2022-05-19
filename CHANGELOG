@@ -19,6 +19,9 @@ studio-controls version 2.3.2
  - Use direct query to jackdbus to check for Running
  - Don't allow running as system or root
  - Use file locking to make sure a read get the whole database
+ - Headphones now include port number and can use JACK master
+ - Update man pages
+ - Fixed many bugs
 
 studio-controls version 2.3.1
 

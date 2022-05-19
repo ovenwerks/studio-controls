@@ -999,7 +999,12 @@ def check_db():
         extra_db['phone-action'] = "switch"
 
     if 'phone-device' not in extra_db:
+        # we could use system but default is most likely to
+        # have ph jack we can detect
         extra_db['phone-device'] = get_default_dev()[0]
+
+    if 'phone-left' not in extra_db:
+        extra_db['phone-left'] = '1'
 
     pulse_db = our_db['pulse']
     if 'inputs' not in pulse_db:
@@ -1037,7 +1042,7 @@ def check_db():
     write_new()
 
 
-def convert(quiet=False):
+def convert(quiet=True):
 
     global config_path
     global install_path

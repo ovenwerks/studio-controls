@@ -39,7 +39,8 @@ def set_db(jack):
     print(c_file)
     if not os.path.isfile(c_file):
         sys.exit("Configuration file not created, Please run Studio Controls first")
-    # config file exists, read it in
+    # config file exists, read it in no_check = True
+    # (autojack should have already done that)
     auto_jack.check_new(True)
     auto_jack.our_db['jack']['on'] = jack
     auto_jack.write_new()
@@ -62,6 +63,8 @@ def main(argv):
     if len(sys.argv) == 2:
         command = sys.argv[1]
         if command == "start":
+            # idea to think on:
+            # ping and check autojack version to restart if not current
             jack = True
             set_db(jack)
             sendbs.signal(command)

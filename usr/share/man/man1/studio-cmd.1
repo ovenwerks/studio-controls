@@ -1,0 +1,26 @@
+.TH studio-cmd 1 "18 May 2022" "version 2.3.2"
+.SH NAME
+studio-cmd \- Is an audio setup utility for sound studio use
+.SH SYNOPSIS
+studio-cmd [start|stop|phones|monitor]
+.SH DESCRIPTION
+Studio-cmd is a command line utility for sending some commands
+directly to the studio-controls back end (autojack). This is  to
+allow adding convenience buttons to a systray with extra code or
+for remote control.
+.LP
+Studio-cmd is always run with exactly one command.
+.SH OPTIONS
+  start     -   Start or restart the JACK server and bridges
+.LP
+  stop      -   Stop the JACK server and restart pulseaudio
+.LP
+  phones    -   Switch the monitoring outputs to the headphone outputs
+.LP
+  monitors  -   Switch the headphone outputs to the monitoring outputs
+.SH SEE ALSO
+studio-controls(1), autojack(2), studio-system(2)
+.SH BUGS
+No known bugs.
+.SH AUTHOR
+Len Ovens (len@ovenwerks.net)
