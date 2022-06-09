@@ -112,6 +112,7 @@ def extra_devices():
     import_config("extra_devices")
     # a few loops
     for dev in conf_db['devices']:
+        time.sleep(.5)
         rawdev = conf_db['devices'][dev]['raw']
         numst = conf_db['devices'][dev]['number']
         usb = bool(conf_db['devices'][dev]['usb']
@@ -520,6 +521,24 @@ def config_start():
                 os.kill(int(sub_db['cap-pid']), 9)
             except Exception:
                 print("")
+    pc = shutil.which("pactl")
+    if pc is None:
+        logging.warning(
+            "pactl is missing... unable to control"
+            "pulseaudio\n configure failed")
+    else:
+        cp = subprocess.run([pc, "unload-module", "module-jack-source"],
+                            universal_newlines=True,
+                            stdout=subprocess.PIPE,
+                            stderr=subprocess.STDOUT, shell=False)
+        logging.debug(f"Pulseaudio: {cp.stdout.strip()}")
+        time.sleep(1)
+        cp = subprocess.run([pc, "unload-module", "module-jack-sink"],
+                            universal_newlines=True,
+                            stdout=subprocess.PIPE,
+                            stderr=subprocess.STDOUT, shell=False)
+        logging.debug(f"Pulseaudio: {cp.stdout.strip()}")
+        time.sleep(1)
 
     bus = dbus.SessionBus()
     controller = bus.get_object(service_name, "/org/jackaudio/Controller")
@@ -544,6 +563,9 @@ def config_start():
                             stderr=subprocess.STDOUT,
                             shell=False)
         logging.debug(f"Kill old Procs: {cp.stdout.strip()}")
+    cp = subprocess.run(["alsactl", "init"], universal_newlines=True,
+                        stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
+                        shell=False)
 
     jack_stat("Stopped")
     last_master = 'none'
@@ -759,20 +781,6 @@ def config_start():
             "pactl is missing... unable to control"
             "pulseaudio\n configure failed")
     else:
-        if len(conf_db['pulse']['inputs']) or len(conf_db['pulse']['outputs']):
-            cp = subprocess.run([pc, "unload-module", "module-udev-detect"],
-                                universal_newlines=True,
-                                stdout=subprocess.PIPE,
-                                stderr=subprocess.STDOUT, shell=False)
-            logging.debug(f"remove module-udev-detect: {cp.stdout.strip()}")
-            time.sleep(1)
-            cp = subprocess.run([pc, "unload-module", "module-alsa-card"],
-                                universal_newlines=True,
-                                stdout=subprocess.PIPE,
-                                stderr=subprocess.STDOUT, shell=False)
-            logging.debug(f"remove module-alsa-card: {cp.stdout.strip()}")
-            time.sleep(1)
-
         for bridge in conf_db['pulse']['inputs']:
             this_count = str(conf_db['pulse']['inputs'][bridge]['count'])
             cp = subprocess.run([pc, "load-module", "module-jack-source",
@@ -792,6 +800,20 @@ def config_start():
                                 stdout=subprocess.PIPE,
                                 stderr=subprocess.STDOUT, shell=False)
             logging.debug(f"Pulseaudio: {cp.stdout.strip()}")
+            time.sleep(1)
+
+        if len(conf_db['pulse']['inputs']) or len(conf_db['pulse']['outputs']):
+            cp = subprocess.run([pc, "unload-module", "module-udev-detect"],
+                                universal_newlines=True,
+                                stdout=subprocess.PIPE,
+                                stderr=subprocess.STDOUT, shell=False)
+            logging.debug(f"remove module-udev-detect: {cp.stdout.strip()}")
+            time.sleep(1)
+            cp = subprocess.run([pc, "unload-module", "module-alsa-card"],
+                                universal_newlines=True,
+                                stdout=subprocess.PIPE,
+                                stderr=subprocess.STDOUT, shell=False)
+            logging.debug(f"remove module-alsa-card: {cp.stdout.strip()}")
             time.sleep(1)
 
     extra_devices()
@@ -1303,61 +1325,6 @@ def msg_cb_removed(*args, **kwargs):
                             kill_slave(subname, old_devs_db)
 
 
-def get_card_rate(rtdev):
-    ''' find out closest SR jack master that device handles'''
-    global conf_db
-    dname, l_dev, sub = rtdev.split(",", 2)
-    dev_db = conf_db['devices'][dname]
-    rtdev = f"{dev_db['raw']},{l_dev},{sub}"
-    desired_rate = str(dev_db['sub'][l_dev]['rate'])
-    backup_rate = ""
-    if os.path.isfile(f"/proc/asound/{dev_db['raw']}"
-                      f"/pcm{l_dev}p/sub{sub}/hw_params"):
-        p_file = f"/proc/asound/{dev_db['raw']}/pcm{l_dev}p/sub{sub}/hw_params"
-        dtype = 0
-    elif os.path.isfile(f"/proc/asound/{dev_db['raw']}"
-                        f"/pcm{l_dev}c/sub{sub}/hw_params"):
-        p_file = f"/proc/asound/{dev_db['raw']}/pcm{l_dev}c/sub{sub}/hw_params"
-        dtype = 1
-    else:
-        logging.warning(
-            f"missing info file for: {rtdev} adding client may fail.")
-        return desired_rate
-
-    adev_h = alsaaudio.PCM(type=dtype, device=f"hw:{rtdev}")
-
-    adev_h.setrate(int(desired_rate))
-    with open(p_file, "r") as card_file:
-        for line in card_file:
-            if 'rate:' in line:
-                fnd_rate = line.split()[1]
-                backup_rate = fnd_rate
-                if fnd_rate == desired_rate:
-                    logging.debug(
-                        f"Good supports desired rate: {desired_rate}")
-                    adev_h.close()
-                    return fnd_rate
-    adev_h.close()
-    for try_rate in ['48000', '44100', '88200', '96000', '32000']:
-        adev_h.setrate(int(try_rate))
-        with open(p_file, "r") as card_file:
-            for line in card_file:
-                if 'rate:' in line:
-                    fnd_rate = line.split()[1]
-                    if fnd_rate == try_rate:
-                        logging.debug(f"Closest we could find: {fnd_rate}")
-                        adev_h.close()
-                        return fnd_rate
-        adev_h.close()
-
-    if backup_rate:
-        # adev_h.close()
-        return backup_rate
-    logging.debug(f"Unable to confirm working rate, using: {desired_rate}")
-    # adev_h.close()
-    return desired_rate
-
-
 def start_slave(ldev):
     ''' takes the audio device as a parameter and starts a bridge
     from that device to jack '''
@@ -1394,7 +1361,19 @@ def start_slave(ldev):
     elif dev_db['internal'] and (buff_size < 128):
         logging.info("Internal device, minimum buffer 128, using 128")
         buff_size = "128"
-    dsr = get_card_rate(ldev)
+    dsr = sub_db['frame']['rate']
+    if dsr not in dev_db['rates']:
+        logging.info(f"sample rate {dsr} for {ldev} not valid")
+        if "48000" in dev_db['rates']:
+            dsr = "48000"
+        elif "44100" in dev_db['rates']:
+            dsr = "44100"
+        elif len(dev_db['rates']):
+            dsr = dev_db['rates'][0]
+        else:
+            logging.info(f"{ldev} has no sample rates, no bridge")
+            return
+        logging.info(f"Using {dsr} instead")
     # we found it and it seems to have this sub
     if sub_db['playback']:
         if not sub_db['play-pid']:

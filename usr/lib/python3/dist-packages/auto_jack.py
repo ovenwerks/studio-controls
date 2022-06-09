@@ -565,10 +565,8 @@ def check_devices(our_db):
                 sub_db['cap-latency'] = 0
             if 'play-latency' not in sub_db:
                 sub_db['play-latency'] = 0
-            if 'play-pid' not in sub_db:
-                sub_db['play-pid'] = 0
-            if 'cap-pid' not in sub_db:
-                sub_db['cap-pid'] = 0
+            sub_db['play-pid'] = 0
+            sub_db['cap-pid'] = 0
             if "description" not in sub_db:
                 sub_db['description'] = "unknown"
 

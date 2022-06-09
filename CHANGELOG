@@ -1,3 +1,10 @@
+studio-controls version 2.3.4
+
+ [ Len Ovens ]
+ - When adding extra devices allow zita to complete before next device (issue #80)
+ - Don't try to detect valid SR, use device info files instead (issue #81)
+ - Reinitialize alsa devices before jack startup
+
 studio-controls version 2.3.3
 
  [ Len Ovens ]
