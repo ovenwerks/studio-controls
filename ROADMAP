@@ -6,39 +6,7 @@
 
 Fixes:
 
-These things need to be looked for in 2.3.2
-autojack
-------------------8<--------------------
-DONE for now
-Traceback (most recent call last):
-  File "/usr/bin/autojack", line 1829, in <module>
-    main()
-  File "/usr/bin/autojack", line 1789, in main
-    phones_check()
-  File "/usr/bin/autojack", line 1576, in phones_check
-    dev_db = conf_db['devices'][dname]
-KeyError: 'USB'
- - human user
- - Maybe unupdated config file
- - I think this has been solved by auto_jack.py
------------------------------------------
-
-IN Studio-controls:
-
-FIXED
-Traceback (most recent call last):
-  File "/usr/bin/studio-controls", line 769, in check_jack_status
-    load = control_iface.GetLoad()
-  File "/usr/lib/python3/dist-packages/dbus/proxies.py", line 141, in __call__
-    return self._connection.call_blocking(self._named_service,
-  File "/usr/lib/python3/dist-packages/dbus/connection.py", line 652, in call_blocking
-    reply_message = self.send_message_with_reply_and_block(
-dbus.exceptions.DBusException: org.jackaudio.Error.ServerNotRunning: Can't execute method 'GetLoad' with stopped JACK server
- - need to check and track jack status
- - Used direct query to jackdbus to check running
-------------------8<--------------------
-In general change all jack_client.* calls to jackdbus queries
-------------------8<--------------------
+These things need to be looked for in 2.3.3
 
 
 
@@ -57,10 +25,6 @@ Future Features:
 		and loop to bt device.
         Note: not worth doing. Pipewire will do this for us.
 
-	- remove Cadence from autostart and Cadences pulseaudio config
-		Cadence will reinsert these if the user decides to use it again
-		but at least if controls is used PA should get set to stock.
-		Will also have to restart PA as Cadence disables respawn so
-		one start is needed to re-enable that.
+
 	- adding in stuff from https://github.com/jhernberg/udev-rtirq so that
 		hot plugged USB devices get higher priority.

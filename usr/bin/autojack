@@ -102,9 +102,11 @@ def extra_devices():
     global conf_db
     global last_master
     global phones
+    global jack_alive
     logging.debug("updating extra devices")
 
-    if not conf_db['jack']['on']:
+    if not jack_alive:
+        logging.debug("Jack is not running, why are we adding extra devices?")
         return
         # no use checking anything else
     import_config("extra_devices")
@@ -122,10 +124,12 @@ def extra_devices():
                 f"{sub_db['play-chan']} "
                 f"{sub_db['cap-chan']} card: {numst}")
             if sub_db['hide'] or int(conf_db['devices'][dev]['number']) == -1:
+                logging.debug(f"{fullname} is hidden or unplugged, no bridge")
                 if sub_db['cap-pid'] or sub_db['play-pid']:
-                    kill_slave(fullname)
+                    kill_slave(fullname, conf_db['devices'])
                 break
             if get_raw(fullname) == last_master:
+                logging.debug(f"{fullname} is master, no bridge")
                 break
             if fullname == conf_db['extra']['phone-device']:
                 if phones:
@@ -138,7 +142,7 @@ def extra_devices():
                     break
             else:
                 if sub_db['cap-pid'] or sub_db['play-pid']:
-                    kill_slave(fullname)
+                    kill_slave(fullname, conf_db['devices'])
     logging.debug("updating extra devices complete")
 
 
@@ -533,7 +537,8 @@ def config_start():
     if kla is None:
         logging.warning("killall not found, audio controls may fail to work")
     else:
-        cp = subprocess.run([kla, "-q", "-9", "jackdbus", "jackd", "a2jmidid"],
+        cp = subprocess.run([kla, "-q", "-9", "jackdbus", "jackd",
+                            "a2jmidid", "pulseaudio"],
                             universal_newlines=True,
                             stdout=subprocess.PIPE,
                             stderr=subprocess.STDOUT,
@@ -585,14 +590,13 @@ def config_start():
                 "Kill ffado mixer because busreset needed:"
                 f"{cp.stdout.strip()}")
 
+    # restart Pulse to reload default modules which we may have removed
+    # bus = dbus.SessionBus() # bus already set above
+    systemd1 = bus.get_object('org.freedesktop.systemd1', '/org/freedesktop/systemd1')
+    manager = dbus.Interface(systemd1, 'org.freedesktop.systemd1.Manager')
+    job = manager.RestartUnit('pulseaudio.service', 'fail')
+    logging.debug(f"JACK is {str(conf_db['jack']['on'])} restart pulse: {job.strip()}")
     if not conf_db['jack']['on']:
-        pa = shutil.which("pulseaudio")
-        # restart Pulse to reload default modules which we may have removed
-        # bus = dbus.SessionBus() # bus already set above
-        systemd1 = bus.get_object('org.freedesktop.systemd1', '/org/freedesktop/systemd1')
-        manager = dbus.Interface(systemd1, 'org.freedesktop.systemd1.Manager')
-        job = manager.RestartUnit('pulseaudio.service', 'fail')
-        logging.debug(f"JACK is {str(conf_db['jack']['on'])} restart pulse: {job.strip()}")
         return
     logging.debug(f"JACK is {str(conf_db['jack']['on'])} start up jack")
     jack_stat("Config Pulse")
@@ -861,21 +865,26 @@ def start_jack_client():
     logging.debug("create jack client")
     jack.set_error_function(callback=jack_error)
     jack.set_info_function(callback=jack_info)
-    try:
-        jack_client = jack.Client(
-            'AutoJack', use_exact_name=False, no_start_server=True)
-    except jack.JackError:
-        logging.warning("Unable to create jack client")
-        jack_died = True
-        return
-    jack_client.set_shutdown_callback(jackdied)
-    jack_client.set_port_connect_callback(jack_con_det)
-    jack_client.activate()
+    # use dbus call to find if jack is running
+    bus = dbus.SessionBus()
+    controller = bus.get_object(service_name, "/org/jackaudio/Controller")
+    control_iface = dbus.Interface(controller, control_interface_name)
+    if int(control_iface.IsStarted()):
+        try:
+            jack_client = jack.Client(
+                'AutoJack', use_exact_name=False, no_start_server=True)
+        except jack.JackError:
+            logging.warning("Unable to create jack client")
+            jack_died = True
+            return
+        jack_client.set_shutdown_callback(jackdied)
+        jack_client.set_port_connect_callback(jack_con_det)
+        jack_client.activate()
 
-    jack_died = False
-    jack_alive = True
-    con_dirty = True
-    logging.debug("jack client created")
+        jack_died = False
+        jack_alive = True
+        con_dirty = True
+        logging.debug("jack client created")
 
 
 def kill_jack_client():
@@ -886,8 +895,6 @@ def kill_jack_client():
     if jack_client in globals():
         jack_client.deactivate()
         jack_client.close()
-    jack.set_error_function()
-    jack.set_info_function()
     jack_died = False
     jack_alive = False
     jack_stat("Stopped")
@@ -929,6 +936,14 @@ def check_jack_status(user_data):
     global jack_count
     global last_status
     global phone_port
+
+    # use dbus call to find if jack is running
+    bus = dbus.SessionBus()
+    controller = bus.get_object(service_name, "/org/jackaudio/Controller")
+    control_iface = dbus.Interface(controller, control_interface_name)
+    # configure_iface = dbus.Interface(controller, configure_interface_name)
+    if jack_alive and not int(control_iface.IsStarted()):
+        jack_died = True
 
     # sent by jackdied() callback
     if jack_died:
@@ -1237,12 +1252,12 @@ def msg_cb_new(*args, **kwargs):
 
 def msg_cb_removed(*args, **kwargs):
     ''' dbus call back when a USB device removal has been detected by udev '''
-    global last_master
     global conf_db
-    global jack_died
     global cards_f
+    global jack_alive
+    global last_master
 
-    if not conf_db['jack']['on']:
+    if not jack_alive:
         # then we don't care
         return
 
@@ -1277,17 +1292,15 @@ def msg_cb_removed(*args, **kwargs):
                     for subn in dev_db['sub']:
                         subname = f"{dev_name},{str(subn)},0"
                         if conf_db['jack']['usbdev'] == subname:
-                            # must get rid of our jack client
-                            # jack_died = True
                             if last_master == get_raw(
                                     conf_db['jack']['usbdev']):
-                                kill_slave(conf_db['jack']['dev'])
+                                kill_slave(conf_db['jack']['dev'], old_devs_db)
                                 time.sleep(1)
                                 config_start()
                         elif conf_db['extra']['usbauto']:
                             if subname == conf_db['extra']['phone-device']:
                                 phones_switch(False)
-                            kill_slave(subname)
+                            kill_slave(subname, old_devs_db)
 
 
 def get_card_rate(rtdev):
@@ -1435,14 +1448,15 @@ def start_slave(ldev):
     import_config("start_slave")
 
 
-def kill_slave(ldev):
+def kill_slave(ldev, devs_db):
     ''' takes the device as a parameter and if the device exists
     and is bridged to jack, stops the bridge '''
     global conf_db
     global procs
     dname, l_dev, sub = ldev.split(",", 2)
     logging.debug(f"{ldev} kill in progress")
-    dev_db = conf_db['devices'][dname]
+    # dev_db = conf_db['devices'][dname]
+    dev_db = devs_db[dname]
     if len(dev_db['sub']):
         sub_db = dev_db['sub'][l_dev]
         logging.debug(
@@ -1490,6 +1504,8 @@ def kill_slave(ldev):
                     del procs[i]
         else:
             logging.debug(f"{ldev} no Capture bridge found")
+    # get rid of pid entries
+    import_config("kill_slave")
 
 
 def we_die():
@@ -1598,7 +1614,7 @@ def phones_switch(plugged):
                 logging.debug(
                     "Headphone device had no jack port ... "
                     "kill unneeded bridge")
-                kill_slave(conf_db['extra']['phone-device'])
+                kill_slave(conf_db['extra']['phone-device'], conf_db['devices'])
         else: # switch to phone port
             if alsadev and port_list == []:
                 logging.debug(

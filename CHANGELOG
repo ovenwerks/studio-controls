@@ -2,6 +2,8 @@ studio-controls version 2.3.3
 
  [ Len Ovens ]
  - Use dbus calls to detect jack state
+ - Make sure device pid is removed when zita-ajbridge is killed
+ - Make sure there is only one pulseaudio running
 
 studio-controls version 2.3.2
 

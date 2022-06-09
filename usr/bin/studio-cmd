@@ -41,6 +41,7 @@ def set_db(jack):
         sys.exit("Configuration file not created, Please run Studio Controls first")
     # config file exists, read it in no_check = True
     # (autojack should have already done that)
+    auto_jack.log = False
     auto_jack.check_new(True)
     auto_jack.our_db['jack']['on'] = jack
     auto_jack.write_new()
