@@ -418,22 +418,28 @@ def write_new():
         os.rename(ck_file, c_file)
 
 
-
-
 def usb_duplicate(device):
     # find out if this is a duplicate
+    global log
     global our_db
+    ret = 'none'
     check_db = our_db['devices'][device]
     for good_dev in our_db['devices']:
+        if device == good_dev:
+            # this is always a duplicate of itself
+            continue
         if len(good_dev) > 3 and good_dev[
                 0:3] == 'USB' and good_dev[3].isdigit():
             good_db = our_db['devices'][good_dev]
             if check_db['id'] == 'none':
-                return good_dev
-            if [good_db['id'], good_db['bus']] == [
-                    check_db['id'], check_db['bus']]:
-                return good_dev
-    return 'none'
+                ret = good_dev
+            if check_db['id'] == good_db['id']:
+                # same kind of device
+                if good_db['bus'] == check_db['bus']:
+                    ret = good_dev
+    if log:
+        print(f"Dup check returns: {ret}")
+    return ret
 
 
 def usb_number():
@@ -494,7 +500,7 @@ def check_devices(our_db):
                     device[0:3] == 'USB' and device[3].isdigit()):
                 # check for duplicate
                 # dup means id and bus match
-                if not usb_duplicate(device) == 'none':
+                if usb_duplicate(device) != 'none':
                     our_db['devices'].pop(device)
                     continue
                 else:
@@ -507,8 +513,12 @@ def check_devices(our_db):
                             un, ud, us = usb_split
                             if un == device:
                                 our_db['jack']['usbdev'] = f"{new_dev},{ud},{us}"
-                        else:
-                            our_db['jack']['usbdev'] = 'none'
+            dup = usb_duplicate(device)
+            if dup != 'none':
+                print(f"dupcheck for {device} returns {dup}")
+                our_db['devices'].pop(device)
+                continue
+
         for sub in dev_db['sub']:
             sub_db = dev_db['sub'][sub]
             if 'playback' not in sub_db:
@@ -584,9 +594,9 @@ def check_devices(our_db):
         return our_db
     ndevs += 1
     for x in range(0, ndevs):
+        # card loop
         rates = ['32000', '44100', '48000', '88200', '96000', '192000']
         drates = []
-        # card loop
         cname = ""
         usb = False
         bus = 'none'
@@ -603,7 +613,7 @@ def check_devices(our_db):
                 cname = str(x)
         else:
             # not all numbers may be used
-            break
+            continue
         # now check for USB device remembering to go by id/bus not raw name
         if os.path.exists(f"/proc/asound/card{str(x)}/usbid"):
             usb = True

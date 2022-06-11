@@ -550,6 +550,9 @@ def config_start():
     except Exception:
         print("stop failed")
     time.sleep(2)
+    cp = subprocess.run(["alsactl", "init"], universal_newlines=True,
+                        stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
+                        shell=False)
 
     # Stop jack if running
     kla = shutil.which("killall")
@@ -1289,6 +1292,7 @@ def msg_cb_removed(*args, **kwargs):
         # check to see if any cards have vanished
         with open('/proc/asound/cards', "r") as card_file:
             my_cards_f = card_file.read()
+            # logging.debug(f"card file: {str(my_cards_f)}")
             if my_cards_f == cards_f:
                 logging.debug("card file not changed, skip")
                 return
@@ -1301,8 +1305,10 @@ def msg_cb_removed(*args, **kwargs):
         dev_db = {}
         for dev_name in conf_db['devices']:
             dev_db = conf_db['devices'][dev_name]
+            logging.debug(f"check device {dev_name} for unplug")
             # we only care about usb devices that are unplugged and have audio
-            if dev_db['usb'] and dev_db['number'] == -1 and len(dev_db['sub']):
+            logging.debug(f"USB {str(dev_db['usb'])} Num: {str(dev_db['number'])}")
+            if dev_db['usb'] and (dev_db['number'] == -1) and len(dev_db['sub']):
                 # check if it was not in db before or "card number" has changed
                 if dev_name in old_devs_db or dev_db[
                         'number'] != old_devs_db[dev_name]['number']:
@@ -1361,7 +1367,7 @@ def start_slave(ldev):
     elif dev_db['internal'] and (buff_size < 128):
         logging.info("Internal device, minimum buffer 128, using 128")
         buff_size = "128"
-    dsr = sub_db['frame']['rate']
+    dsr = str(sub_db['rate'])
     if dsr not in dev_db['rates']:
         logging.info(f"sample rate {dsr} for {ldev} not valid")
         if "48000" in dev_db['rates']:

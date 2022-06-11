@@ -1,3 +1,10 @@
+studio-controls version 2.3.5
+
+ [ Len Ovens ]
+ - Properly prevent duplicate device records
+ - Skip device numbers that don't exist but look for higher numbers
+ - Fix type, compare string to string
+
 studio-controls version 2.3.4
 
  [ Len Ovens ]
