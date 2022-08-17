@@ -952,8 +952,10 @@ def jack_con_det(a, b, connect):
 
 
 def check_jack_status(user_data):
-    '''Check if jack has died and the client needs to be
-    closed.'''
+    ''' Check if jack has died and the client needs to be
+    closed. At least that is what it started as. Now it is a loop
+    that is run on a timer that checks for various things to do.
+    '''
     global con_dirty
     global jack_client
     global jack_alive
@@ -961,6 +963,25 @@ def check_jack_status(user_data):
     global jack_count
     global last_status
     global phone_port
+    global control_signal
+    global device_signal
+    global phone_signal
+
+    if control_signal != []:
+        command_run()
+        control_signal = []
+    if device_signal < 0:
+        device_removed()
+        device_signal = 0
+    if device_signal > 0:
+        device_new()
+        device_signal = 0
+    if phone_signal < 0:
+        phones_switch(False)
+        phone_signal = 0
+    if phone_signal > 0:
+        phones_switch(True)
+        phone_signal = 0
 
     # use dbus call to find if jack is running
     bus = dbus.SessionBus()
@@ -1212,11 +1233,11 @@ def disconnect_pa(our_config):
 
 def msg_cb_new(*args, **kwargs):
     '''call back for udev sensing new device. checks if device is audio.
-    checks if device is USB. If both are true and configuration is to
-    use this device, the device is either connected with zita-ajbridge
-    or becomes jack's master device'''
+        If it is, set a global variable to run in timer loop.
+    '''
     global last_master
     global conf_db
+    global device_signal
     global version
     global cards_f
 
@@ -1228,7 +1249,9 @@ def msg_cb_new(*args, **kwargs):
     time.sleep(3)
 
     if args[0].find("sound-card") >= 0:
-        # check to see if any new cards
+        device_signal = 1
+        return
+        '''# check to see if any new cards
         with open('/proc/asound/cards', "r") as card_file:
             my_cards_f = card_file.read()
             if my_cards_f == cards_f:
@@ -1272,13 +1295,73 @@ def msg_cb_new(*args, **kwargs):
                             # extra_devices()
                             start_slave(subname)
                             if subname == conf_db['extra']['phone-device']:
-                                phones_switch(True)
+                                phones_switch(True)'''
+
+
+def device_new():
+    '''
+        call back for udev sensing new device has set variable so
+        this checks if device is USB. If both are true and
+        configuration is to use this device, the device is either
+        connected with zita-ajbridge or becomes jack's master device
+    '''
+    global last_master
+    global conf_db
+    global version
+    global cards_f
+
+    # check to see if any new cards
+    with open('/proc/asound/cards', "r") as card_file:
+        my_cards_f = card_file.read()
+        if my_cards_f == cards_f:
+            logging.debug("card file not changed, skip")
+            return
+        else:
+            cards_f = my_cards_f
+    # remake database
+    old_devs_db = copy.deepcopy(conf_db['devices'])
+    import_config("msg_cb_new")
+    dev_db = {}
+    for dev_name in conf_db['devices']:
+        dev_db = conf_db['devices'][dev_name]
+        # we only care about usb devices that are plugged in and have audio
+        if dev_db['usb'] and dev_db['number'] != -1 and len(dev_db['sub']):
+            # check if it was not in db before or "card number" has changed
+            if dev_name not in old_devs_db or dev_db[
+                    'number'] != old_devs_db[dev_name]['number']:
+                # tell gui devicelist has changed so it can up date
+                # device dropdowns
+                sendbs.state(version, 'usb')
+                logging.debug(f"USB device {dev_name} has been plugged in")
+
+                for subn in dev_db['sub']:
+                    subname = f"{dev_name},{str(subn)},0"
+                    if subname == last_master:
+                        # this device is current master
+                        # maybe jack did a reset?
+                        continue
+                    sub_db = dev_db['sub'][subn]
+                    if (conf_db['jack']['driver'] == "alsa") and (
+                            conf_db['jack']['usbdev'] == subname):
+                        logging.debug(
+                            f"Changing jack master to: {subname}")
+                        config_start()
+                        return
+                    if sub_db['play-pid'] or sub_db['cap-pid']:
+                        # device in use already
+                        continue
+                    if conf_db['extra']['usbauto']:
+                        # extra_devices()
+                        start_slave(subname)
+                        if subname == conf_db['extra']['phone-device']:
+                            phones_switch(True)
 
 
 def msg_cb_removed(*args, **kwargs):
     ''' dbus call back when a USB device removal has been detected by udev '''
     global conf_db
     global cards_f
+    global device_signal
     global jack_alive
     global last_master
 
@@ -1289,46 +1372,60 @@ def msg_cb_removed(*args, **kwargs):
     # let things settle
     time.sleep(.5)
     if args[0].find("sound-card") >= 0:
-        # check to see if any cards have vanished
-        with open('/proc/asound/cards', "r") as card_file:
-            my_cards_f = card_file.read()
-            # logging.debug(f"card file: {str(my_cards_f)}")
-            if my_cards_f == cards_f:
-                logging.debug("card file not changed, skip")
-                return
-            else:
-                cards_f = my_cards_f
+        device_signal = -1
 
-        # remake database
-        old_devs_db = copy.deepcopy(conf_db['devices'])
-        import_config("msg_cb_removed")
-        dev_db = {}
-        for dev_name in conf_db['devices']:
-            dev_db = conf_db['devices'][dev_name]
-            logging.debug(f"check device {dev_name} for unplug")
-            # we only care about usb devices that are unplugged and have audio
-            logging.debug(f"USB {str(dev_db['usb'])} Num: {str(dev_db['number'])}")
-            if dev_db['usb'] and (dev_db['number'] == -1) and len(dev_db['sub']):
-                # check if it was not in db before or "card number" has changed
-                if dev_name in old_devs_db or dev_db[
-                        'number'] != old_devs_db[dev_name]['number']:
-                    # tell gui devicelist has changed
-                    # so it can up date device dropdowns
-                    sendbs.state(version, 'usb')
-                    logging.debug(f"USB device {dev_name} has been unplugged")
 
-                    for subn in dev_db['sub']:
-                        subname = f"{dev_name},{str(subn)},0"
-                        if conf_db['jack']['usbdev'] == subname:
-                            if last_master == get_raw(
-                                    conf_db['jack']['usbdev']):
-                                kill_slave(conf_db['jack']['dev'], old_devs_db)
-                                time.sleep(1)
-                                config_start()
-                        elif conf_db['extra']['usbauto']:
-                            if subname == conf_db['extra']['phone-device']:
-                                phones_switch(False)
-                            kill_slave(subname, old_devs_db)
+def device_removed():
+    ''' dbus call back when a USB device removal has been detected by udev '''
+    global conf_db
+    global cards_f
+    global jack_alive
+    global last_master
+
+    if not jack_alive:
+        # then we don't care
+        return
+
+    # check to see if any cards have vanished
+    with open('/proc/asound/cards', "r") as card_file:
+        my_cards_f = card_file.read()
+        # logging.debug(f"card file: {str(my_cards_f)}")
+        if my_cards_f == cards_f:
+            logging.debug("card file not changed, skip")
+            return
+        else:
+            cards_f = my_cards_f
+
+    # remake database
+    old_devs_db = copy.deepcopy(conf_db['devices'])
+    import_config("msg_cb_removed")
+    dev_db = {}
+    for dev_name in conf_db['devices']:
+        dev_db = conf_db['devices'][dev_name]
+        logging.debug(f"check device {dev_name} for unplug")
+        # we only care about usb devices that are unplugged and have audio
+        logging.debug(f"USB {str(dev_db['usb'])} Num: {str(dev_db['number'])}")
+        if dev_db['usb'] and (dev_db['number'] == -1) and len(dev_db['sub']):
+            # check if it was not in db before or "card number" has changed
+            if dev_name in old_devs_db or dev_db[
+                    'number'] != old_devs_db[dev_name]['number']:
+                # tell gui devicelist has changed
+                # so it can up date device dropdowns
+                sendbs.state(version, 'usb')
+                logging.debug(f"USB device {dev_name} has been unplugged")
+
+                for subn in dev_db['sub']:
+                    subname = f"{dev_name},{str(subn)},0"
+                    if conf_db['jack']['usbdev'] == subname:
+                        if last_master == get_raw(
+                                conf_db['jack']['usbdev']):
+                            kill_slave(conf_db['jack']['dev'], old_devs_db)
+                            time.sleep(1)
+                            config_start()
+                    elif conf_db['extra']['usbauto']:
+                        if subname == conf_db['extra']['phone-device']:
+                            phones_switch(False)
+                        kill_slave(subname, old_devs_db)
 
 
 def start_slave(ldev):
@@ -1696,11 +1793,15 @@ def phones_plug(*args, **kwargs):
         phones are unmuted and have a level higher than -inf.
         We also may want to mute speakers '''
     global conf_db
+    global phone_signal
     logging.info("Got phones plugged in signal.")
     dname, ddev, dsub = conf_db['extra']['phone-device'].split(',')
     dev_db = conf_db['devices'][dname]
     if int(dev_db['number']) > -1 and dev_db['internal']:
-        phones_switch(True)
+        # changed to:
+        phone_signal = 1
+        # the line below to be moved to check_jack_status
+        # phones_switch(True)
     else:
         logging.info("Ignored phone plug: not correct device")
 
@@ -1710,11 +1811,15 @@ def phones_unplug(*args, **kwargs):
         phones are muted and the speakers  are unmuted and have a
         level higher than -inf.'''
     global conf_db
+    global phone_signal
     logging.info("Got phones unplugged signal.")
     dname, ddev, dsub = conf_db['extra']['phone-device'].split(',')
     dev_db = conf_db['devices'][dname]
     if int(dev_db['number']) > -1 and dev_db['internal']:
-        phones_switch(False)
+        # changed to:
+        phone_signal = -1
+        # the line below to be moved to check_jack_status
+        # phones_switch(False)
     else:
         logging.info("Ignored phone unplug: not correct device")
 
@@ -1734,11 +1839,19 @@ def jack_info(mesg):
 
 def ses_cb_command(*args, **kwargs):
     ''' Generic signal receiver '''
-    global ping_string
+    global control_signal
+    rec_string = f"args: {str(args[0])}"
+    # logging.debug(f"got signal - {rec_string}")
+    control_signal = args
+
+
+def command_run():
+    ''' Generic signal receiver '''
     global version
     global last_status
     global phones
-    rec_string = f"args: {str(args[0])}"
+    global control_signal
+    args = control_signal
     logging.debug(f"got signal - {rec_string}")
     if 'start' in args:
         logging.info("Got start signal.")
@@ -1802,6 +1915,12 @@ def main():
     global sendbs
     global startup
     global version
+    global control_signal
+    global device_signal
+    global phone_signal
+    control_signal = []
+    device_signal = 0
+    phone_signal = 0
     auto_jack.check_user()  # don't run as system or root
     cards_f = "none"
     con_dirty = False
@@ -1896,6 +2015,7 @@ def main():
         ses_cb_command, dbus_interface='org.studio.control.command',
         signal_name='signal')
 
+    time.sleep(1) # avoid race condition with plasma-pa
     sendbs.signal('start')
 
     jack_stat("Undetermined")

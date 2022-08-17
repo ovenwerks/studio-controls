@@ -1,3 +1,10 @@
+studio-controls version 2.3.6
+
+ [ Len Ovens ]
+ - Extra delay when starting to avoid race condition
+ - Set all DBUS call backs to only set a variable
+ - Check_jack_status now runs actual dbus calls to prevent dbus loop
+
 studio-controls version 2.3.5
 
  [ Len Ovens ]
