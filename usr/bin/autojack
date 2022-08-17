@@ -1251,51 +1251,6 @@ def msg_cb_new(*args, **kwargs):
     if args[0].find("sound-card") >= 0:
         device_signal = 1
         return
-        '''# check to see if any new cards
-        with open('/proc/asound/cards', "r") as card_file:
-            my_cards_f = card_file.read()
-            if my_cards_f == cards_f:
-                logging.debug("card file not changed, skip")
-                return
-            else:
-                cards_f = my_cards_f
-        # remake database
-        old_devs_db = copy.deepcopy(conf_db['devices'])
-        import_config("msg_cb_new")
-        dev_db = {}
-        for dev_name in conf_db['devices']:
-            dev_db = conf_db['devices'][dev_name]
-            # we only care about usb devices that are plugged in and have audio
-            if dev_db['usb'] and dev_db['number'] != -1 and len(dev_db['sub']):
-                # check if it was not in db before or "card number" has changed
-                if dev_name not in old_devs_db or dev_db[
-                        'number'] != old_devs_db[dev_name]['number']:
-                    # tell gui devicelist has changed so it can up date
-                    # device dropdowns
-                    sendbs.state(version, 'usb')
-                    logging.debug(f"USB device {dev_name} has been plugged in")
-
-                    for subn in dev_db['sub']:
-                        subname = f"{dev_name},{str(subn)},0"
-                        if subname == last_master:
-                            # this device is current master
-                            # maybe jack did a reset?
-                            continue
-                        sub_db = dev_db['sub'][subn]
-                        if (conf_db['jack']['driver'] == "alsa") and (
-                                conf_db['jack']['usbdev'] == subname):
-                            logging.debug(
-                                f"Changing jack master to: {subname}")
-                            config_start()
-                            return
-                        if sub_db['play-pid'] or sub_db['cap-pid']:
-                            # device in use already
-                            continue
-                        if conf_db['extra']['usbauto']:
-                            # extra_devices()
-                            start_slave(subname)
-                            if subname == conf_db['extra']['phone-device']:
-                                phones_switch(True)'''
 
 
 def device_new():
