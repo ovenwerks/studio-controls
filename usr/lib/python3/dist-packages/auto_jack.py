@@ -581,6 +581,7 @@ def check_devices(our_db):
                 sub_db['description'] = "unknown"
 
     # now find the real number
+    ndevs = -1
     if os.path.exists("/proc/asound/cards"):
         with open("/proc/asound/cards", "r") as cards_file:
             for line in cards_file:
@@ -591,6 +592,8 @@ def check_devices(our_db):
                 if first_el.isdigit():
                     ndevs = int(first_el)
     else:
+        return our_db
+    if ndevs == -1:
         return our_db
     ndevs += 1
     for x in range(0, ndevs):

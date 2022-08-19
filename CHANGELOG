@@ -1,3 +1,10 @@
+studio-controls version 2.3.7
+
+ [ Len Ovens ]
+ - Ensure value exists before using in auto_jack.py
+ - Ensure value exists before using in autojack
+ - Don't read empty lock file
+
 studio-controls version 2.3.6
 
  [ Len Ovens ]

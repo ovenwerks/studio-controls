@@ -1795,8 +1795,6 @@ def jack_info(mesg):
 def ses_cb_command(*args, **kwargs):
     ''' Generic signal receiver '''
     global control_signal
-    rec_string = f"args: {str(args[0])}"
-    # logging.debug(f"got signal - {rec_string}")
     control_signal = args
 
 
@@ -1807,6 +1805,7 @@ def command_run():
     global phones
     global control_signal
     args = control_signal
+    rec_string = f"args: {str(args[0])}"
     logging.debug(f"got signal - {rec_string}")
     if 'start' in args:
         logging.info("Got start signal.")
@@ -1919,18 +1918,20 @@ def main():
     new_pid = str(os.getpid())
     old_pid = new_pid
     if os.path.isfile(lock_file):
-        # other instance still hasn't gone maybe hung
-        with open(lock_file, "r") as lk_file:
-            for line in lk_file:
-                # only need one line
-                old_pid = line.rstrip()
-        if new_pid != old_pid:
-            print("old lock file found, killing old pid")
-            try:
-                os.kill(int(old_pid), 9)
-            except Exception:
-                print("")
-            time.sleep(1)
+        file_stats = os.stat(lock_file)
+        if int(file_stats.st_size):
+            # other instance still hasn't gone maybe hung
+            with open(lock_file, "r") as lk_file:
+                for line in lk_file:
+                    # only need one line
+                    old_pid = line.rstrip()
+            if new_pid != old_pid:
+                print("old lock file found, killing old pid")
+                try:
+                    os.kill(int(old_pid), 9)
+                except Exception:
+                    print("")
+                time.sleep(1)
     with open(lock_file, "w") as lk_file:
         lk_file.write(new_pid)
         print("Lock file created")
