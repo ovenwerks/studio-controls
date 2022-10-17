@@ -1,3 +1,8 @@
+studio-controls version 2.3.9
+
+ [ Len Ovens ]
+ - Fixed makefile to reflect new desktop file name (issue #84)
+
 studio-controls version 2.3.8
 
  [ Len Ovens ]

@@ -45,7 +45,7 @@ install:
 	install -d $(DESTDIR)$(LIBDIR)/python3/dist-packages
 
 	# now the files
-	install -m 644	usr/share/applications/studio-controls.desktop \
+	install -m 644	usr/share/applications/com.github.ovenwerks.studio-controls.desktop \
 		$(DESTDIR)$(DATADIR)/applications
 	install -m 644 usr/share/icons/hicolor/16x16/apps/* \
 		$(DESTDIR)$(DATADIR)/icons/hicolor/16x16/apps
@@ -93,7 +93,7 @@ uninstall:
 	rm -f /etc/acpi/studio-*
 	rm -f /etc/acpi/studio.sh
 
-	rm -f $(DESTDIR)$(DATADIR)/applications/studio-controls.desktop
+	rm -f $(DESTDIR)$(DATADIR)/applications/com.github.ovenwerks.studio-controls.desktop
 
 	rm -f $(DESTDIR)$(DATADIR)/icons/hicolor/16x16/apps/studio-controls.png
 	rm -f $(DESTDIR)$(DATADIR)/icons/hicolor/22x22/apps/studio-controls.png
