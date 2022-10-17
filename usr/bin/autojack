@@ -957,14 +957,15 @@ def check_jack_status(user_data):
     that is run on a timer that checks for various things to do.
     '''
     global con_dirty
-    global jack_client
-    global jack_alive
-    global jack_died
-    global jack_count
-    global last_status
-    global phone_port
+    global conf_db
     global control_signal
     global device_signal
+    global jack_alive
+    global jack_count
+    global jack_client
+    global jack_died
+    global last_status
+    global phone_port
     global phone_signal
 
     if control_signal != []:
@@ -997,6 +998,8 @@ def check_jack_status(user_data):
 
     jack_count = jack_count + 1
     if jack_count == 200:
+        # maintain logfiles and other things that don't need to
+        # be looked at so often
         logging.log(7, f"Jack_status: {str(jack_alive)}")
         jack_count = 0
 
@@ -1027,6 +1030,35 @@ def check_jack_status(user_data):
                 else:
                     os.replace(logfile, f"{logfile}.1")
             logging.debug("JACK Log File rotated")
+
+    rgov, rboost = auto_jack.get_gvnr_hw()
+    pk = shutil.which("pkexec")
+    if pk is None:
+        logging.warning(
+            "pexec is missing... unable to change"
+            " cpu-governor or boost")
+    else:
+        if conf_db['cpu-governor'] != rgov:
+            if conf_db['cpu-governor']:
+                gov = "performance"
+            else:
+                if os.path.exists("/sys/devices/system/cpu/intel_pstate"):
+                    gov = "powersave"
+                else:
+                    gov = "ondemand"
+            logging.info(f"Setting CPU Governor to {gov}")
+            subprocess.run(
+                [pk, f"{install_path}/sbin/studio-system", gov], shell=False)
+
+        if conf_db['boost'] != rboost:
+            if conf_db['boost']:
+                boost = "noboost"
+                logging.info("Setting Intel Boost to disable")
+            else:
+                boost = 'boost'
+                logging.info("Setting Intel Boost to enable")
+            subprocess.run(
+                [pk, f"{install_path}/sbin/studio-system", boost], shell=False)
 
     if con_dirty and jack_alive:
         logging.debug("Connection changed")
@@ -1971,7 +2003,6 @@ def main():
         ses_cb_command, dbus_interface='org.studio.control.command',
         signal_name='signal')
 
-    time.sleep(1) # avoid race condition with plasma-pa
     sendbs.signal('start')
 
     jack_stat("Undetermined")

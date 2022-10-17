@@ -1,9 +1,0 @@
-[Unit]
-Description=Studio System CPU Governor Setting
-
-[Service]
-Type=oneshot
-ExecStart=/usr/lib/systemd/studio
-
-[Install]
-WantedBy=multi-user.target

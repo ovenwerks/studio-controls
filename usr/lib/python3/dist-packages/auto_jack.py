@@ -60,6 +60,44 @@ def check_user():
         os._exit(0)
 
 
+def get_gvnr_set():
+    """ Find out if old style cpu governor setting has been used """
+    cpu_gov = False
+    boost = False
+    govfile = '/etc/default/studio'
+    if os.path.isfile(govfile):
+        with open(govfile, "r") as g_file:
+            for line in g_file:
+                if 'NO_TURBO' in line:
+                    if line.rstrip().find("1") > -1:
+                        boost = True
+                if 'GOVERNOR' in line:
+                    if line.rstrip().find("performance") > -1:
+                        cpu_gov = True
+    return cpu_gov, boost
+
+
+def get_gvnr_hw():
+    """ Find out what the HW is set to now """
+    perf = False
+    no_boost = False
+    boost_path = "/sys/devices/system/cpu/intel_pstate/no_turbo"
+    if os.path.exists(boost_path):
+        with open(boost_path, "r") as boost_test:
+            for line in boost_test:
+                if re.match("1", line.rstrip()):
+                    no_boost = True
+    if os.path.isfile("/sys/devices/system/cpu/cpufreq"
+                      "/policy0/scaling_governor"):
+        with open("/sys/devices/system/cpu/cpufreq"
+                  "/policy0/scaling_governor",
+                  "r") as perform_file_test:
+            for line in perform_file_test:
+                if re.match("performance", line.rstrip()):
+                    perf = True
+    return perf, no_boost
+
+
 def get_default_dev():
     # Ideally, this is the HDA device
     # certainly it should be internal and not USB
@@ -197,6 +235,8 @@ def make_db():
     ''' Stuff config into this db:
         Version: text
         log-level: int (20)
+        cpu_gov: True (true means performance)
+        boost: bool(True) (true means no_boost)
         JACK: # things that require restart
             Used: bool (False)
             driver: string (alsa)
@@ -234,6 +274,7 @@ def make_db():
         print("make up to date config file")
     our_db = {'version': version()}
     our_db['log-level'] = int(def_config['log-level'])
+    our_db['cpu-governor'], our_db['boost'] = get_gvnr_set()
     if def_config['usbdev'] == '':
         def_config['usbdev'] = 'none'
     jack_db = {'on': bool(def_config['jack'] in ['True']),
@@ -899,6 +940,11 @@ def check_db():
     our_db['version'] = version()
     if 'log-level' not in our_db:
         our_db['log-level'] = 15
+    temp_gov, temp_boost = get_gvnr_set()
+    if 'cpu-governor' not in our_db:
+        our_db['cpu-governor'] = temp_gov
+    if 'boost' not in our_db:
+        our_db['boost'] = temp_boost
     if 'jack' not in our_db:
         our_db['jack'] = {}
     if 'extra' not in our_db:

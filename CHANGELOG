@@ -1,3 +1,9 @@
+studio-controls version 2.3.8
+
+ [ Len Ovens ]
+ - Do all governor setting from autojack not systemd
+ - Do all Boost setting from autojack not systemd
+
 studio-controls version 2.3.7
 
  [ Len Ovens ]

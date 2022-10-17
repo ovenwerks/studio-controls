@@ -40,8 +40,6 @@ install:
 
 	install -d $(DESTDIR)$(BINDIR)
 	install -d $(DESTDIR)$(SBINDIR)
-	install -d $(DESTDIR)$(LIBDIR)/systemd/system/ondemand.service.d
-	install -d $(DESTDIR)$(LIBDIR)/systemd/system/multi-user.target.wants
 	install -d $(DESTDIR)$(LIBDIR)/systemd/user/default.target.wants
 	install -d $(DESTDIR)$(LIBDIR)/systemd/user/indicator-messages.service.wants
 	install -d $(DESTDIR)$(LIBDIR)/python3/dist-packages
@@ -79,22 +77,12 @@ install:
 	install -m 655 usr/sbin/* \
 		$(DESTDIR)$(SBINDIR)
 
-	install -m 655 usr/lib/systemd/studio \
-		$(DESTDIR)$(LIBDIR)/systemd
-	install -m 644 usr/lib/systemd/system/studio-system.service \
-		$(DESTDIR)$(LIBDIR)/systemd/system
-	install -m 644 usr/lib/systemd/system/ondemand.service.d/studio.conf \
-		$(DESTDIR)$(LIBDIR)/systemd/system/ondemand.service.d
 	install -m 644 usr/lib/systemd/user/session-monitor.service \
-		$(DESTDIR)$(LIBDIR)/systemd/user
-	install -m 644 usr/lib/systemd/user/studio.service \
 		$(DESTDIR)$(LIBDIR)/systemd/user
 	install -m 655 usr/lib/python3/dist-packages/* \
 		$(DESTDIR)$(LIBDIR)/python3/dist-packages
 
 	# make links
-	ln -s $(DESTDIR)$(LIBDIR)/systemd/system/studio-system.service \
-		$(DESTDIR)$(LIBDIR)/systemd/system/multi-user.target.wants/studio-system.service
 	ln -s $(DESTDIR)$(LIBDIR)/systemd/user/session-monitor.service \
 		$(DESTDIR)$(LIBDIR)/systemd/user/indicator-messages.service.wants/session-monitor.service
 
@@ -131,10 +119,6 @@ uninstall:
 
 	rm -f $(DESTDIR)$(SBINDIR)/studio-system
 
-	rm -f $(DESTDIR)$(LIBDIR)/systemd/studio
-	rm -f $(DESTDIR)$(LIBDIR)/systemd/system/studio-system.service
-	rm -rf $(DESTDIR)$(LIBDIR)/systemd/system/ondemand.service.d
-	rm -f $(DESTDIR)$(LIBDIR)/systemd/system/multi-user.target.wants/studio-system.service
 	rm -f $(DESTDIR)$(LIBDIR)/python3/dist-packages/auto_jack.py
 
 	rm -f $(DESTDIR)$(LIBDIR)/systemd/user/session-monitor.service

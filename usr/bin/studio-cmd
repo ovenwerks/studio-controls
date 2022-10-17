@@ -57,7 +57,7 @@ def goodbye(dummy):
 
 
 def main(argv):
-    ''' Control-cl takes either start or stop as a command line
+    ''' Control-cmd takes either start or stop as a command line
         parameter to send to auto jack '''
     dbus.mainloop.glib.DBusGMainLoop(set_as_default=True)
     sendbs = sendbus()

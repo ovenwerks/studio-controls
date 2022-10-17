@@ -59,7 +59,7 @@ class SysInfo:
         return False
 
     def check_pam_files(self):
-        '''Checks for the existence of two files'''
+        '''Checks for the existence of files'''
         if os.path.isfile("/etc/security/limits.d/audio.conf"):
             return True
         return False
@@ -68,67 +68,6 @@ class SysInfo:
         '''returns hard rlimit values for RTPRIO and MEMLOCK'''
         return {resource.getrlimit(resource.RLIMIT_RTPRIO)[1],
                 resource.getrlimit(resource.RLIMIT_MEMLOCK)[1]}
-
-    # System tweaks
-    def get_performance(self):
-        '''Checks for current cpu governor'''
-        if os.path.isfile("/sys/devices/system/cpu/cpufreq"
-                          "/policy0/scaling_governor"):
-            with open("/sys/devices/system/cpu/cpufreq"
-                      "/policy0/scaling_governor",
-                      "r") as perform_file_test:
-                for line in perform_file_test:
-                    if re.match("performance", line.rstrip()):
-                        return True
-        return False
-
-    def get_boosted(self):
-        '''Checks for Intel boost state'''
-        boost_path = "/sys/devices/system/cpu/intel_pstate/no_turbo"
-        if os.path.exists(boost_path):
-            with open(boost_path, "r") as boost_test:
-                for line in boost_test:
-                    if re.match("0", line.rstrip()):
-                        return True
-        return False
-
-    # Audio stuff
-
-
-class RTSetup:
-    # defs for doing things
-    def __init__(self):
-        self.enabled_path = "/etc/security/limits.d/audio.conf"
-        self.disabled_path = "/etc/security/limits.d/audio.conf.disabled"
-        self.backup_file = f"{install_path}/share/studio-controls/audio.conf"
-        self.pke = shutil.which("pkexec")
-        if self.pke is None:
-            print("no pkexec, Fail")
-
-    def set_governor(self, enable):
-        if enable:
-            gov = "performance"
-        else:
-            if os.path.exists("/sys/devices/system/cpu/intel_pstate"):
-                gov = "powersave"
-            else:
-                gov = "ondemand"
-        subprocess.run(
-            [self.pke, f"{install_path}/sbin/studio-system", gov], shell=False)
-
-    def set_boost(self, enable):
-        boost_path = "/sys/devices/system/cpu/intel_pstate/no_turbo"
-        if os.path.exists(boost_path):
-            if enable:
-                subprocess.run(
-                    [self.pke,
-                        f"{install_path}/sbin/studio-system", "boost"],
-                    shell=False)
-            else:
-                subprocess.run(
-                    [self.pke,
-                        f"{install_path}/sbin/studio-system", "noboost"],
-                    shell=False)
 
 
 class StudioControls:
@@ -307,25 +246,28 @@ class StudioControls:
                 self.rt_button.set_label("Real Time Permissions Enabled")
                 self.rt_button.set_sensitive(False)
 
+        # read in autojack config file
+        self.conf_db = auto_jack.convert()
+        self.jackdb = self.conf_db['jack']
+        self.extra = self.conf_db['extra']
+
         # show current CPU Governor
         self.combo_governor.append_text("Performance")
         if os.path.exists("/sys/devices/system/cpu/intel_pstate/"):
             self.combo_governor.append_text("Powersave")
         else:
             self.combo_governor.append_text("Ondemand")
-        self.in_performance = self.sysinfo.get_performance()
-        if self.in_performance:
+        if self.conf_db['cpu-governor']:
             self.combo_governor.set_active(0)
         else:
             self.combo_governor.set_active(1)
 
         # show boost state
         if os.path.exists("/sys/devices/system/cpu/intel_pstate/no_turbo"):
-            self.boosted = self.sysinfo.get_boosted()
-            if self.boosted:
-                self.combo_boost.set_active(1)
-            else:
+            if self.conf_db['boost']:
                 self.combo_boost.set_active(0)
+            else:
+                self.combo_boost.set_active(1)
         else:
             self.combo_boost.set_sensitive(False)
 
@@ -353,11 +295,6 @@ class StudioControls:
         self.not_applied = False
         jack.set_error_function(callback=self.jack_error)
         jack.set_info_function(callback=self.jack_info)
-
-        # read in autojack config file
-        self.conf_db = auto_jack.convert()
-        self.jackdb = self.conf_db['jack']
-        self.extra = self.conf_db['extra']
 
         self.logging_comb.set_active_id(str(self.conf_db['log-level']))
         # fill in Jack master widgets
@@ -480,7 +417,6 @@ class StudioControls:
         }
         builder.connect_signals(handlers)
 
-        self.rtsetup = RTSetup()
         self.timeout_id = GLib.timeout_add(500, self.check_jack_status, None)
         self.signal_autojack("ping")
         autojack = False
@@ -805,21 +741,21 @@ class StudioControls:
     # system tweaks
 
     def combo_governor_changed_cb(self, button):
+        newval = False
         if button.get_active_text() == "Performance":
-            self.rtsetup.set_governor(True)
-        else:
-            self.rtsetup.set_governor(False)
+            newval = True
+        if self.conf_db['cpu-governor'] != newval:
+            self.conf_db['cpu-governor'] = newval
+            self.cb_audio_apply(button)
+
 
     def combo_boost_changed_cb(self, button):
-        if button.get_active_text() == "on":
-            self.rtsetup.set_boost(True)
-        else:
-            self.rtsetup.set_boost(False)
-        self.boosted = self.sysinfo.get_boosted()
-        if self.boosted:
-            self.combo_boost.set_active(1)
-        else:
-            self.combo_boost.set_active(0)
+        newval = False
+        if button.get_active_text() == "off":
+            newval = True
+        if self.conf_db['boost'] != newval:
+            self.conf_db['boost'] = newval
+            self.cb_audio_apply(button)
 
     def logging_changed(self, widget):
         newval = widget.get_active_id()
@@ -1150,7 +1086,6 @@ class StudioControls:
             self.pj_count.set_value(1)
             self.pj_con.set_active_id('none')
             self.pj_direction.set_active_id('out')
-            # self.pj_direction.set_active_id('none')
             self.pj_bridge = ''
         else:
             for bridge in out_db:
@@ -1165,11 +1100,9 @@ class StudioControls:
             if new_bridge in out_db:
                 our_db = out_db
                 self.pj_direction.set_active_id('out')
-                # self.pj_direct.set_text('Output (Pulse to JACK)')
             if new_bridge in in_db:
                 our_db = in_db
                 self.pj_direction.set_active_id('in')
-                # self.pj_direct.set_text('Input (JACK to Pulse)')
             self.pj_combo.set_active_id(new_bridge)
             self.pj_name.set_text(new_bridge)
             self.pj_count.set_value(our_db[new_bridge]['count'])
@@ -1177,7 +1110,6 @@ class StudioControls:
             self.pj_bridge = new_bridge
 
         self.pj_combo.set_sensitive(True)
-        # self.pj_direction.set_sensitive(True)
         self.pj_name.set_sensitive(True)
         self.pj_count.set_sensitive(True)
         self.pj_con.set_sensitive(True)
@@ -1349,8 +1281,6 @@ class StudioControls:
                 if znet_db[new_bridge]['direction'] == 'out':
                     self.znet_bits.set_sensitive(True)
                 self.znet_bridge.set_sensitive(True)
-                # self.znet_direction.set_sensitive(True)
-                # should never be true
                 self.znet_count.set_sensitive(True)
                 self.znet_ip.set_sensitive(True)
                 self.znet_port.set_sensitive(True)
