@@ -30,6 +30,7 @@ old_name = f"{config_path}/autojackrc"
 temp_name = f"{config_path}/temp_aj.json"
 # log = False
 
+
 def version():
     ''' get the version we are running as. Used mostly to detect
     if a new version has been installed but the old version
@@ -47,6 +48,7 @@ def version():
                     # return after first line
                     return vers
     return vers
+
 
 def check_user():
     """ Check that user is a human and is not root
@@ -677,7 +679,7 @@ def check_devices(our_db):
                         f"/proc/asound/card{str(x)}/stream0",
                         "r") as desc_file:
                     for line in desc_file:
-                        if line0:
+                        if line0 and ' at ' in line:
                             prebus = line.strip().split(' at ')[1]
                             bus = line.strip().split(' at ')[1].split(', ')[0]
                             cdescription = line.strip().split(' at ')[0]
@@ -892,7 +894,8 @@ def check_new(no_check=False):
     global our_db
     global temp_name
     if log:
-        print(f"checking config file for compatability with version {version()}")
+        print(
+            f"checking config file for compatability with version {version()}")
     c_file = expanduser(new_name)
     ck_file = expanduser(temp_name)
     count = 0
