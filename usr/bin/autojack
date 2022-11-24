@@ -740,7 +740,7 @@ def config_start():
         time.sleep(.2)
         configure_iface.SetParameterValue([
             'driver', 'playback'],
-            dbus.UInt32(conf_db['jack']['chan_out']))
+            dbus.UInt32(conf_db['jack']['chan-out']))
         time.sleep(.2)
         configure_iface.SetParameterValue(['driver', 'monitor'], True)
     logging.debug(

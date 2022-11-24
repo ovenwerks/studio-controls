@@ -4,26 +4,138 @@
  least order to be worked on. (some later things rely on sooner
  things)
 
-Fixes:
-
-These things need to be looked for in 2.3.3
-
-
 
 TODO:
-    - detect if pulse is pw
-    - 
+    - Assume pipewire is in system
+    - detect if pulse is pw - use pw commands
+    - choose system mode:
+        - pulse/jack:
+            same as before, turn pulse on, turn PW's jack lib off
+            This will only last a while as pulse will go
+        - pipewire only
+            Use PW to replace both pulse and jack. Jack libs will point
+            at PW. Maybe figure out use jackd as a device. (jack device switch)
+        - pipewire/jack
+            The idea is to use PW instead of pulse with jack still being
+            used normally. Need to figure out pw-jack bridging
+
+Useful info:
+    - PW restart line: systemctl --user restart wireplumber pipewire pipewire-pulse
+
+    - PW devices can be renamed in ~/.config/wireplumber/main.lua.d/
+        sample file: 51-alsa-rename.lua
+            rule = {
+              matches = {
+                {
+                  { "node.name", "equals", "alsa_output.pci-0000_07_00.0.pro-output-0" },
+                },
+              },
+              apply_properties = {
+                ["node.description"] = "M66",
+                ["node.nick"] = "M66",
+              },
+             }
+            rule1 = {
+              matches = {
+                {
+                  { "node.name", "equals", "alsa_input.pci-0000_07_00.0.pro-input-0" },
+                },
+              },
+              apply_properties = {
+                ["node.description"] = "M66",
+                ["node.nick"] = "M66",
+              },
+            }
+            
+            table.insert(alsa_monitor.rules,rule)
+            table.insert(alsa_monitor.rules,rule1)
+            Notes: description = what desktop sees and jack sees in full mode
+                    nick = what jack sees in short mode.
+
+    - pw setting jack parameters is done in ~/.config/pipewire/jack.conf.d/
+        I used a file called: studio.conf
+            jack.properties = {
+                node.latency = 512/48000
+                #node.rate          = 1/48000 # is this right?
+                node.lock-quantum = true #we want true
+                node.force-quantum = 512 # this should match latency above
+                jack.show-monitor  = false # default to off. The same
+                                            # same audio is already available
+                #jack.merge-monitor  = false # perhaps true would be right
+                jack.short-name     = true # long names are painful
+                jack.filter-name    = true # no bad char
+                jack.filter-char    = "_" # space is bad
+                #
+                # allow:           Don't restrict self connect requests
+                # fail-external:   Fail self connect requests to external ports only
+                # ignore-external: Ignore self connect requests to external ports only
+                # fail-all:        Fail all self connect requests
+                # ignore-all:      Ignore all self connect requests
+                #jack.self-connect-mode = allow
+                #jack.locked-process    = true
+                jack.default-as-system = true # true because old projects
+                                            # that connect to system: work
+                #jack.fix-midi-events   = true # change note on v0 to note off
+
+        Setting rate may not work as above and note that most of the above
+        parameters can be changed on the fly. pipewire.conf does have a
+        default SR. but the jack page suggests using:
+            pw-metadata -n settings 0 clock.force-rate <samplerate>
+            pw-metadata -n settings 0 clock.force-quantum <buffersize>
+        Need to find out how to set jack master and desktop default to
+        be different.
+        Many of these things can be set on the fly, so set the param on the
+        fly so we don't restart PW but still write the file for next start.
+
+    - pw mode should replace pulse bridge with a loopback node(s):
+        ~/.config/pipewire/pipewire.conf.d/11-loopback.conf
+        context.modules = [
+            {   name = libpipewire-module-loopback
+                args = {
+                    audio.position = [ FL FR ]
+                    capture.props = {
+                        media.class = Audio/Sink
+                        node.name = loop_sink
+                        node.description = "loop-sink"
+                        #node.latency = 1024/48000
+                        #audio.rate = 44100
+                        #audio.channels = 2
+                        #audio.position = [ FL FR ]
+                        #target.object = "my-default-sink"
+                    }
+                    playback.props = {
+                        #media.class = Audio/Source
+                        node.name = loop_source
+                        node.description = "loop-source"
+                        #node.latency = 1024/48000
+                        #audio.rate = 44100
+                        #audio.channels = 2
+                        #audio.position = [ FL FR ]
+                        target.object = "my-default-source"
+                    }
+                }
+            }
+        ]
+
+    -pw device name changes etc can replace extra devices. "Extra devices"
+        should be changed "device setup"
+    -Session management can remain as is.
+    - network can remain as is using zita-njbridge
+        this may be a problem... zita-njbridge was crashing.
+
+
 
 Future Features:
 	- make help work with current tab
 	- remove warning dialogs and create on the fly as needed
 	- Add packagers file describing depends/conflicts
 	- Add multiple devices for firewire
-	- bluetooth via pulse. use: pacmd load-module module-loopback latency_msec=5
+	- bluetooth via pulse. 
+        Note: not worth doing. Pipewire will do this for us.
+        use: pacmd load-module module-loopback latency_msec=5
 		and: pacmd unload-module module-loopback
 		need to figue out how to auto route jack->pulse bridge to loop
 		and loop to bt device.
-        Note: not worth doing. Pipewire will do this for us.
 
 
 	- adding in stuff from https://github.com/jhernberg/udev-rtirq so that

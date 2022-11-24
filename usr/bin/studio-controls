@@ -145,7 +145,7 @@ class StudioControls:
         self.combo_boost = builder.get_object('combo_boost')
         self.logging_comb = builder.get_object('logging_comb')
         self.combo_fw = builder.get_object('combo_fw')
-        # audio tab stuff
+        self.sub_system_cmb = builder.get_object('sub_system_cmb')
         # right side menu
         self.mixer_start = builder.get_object('mixer_start')
         # master tab
@@ -166,8 +166,14 @@ class StudioControls:
         self.jack_state = builder.get_object('jack_state')
         self.dsp_label = builder.get_object('dsp_label')
         self.xrun_lab = builder.get_object('xrun_lab')
-
-        # extra tab
+        # Pipewire Tab
+        self.pw_master_dr = builder.get_object('pw_master_dr')
+        self.pw_secondary_dr = builder.get_object('pw_secondary_dr')
+        self.pw_jkdev_dr = builder.get_object('pw_jkdev_dr')
+        self.pw_rate_dr = builder.get_object('pw_rate_dr')
+        self.pw_buffer_dr = builder.get_object('pw_buffer_dr')
+        self.pw_latency_dr = builder.get_object('pw_latency_dr')
+        # Device tab
         self.usb_plug_check = builder.get_object('usb_plug_check')
         self.xdev_select = builder.get_object('xdev_select')
         self.cap_chan_spin = builder.get_object('cap_chan_spin')
@@ -329,6 +335,7 @@ class StudioControls:
             self.extra['phone-left'] = '1'
         self.hp_left_pt.set_value(int(self.extra['phone-left']))
 
+        self.pw_setup()
         # pulse bridge defaults
         self.pj_direction.set_sensitive(False)
         self.pj_count.set_range(1, 99)
@@ -369,6 +376,7 @@ class StudioControls:
                 self.combo_boost_changed_cb,
             "logging_change": self.logging_changed,
             "firewire_cb": self.firewire_cb,
+            "sub_system_cb": self.sub_system_cb,
             "rt_button_hit": self.rt_button_hit,
             "on_button_msg_ok_clicked":
                 self.on_button_msg_ok_clicked,
@@ -388,6 +396,13 @@ class StudioControls:
             "pavucontrol_cb": self.pavucontrol_cb,
             "carla_cb": self.carla_cb,
             "generic_cb": self.generic_cb,
+
+            "pw_master_cb": self.pw_master_cb,
+            "pw_secondary_cb": self.pw_secondary_cb,
+            "pw_jkdev_cb": self.pw_jkdev_cb,
+            "pw_rate_cb": self.pw_rate_cb,
+            "pw_buffer_cb": self.pw_buffer_cb,
+            "pw_latency_cb": self.pw_latency_cb,
 
             "xdev_select_cb": self.xdev_select_cb,
             "xdev_changed": self.xdev_changed,
@@ -775,8 +790,182 @@ class StudioControls:
                  f"{install_path}/sbin/studio-system",
                  newval], shell=False)
 
+    def sub_system_cb(self, widget):
+        '''
+        sends messages to change the audio subsystem. there are
+        three choices:
+            - jack - pa for desktop with jackd(bus) for proaudio
+            - pipewire - pipewire does desktop and acts like jack
+                Hopefully, this mode will allow using jack as a device
+            - pw-jack - pw does desktop, jackd(bus) runs as well
+                Brisging is still a question.
+        '''
+        newval = widget.get_active_id()
+        oldval = self.conf_db['sub-system']
+        if newval != oldval:
+            needboot = False
+            self.conf_db['sub-system'] = newval
+            pke = shutil.which("pkexec")
+            if pke is None:
+                print("no pkexec, Fail")
+                return
+            if newval == "jack":
+                needboot = True
+                subprocess.run(
+                    [pke,
+                     f"{install_path}/sbin/studio-system",
+                     "pulse"], shell=False)
+                subprocess.run(
+                    [pke,
+                     f"{install_path}/sbin/studio-system",
+                     newval], shell=False)
+            if newval == "pipewire":
+                # turn jack off
+                self.conf_db['jack']['on'] = False
+                subprocess.run(
+                    [pke,
+                     f"{install_path}/sbin/studio-system",
+                     "pwlib"], shell=False)
+            if newval == "pw_jack":
+                subprocess.run(
+                    [pke,
+                     f"{install_path}/sbin/studio-system",
+                     "pipewire"], shell=False)
+            self.cb_audio_apply(widget)
+
+
     # Audio setup call backs
 
+    # PipeWire setup
+    def pw_setup(self):
+        # Make sure no changes happen till we are done
+        self.pw_master_dr.set_sensitive(False)
+        self.pw_secondary_dr.set_sensitive(False)
+        self.pw_jkdev_dr.set_sensitive(False)
+        self.pw_rate_dr.set_sensitive(False)
+        self.pw_buffer_dr.set_sensitive(False)
+        self.pw_latency_dr.set_sensitive(False)
+        # popdown any combo boxes before changing
+        self.pw_master_dr.popdown()
+        self.pw_secondary_dr.popdown()
+        self.pw_jkdev_dr.popdown()
+        self.pw_rate_dr.popdown()
+        self.pw_buffer_dr.popdown()
+        self.pw_latency_dr.popdown()
+        # clear what needs clearing
+        self.pw_master_dr.get_model().clear()
+        self.pw_secondary_dr.get_model().clear()
+        self.pw_rate_dr.get_model().clear()
+        self.pw_buffer_dr.get_model().clear()
+        self.pw_latency_dr.get_model().clear()
+
+        self.pw_jkdev_dr.set_active_id('false')
+        self.pw_secondary_dr.append("none", "none")
+        self.pw_secondary_dr.set_active_id("none")
+        for device in self.conf_db['devices']:
+            this_dev = self.conf_db['devices'][device]
+            for subd in this_dev['sub']:
+                sub_dev = this_dev['sub'][subd]
+                if not sub_dev['hide']:
+                    bustxt = ""
+                    plugged = ""
+                    if this_dev['usb']:
+                        bustxt = f" ({this_dev['bus']})"
+                        if this_dev['number'] < 0:
+                            plugged = " (unplugged)"
+                    this_entry = f"{sub_dev['name']}{bustxt}"
+                    this_entry = f"{this_entry} {sub_dev['description']}"
+                    this_entry = f"{this_entry}{plugged}"
+                    self.pw_master_dr.append(sub_dev['name'], this_entry)
+                    self.pw_secondary_dr.append(sub_dev['name'], this_entry)
+                    if self.conf_db['pipewire']['primary'] == sub_dev['name']:
+                        self.pw_master_dr.set_active_id(sub_dev['name'])
+                        for rate in this_dev['rates']:
+                            self.pw_rate_dr.append(rate, rate)
+                            if int(rate) == self.conf_db['pipewire']['rate']:
+                                self.pw_rate_dr.set_active_id(rate)
+                        frames = [16, 32, 64, 128, 256, 512, 1024, 2048, 4096]
+                        for buff in frames:
+                            if buff >= this_dev['min_latency']:
+                                tbuff = str(buff)
+                                self.pw_buffer_dr.append(tbuff, tbuff)
+                                if buff == self.conf_db['pipewire']['buffer']:
+                                    self.pw_buffer_dr.set_active_id(tbuff)
+                        periods = [2, 3]
+                        tmppd = self.conf_db['pipewire']['latency']
+                        for pds in periods:
+                            p_id = pds *  self.conf_db['pipewire']['buffer']
+                            p_text = str(1000 * p_id /  self.conf_db['pipewire']['rate'])
+                            self.pw_latency_dr.append(str(pds), f"{p_text:.3} ms")
+                            if pds == tmppd:
+                                self.conf_db['pipewire']['latency'] = tmppd
+                                self.pw_latency_dr.set_active_id(str(pds))
+                        if int(self.pw_latency_dr.get_active) < 0:
+                            self.pw_latency_dr.set_active_id('2')
+                    if self.conf_db['pipewire']['secondary'] == sub_dev['name']:
+                        self.pw_secondary_dr.set_active_id(sub_dev['name'])
+
+        self.pw_master_dr.set_sensitive(True)
+        self.pw_secondary_dr.set_sensitive(True)
+        # self.pw_jkdev_dr.set_sensitive(True) not implemented yet
+        self.pw_rate_dr.set_sensitive(True)
+        self.pw_buffer_dr.set_sensitive(True)
+        self.pw_latency_dr.set_sensitive(True)
+
+    # PipeWire call backs
+    def pw_master_cb(self, widget):
+        device = str(widget.get_active_id())
+        if device == 'None':
+            return
+        if device != self.conf_db['pipewire']['primary']:
+            self.conf_db['pipewire']['primary'] = device
+            self.pw_setup()
+            self.not_applied = True
+
+    def pw_secondary_cb(self, widget):
+        device = str(widget.get_active_id())
+        if device == 'None':
+            return
+        if device != self.conf_db['pipewire']['secondary']:
+            self.conf_db['pipewire']['secondary'] = device
+            self.not_applied = True
+
+    def pw_jkdev_cb(self, widget):
+        rawjkdev = str(widget.get_active_id())
+        if rawjkdev != "None":
+            kcdev = rawjkdev in ['True', 'true']
+            if jkdev != self.conf_db['pipewire']['usejack']:
+                self.conf_db['pipewire']['usejack'] = jkdev
+                self.not_applied = True
+
+    def pw_rate_cb(self, widget):
+        rate = str(widget.get_active_id())
+        if rate == 'None':
+            return
+        if int(rate) != self.conf_db['pipewire']['rate']:
+            self.conf_db['pipewire']['rate'] = int(rate)
+            self.pw_setup()
+            self.not_applied = True
+
+    def pw_buffer_cb(self, widget):
+        buff = str(widget.get_active_id())
+        if buff == 'None':
+            return
+        if int(buff) != self.conf_db['pipewire']['buffer']:
+            self.conf_db['pipewire']['buffer'] = int(buff)
+            self.pw_setup()
+            self.not_applied = True
+
+    def pw_latency_cb(self, widget):
+        late = str(widget.get_active_id())
+        if late == 'None':
+            return
+        if int(late) != self.conf_db['pipewire']['latency']:
+            self.conf_db['pipewire']['latency'] = int(late)
+            self.pw_setup()
+            self.not_applied = True
+
+    # Device setup names, profiles, etc. Call backs
     def xdev_select_cb(self, widget):
         a_id = str(widget.get_active_id())
         if a_id != "None" and a_id != self.current_ex_dev:

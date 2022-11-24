@@ -1,3 +1,16 @@
+studio-controls version 2.9.0
+
+ [ Len Ovens ]
+ - Work starts on version 2.9.0 or 3.0-alpha
+ - Assumes pipewire is installed
+ - Fix missing key in dummy backend code
+ - Add pipewire section to GUI
+ - Make device dup check keep first found
+ - Fix new device creation
+ - 
+ [ f00b455 ]
+ - Fix crash if "at" not in file line 0
+
 studio-controls version 2.3.9
 
  [ Len Ovens ]

@@ -8,6 +8,7 @@ import json
 import os
 import re
 import shutil
+import subprocess
 import sys
 import time
 
@@ -19,6 +20,7 @@ global vers
 vers = "not installed"
 
 global config_path
+global default_sub_sys
 global log
 global new_name
 global old_name
@@ -28,6 +30,7 @@ config_path = "~/.config/autojack/"
 new_name = f"{config_path}autojack.json"
 old_name = f"{config_path}/autojackrc"
 temp_name = f"{config_path}/temp_aj.json"
+default_sub_sys = "jack"
 # log = False
 
 def version():
@@ -274,6 +277,7 @@ def make_db():
         print("make up to date config file")
     our_db = {'version': version()}
     our_db['log-level'] = int(def_config['log-level'])
+    our_db['sub-system'] = default_sub_sys
     our_db['cpu-governor'], our_db['boost'] = get_gvnr_set()
     if def_config['usbdev'] == '':
         def_config['usbdev'] = 'none'
@@ -467,17 +471,20 @@ def usb_duplicate(device):
     check_db = our_db['devices'][device]
     for good_dev in our_db['devices']:
         if device == good_dev:
-            # this is always a duplicate of itself
-            continue
+            # This is our test, if we got here, we are the first
+            # so any dup is a higher number
+            break
         if len(good_dev) > 3 and good_dev[
                 0:3] == 'USB' and good_dev[3].isdigit():
             good_db = our_db['devices'][good_dev]
             if check_db['id'] == 'none':
                 ret = good_dev
+                break
             if check_db['id'] == good_db['id']:
                 # same kind of device
                 if good_db['bus'] == check_db['bus']:
                     ret = good_dev
+                    break
     if log:
         print(f"Dup check returns: {ret}")
     return ret
@@ -639,12 +646,16 @@ def check_devices(our_db):
     ndevs += 1
     for x in range(0, ndevs):
         # card loop
+        if log:
+            print(f"\nChecking card {str(x)}")
         rates = ['32000', '44100', '48000', '88200', '96000', '192000']
         drates = []
         cname = ""
         usb = False
-        bus = 'none'
-        d_id = 'none'
+        bus = 'unset'
+        d_id = 'unset'
+        usbstring = ""
+        oldbus = ""
         cdescription = 'unknown'
         # first get device raw name
         if os.path.exists(f"/proc/asound/card{str(x)}"):
@@ -670,7 +681,32 @@ def check_devices(our_db):
                         f"/proc/asound/card{str(x)}/usbbus",
                         "r") as bus_file:
                     for line in bus_file:
-                        oldbus = line.strip().split('/')[0]
+                        oldbus, devno = line.strip().split('/')
+            rt = subprocess.run(['lsusb', '-t'], text=True, capture_output=True)
+            thisbus = False
+            rawbus = f"Bus {int(oldbus):02d}"
+            txtdev = f"Dev {str(int(devno))}"
+            port = 'none'
+            if log:
+                print(f" checking {d_id} oldbus: {oldbus} rawbus: {rawbus} txtdev: {txtdev}")
+            for line in rt.stdout.split("\n"):
+                #check for Bus
+                #if log:
+                #    print(f" checking {line}")
+                if line.strip().find(rawbus) > -1:
+                    if log:
+                        print(f"found {rawbus}")
+                    thisbus = True
+                if thisbus and line.strip().find(txtdev) > -1:
+                    # we want the physical port number
+                    preport = line.strip().split("Port ")[1]
+                    port = preport.split(":")[0]
+                    if log:
+                        print(f" preport {preport} port: {port}")
+                    break
+            bus = f"{int(oldbus):02d}-{port}"
+            if log:
+                print(f" Final bus: {bus}")
             if os.path.isfile(f"/proc/asound/card{str(x)}/stream0"):
                 line0 = True
                 with open(
@@ -678,9 +714,12 @@ def check_devices(our_db):
                         "r") as desc_file:
                     for line in desc_file:
                         if line0:
-                            prebus = line.strip().split(' at ')[1]
-                            bus = line.strip().split(' at ')[1].split(', ')[0]
-                            cdescription = line.strip().split(' at ')[0]
+                            if ' at ' in line:
+                                cdescription, rawusbstring = line.strip().split(' at ')
+                                usbstring = rawusbstring.split(',')[0]
+                                # need usb string after "at" if it's there
+                            else:
+                                cdescription = line.strip()
                             line0 = False
                         if 'Rates:' in line:
                             fnd_rates = line.split()[1:]
@@ -691,35 +730,55 @@ def check_devices(our_db):
         # find this device in db or add to db
         found_name = ""
         for dev in our_db['devices']:
+            if log:
+                print(f"Is {cname}({str(x)}) {dev}? d_id: {d_id} bus: {bus}")
+            if log:
+                print(f"usbstring: {usbstring} oldbus: {oldbus}")
             dev_db = our_db['devices'][dev]
+            if log:
+                print(f"{dev} has ID: {dev_db['id']} bus: {dev_db['bus']}\n")
             if usb and [dev_db['id'], dev_db['bus']] == [d_id, bus]:
-                # this is the device...
+                if log:
+                    print(f"{dev} is {cname} bus match")
+                dev_db['usb'] = True
+                found_name = dev
+                break
+            elif usb and [dev_db['id'], dev_db['bus']] == [d_id, usbstring]:
+                if log:
+                    print(f"{dev} is {cname} usbstring match")
                 dev_db['usb'] = True
                 found_name = dev
                 break
             elif usb and [dev_db['id'], dev_db['bus']] == [d_id, oldbus]:
-                # this is an old style device... well maybe
-                # check if it already has a number
+                if log:
+                    print(f"{dev} is {cname} oldbus match")
                 dev_db['usb'] = True
                 found_name = dev
                 break
-            elif usb and [dev_db['id'], dev_db['bus']] == ['none', 'none']:
-                # really old style
+            elif usb and dev_db['usb'] and [dev_db['id'], dev_db['bus']] == ['none', 'none']:
+                if log:
+                    print(f"{dev} is {cname} none bus match")
                 if dev_db['raw'] == cname:
                     found_name = dev
                     dev_db['usb'] = True
                     break
             elif dev == cname:
+                if log:
+                    print(f"{dev} is {cname} no usb match")
                 dev_db['raw'] = cname
                 dev_db['usb'] = False
                 dev_db['number'] = x
                 found_name = dev
                 break
+        if log:
+            print(f"{cname} identified as {found_name}")
         if found_name == "":
             if log:
                 print("device not found")
             if usb:
                 found_name = f"USB{usb_number()}"
+                if log:
+                    print(f"Usb dev: {cname} is now {found_name}")
                 our_db['devices'][found_name] = {
                     'number': x, 'usb': True,
                     "internal": False,
@@ -738,8 +797,11 @@ def check_devices(our_db):
                               '88200', '96000', '192000'],
                     'raw': cname, 'id': 'none',
                     'bus': 'none', 'sub': {}}
+            if log:
+                print(f"new dev: {found_name}: {str(our_db['devices'][found_name])}")
 
         # print(f"{cname}")
+        dev_db = our_db['devices'][found_name]
 
         ''' get device info from system files '''
         dev_db['internal'] = False
@@ -945,8 +1007,12 @@ def check_db():
         our_db['cpu-governor'] = temp_gov
     if 'boost' not in our_db:
         our_db['boost'] = temp_boost
+    if 'sub-system' not in our_db:
+        our_db['sub-system'] = default_sub_sys
     if 'jack' not in our_db:
         our_db['jack'] = {}
+    if 'pipewire' not in our_db:
+        our_db['pipewire'] = {}
     if 'extra' not in our_db:
         our_db['extra'] = {}
     if 'pulse' not in our_db:
@@ -959,13 +1025,15 @@ def check_db():
         our_db['mnet'] = {'type': 'jack', 'count': 0}
 
     extra_db = our_db['extra']
+    jack_db = our_db['jack']
+    pw_db = our_db['pipewire']
 
     # check_devices should be universal.
     our_db = check_devices(our_db)
     if log:
         print(" Devices checked, continue data base check")
 
-    jack_db = our_db['jack']
+    # check jack_db is full
     if 'on' not in jack_db:
         jack_db['on'] = False
     else:
@@ -1027,6 +1095,27 @@ def check_db():
     else:
         jack_db['play-latency'] = int(jack_db['play-latency'])
 
+    # check pipewire is full, use jack values for empty
+    if 'primary' not in pw_db:
+        if jack_db['usbdev'] != 'none':
+            pw_db['primary'] = jack_db['usbdev']
+        else:
+            pw_db['primary'] = jack_db['dev']
+    if 'secondary' not in pw_db:
+        if jack_db['usbdev'] != 'none':
+            pw_db['secondary'] = jack_db['dev']
+        else:
+            pw_db['secondary'] = 'none'
+    if 'usejack' not in pw_db:
+        pw_db['usejack'] = False
+    if 'rate' not in pw_db:
+        pw_db['rate'] = jack_db['rate']
+    if 'buffer' not in pw_db:
+        pw_db['buffer'] = jack_db['frame']
+    if 'latency' not in pw_db:
+        pw_db['latency'] = jack_db['period']
+        
+    # check extra is full
     if 'a2j' not in extra_db:
         extra_db['a2j'] = True
     else:
@@ -1123,3 +1212,7 @@ def convert(quiet=True):
         make_db()
         check_db()
     return our_db
+
+
+if __name__ == '__main__':
+    convert(False)

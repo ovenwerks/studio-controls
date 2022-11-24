@@ -8,8 +8,9 @@ NO_TURBO="0"
 
 set_governors() {
 	# do this here in case we hit exit 0 before the end
-	echo "NO_TURBO=$NO_TURBO\n" > /etc/default/studio
-	echo "GOVERNOR=${GOVERNOR}\n" >> /etc/default/studio
+    # the default file is no longer used
+	#echo "NO_TURBO=$NO_TURBO\n" > /etc/default/studio
+	#echo "GOVERNOR=${GOVERNOR}\n" >> /etc/default/studio
 	AVAILABLE="/sys/devices/system/cpu/cpu0/cpufreq/scaling_available_governors"
 	[ -f $AVAILABLE ] || exit 0
 	read governors < $AVAILABLE
@@ -45,15 +46,15 @@ set_governors() {
 			echo -n $GOVERNOR > $CPUFREQ
 		done
 	#reswrite just in case we corrected something
-	echo "NO_TURBO=$NO_TURBO\n" > /etc/default/studio
-	echo "GOVERNOR=${GOVERNOR}\n" >> /etc/default/studio
+	#echo "NO_TURBO=$NO_TURBO\n" > /etc/default/studio
+	#echo "GOVERNOR=${GOVERNOR}\n" >> /etc/default/studio
 
 }
 
 # any setting in this file will override the above defaults.
 # studio-controls will normally write the defaults file
 if [ -f /etc/default/studio ] ; then
-	. /etc/default/studio
+	rm /etc/default/studio
 fi
 
 case "$1" in
@@ -85,16 +86,16 @@ case "$1" in
 
 	boost)
 		if [ -f /sys/devices/system/cpu/intel_pstate/no_turbo ]; then
-			echo "NO_TURBO=0\n" > /etc/default/studio
-			echo "GOVERNOR=${GOVERNOR}" >> /etc/default/studio
+			#echo "NO_TURBO=0\n" > /etc/default/studio
+			#echo "GOVERNOR=${GOVERNOR}" >> /etc/default/studio
 			echo "0" | tee /sys/devices/system/cpu/intel_pstate/no_turbo
 		fi
 		;;
 
 	noboost)
 		if [ -f /sys/devices/system/cpu/intel_pstate/no_turbo ]; then
-			echo "NO_TURBO=1\n" > /etc/default/studio
-			echo "GOVERNOR=${GOVERNOR}" >> /etc/default/studio
+			#echo "NO_TURBO=1\n" > /etc/default/studio
+			#echo "GOVERNOR=${GOVERNOR}" >> /etc/default/studio
 			echo "1" | tee /sys/devices/system/cpu/intel_pstate/no_turbo
 		fi
 		;;
@@ -118,6 +119,49 @@ case "$1" in
 		if [ -f /etc/modprobe.d/blacklist-studio.conf ]; then
 			rm /etc/modprobe.d/blacklist-studio.conf
 		fi
+		;;
+
+	jack)
+		# do stuff to point calls to jacklib at real jack
+        # need to check if file exists first
+        mv -f /etc/ld.so.conf.d/pipewire-jack-x86_64-linux-gnu.conf \
+        /usr/share/studio-controls/
+        ldconfig
+		# remove exit 0 when we put stuff in here
+		exit 0
+		;;
+
+	pipewire)
+        # pulseaudio should be disabled
+        systemctl --user --now disable pulseaudio.{socket,service}
+        systemctl --user mask pulseaudio
+
+		# remove exit 0 when we put stuff in here
+		exit 0
+		;;
+
+	pwlib)
+		# do stuff to point calls to jacklib at pipewire
+        # need to make sure this needs to be done, is file
+        # already in place?
+        cp -f /usr/share/studio-controls/pipewire-jack-x86_64-linux-gnu.conf \
+        /etc/ld.so.conf.d/
+        ldconfig
+        # pulseaudio should be disabled
+        systemctl --user --now disable pulseaudio.{socket,service}
+        systemctl --user mask pulseaudio
+		# remove exit 0 when we put stuff in here
+		exit 0
+		;;
+
+    pulse)
+        # pulseaudio should start
+        systemctl --user --now enable pulseaudio.{socket,service}
+        systemctl --user unmask pulseaudio
+        # enable pulse, stop pw, etc, start pulse, restart pipewire
+        # Maybe just restart audio?
+		# remove exit 0 when we put stuff in here
+		exit 0
 		;;
 
 	*)
