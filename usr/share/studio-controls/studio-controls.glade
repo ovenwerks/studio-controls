@@ -1272,6 +1272,7 @@ Many FireWire devices will work with the ALSA Modules but using the FFADO module
                       <object class="GtkGrid" id="pw_grid">
                         <property name="visible">True</property>
                         <property name="can-focus">False</property>
+                        <property name="halign">center</property>
                         <child>
                           <object class="GtkLabel">
                             <property name="visible">True</property>
@@ -1482,7 +1483,7 @@ Many FireWire devices will work with the ALSA Modules but using the FFADO module
                       </packing>
                     </child>
                     <child>
-                      <!-- n-columns=3 n-rows=9 -->
+                      <!-- n-columns=3 n-rows=8 -->
                       <object class="GtkGrid" id="extragrid">
                         <property name="visible">True</property>
                         <property name="can-focus">False</property>
@@ -1490,26 +1491,12 @@ Many FireWire devices will work with the ALSA Modules but using the FFADO module
                         <property name="valign">center</property>
                         <property name="row-homogeneous">True</property>
                         <child>
-                          <object class="GtkCheckButton" id="hide_check">
-                            <property name="label" translatable="yes">Hide this device (blacklist)</property>
-                            <property name="visible">True</property>
-                            <property name="can-focus">True</property>
-                            <property name="receives-default">False</property>
-                            <property name="halign">center</property>
-                            <property name="draw-indicator">True</property>
-                            <signal name="toggled" handler="xdev_changed" swapped="no"/>
-                          </object>
-                          <packing>
-                            <property name="left-attach">0</property>
-                            <property name="top-attach">1</property>
-                          </packing>
-                        </child>
-                        <child>
                           <!-- n-columns=3 n-rows=3 -->
-                          <object class="GtkGrid">
+                          <object class="GtkGrid" id="ex-sr-bf-late">
                             <property name="visible">True</property>
                             <property name="can-focus">False</property>
                             <property name="halign">center</property>
+                            <property name="row-homogeneous">True</property>
                             <child>
                               <object class="GtkLabel">
                                 <property name="visible">True</property>
@@ -1607,15 +1594,17 @@ Many FireWire devices will work with the ALSA Modules but using the FFADO module
                           </object>
                           <packing>
                             <property name="left-attach">2</property>
-                            <property name="top-attach">1</property>
+                            <property name="top-attach">0</property>
                             <property name="height">3</property>
                           </packing>
                         </child>
                         <child>
-                          <!-- n-columns=3 n-rows=3 -->
-                          <object class="GtkGrid">
+                          <!-- n-columns=3 n-rows=2 -->
+                          <object class="GtkGrid" id="ex-cap">
                             <property name="visible">True</property>
                             <property name="can-focus">False</property>
+                            <property name="valign">start</property>
+                            <property name="row-homogeneous">True</property>
                             <child>
                               <object class="GtkLabel">
                                 <property name="visible">True</property>
@@ -1684,52 +1673,20 @@ Many FireWire devices will work with the ALSA Modules but using the FFADO module
                             <child>
                               <placeholder/>
                             </child>
-                            <child>
-                              <placeholder/>
-                            </child>
-                            <child>
-                              <placeholder/>
-                            </child>
-                            <child>
-                              <placeholder/>
-                            </child>
                           </object>
                           <packing>
                             <property name="left-attach">0</property>
-                            <property name="top-attach">2</property>
+                            <property name="top-attach">3</property>
                             <property name="height">2</property>
                           </packing>
                         </child>
                         <child>
-                          <!-- n-columns=3 n-rows=3 -->
-                          <object class="GtkGrid">
+                          <!-- n-columns=3 n-rows=2 -->
+                          <object class="GtkGrid" id="ex-play">
                             <property name="visible">True</property>
                             <property name="can-focus">False</property>
+                            <property name="valign">start</property>
                             <property name="row-homogeneous">True</property>
-                            <child>
-                              <object class="GtkLabel">
-                                <property name="visible">True</property>
-                                <property name="can-focus">False</property>
-                                <property name="halign">end</property>
-                                <property name="label" translatable="yes">JACK Base Name: </property>
-                              </object>
-                              <packing>
-                                <property name="left-attach">0</property>
-                                <property name="top-attach">0</property>
-                              </packing>
-                            </child>
-                            <child>
-                              <object class="GtkEntry" id="xdev_name">
-                                <property name="visible">True</property>
-                                <property name="can-focus">True</property>
-                                <signal name="activate" handler="xdev_changed" swapped="no"/>
-                              </object>
-                              <packing>
-                                <property name="left-attach">1</property>
-                                <property name="top-attach">0</property>
-                                <property name="width">2</property>
-                              </packing>
-                            </child>
                             <child>
                               <object class="GtkLabel">
                                 <property name="visible">True</property>
@@ -1738,19 +1695,7 @@ Many FireWire devices will work with the ALSA Modules but using the FFADO module
                               </object>
                               <packing>
                                 <property name="left-attach">0</property>
-                                <property name="top-attach">1</property>
-                              </packing>
-                            </child>
-                            <child>
-                              <object class="GtkLabel">
-                                <property name="visible">True</property>
-                                <property name="can-focus">False</property>
-                                <property name="halign">end</property>
-                                <property name="label" translatable="yes">Playback Latency: </property>
-                              </object>
-                              <packing>
-                                <property name="left-attach">0</property>
-                                <property name="top-attach">2</property>
+                                <property name="top-attach">0</property>
                               </packing>
                             </child>
                             <child>
@@ -1764,7 +1709,7 @@ Many FireWire devices will work with the ALSA Modules but using the FFADO module
                               </object>
                               <packing>
                                 <property name="left-attach">1</property>
-                                <property name="top-attach">1</property>
+                                <property name="top-attach">0</property>
                               </packing>
                             </child>
                             <child>
@@ -1777,6 +1722,18 @@ Many FireWire devices will work with the ALSA Modules but using the FFADO module
                               </object>
                               <packing>
                                 <property name="left-attach">2</property>
+                                <property name="top-attach">0</property>
+                              </packing>
+                            </child>
+                            <child>
+                              <object class="GtkLabel">
+                                <property name="visible">True</property>
+                                <property name="can-focus">False</property>
+                                <property name="halign">end</property>
+                                <property name="label" translatable="yes">Playback Latency: </property>
+                              </object>
+                              <packing>
+                                <property name="left-attach">0</property>
                                 <property name="top-attach">1</property>
                               </packing>
                             </child>
@@ -1790,7 +1747,7 @@ Many FireWire devices will work with the ALSA Modules but using the FFADO module
                               </object>
                               <packing>
                                 <property name="left-attach">1</property>
-                                <property name="top-attach">2</property>
+                                <property name="top-attach">1</property>
                               </packing>
                             </child>
                             <child>
@@ -1799,22 +1756,8 @@ Many FireWire devices will work with the ALSA Modules but using the FFADO module
                           </object>
                           <packing>
                             <property name="left-attach">1</property>
-                            <property name="top-attach">1</property>
-                            <property name="height">3</property>
-                          </packing>
-                        </child>
-                        <child>
-                          <object class="GtkButton" id="hp_switch">
-                            <property name="label" translatable="yes">Switch to Headphones Output</property>
-                            <property name="visible">True</property>
-                            <property name="can-focus">True</property>
-                            <property name="receives-default">True</property>
-                            <property name="tooltip-text" translatable="yes">Switch between Speakers and headphones in case it can not be auto detected.</property>
-                            <signal name="clicked" handler="hp_switch_cb" swapped="no"/>
-                          </object>
-                          <packing>
-                            <property name="left-attach">0</property>
-                            <property name="top-attach">8</property>
+                            <property name="top-attach">3</property>
+                            <property name="height">2</property>
                           </packing>
                         </child>
                         <child>
@@ -1831,7 +1774,7 @@ Many FireWire devices will work with the ALSA Modules but using the FFADO module
                           </object>
                           <packing>
                             <property name="left-attach">0</property>
-                            <property name="top-attach">5</property>
+                            <property name="top-attach">7</property>
                           </packing>
                         </child>
                         <child>
@@ -1842,14 +1785,39 @@ Many FireWire devices will work with the ALSA Modules but using the FFADO module
                           </object>
                           <packing>
                             <property name="left-attach">0</property>
-                            <property name="top-attach">4</property>
+                            <property name="top-attach">6</property>
                             <property name="width">3</property>
                           </packing>
                         </child>
                         <child>
-                          <object class="GtkBox">
+                          <!-- n-columns=2 n-rows=3 -->
+                          <object class="GtkGrid" id="ex-dev-names">
                             <property name="visible">True</property>
                             <property name="can-focus">False</property>
+                            <property name="halign">center</property>
+                            <child>
+                              <object class="GtkLabel">
+                                <property name="visible">True</property>
+                                <property name="can-focus">False</property>
+                                <property name="halign">end</property>
+                                <property name="label" translatable="yes">JACK Base Name: </property>
+                              </object>
+                              <packing>
+                                <property name="left-attach">0</property>
+                                <property name="top-attach">1</property>
+                              </packing>
+                            </child>
+                            <child>
+                              <object class="GtkEntry" id="xdev_name">
+                                <property name="visible">True</property>
+                                <property name="can-focus">True</property>
+                                <signal name="activate" handler="xdev_changed" swapped="no"/>
+                              </object>
+                              <packing>
+                                <property name="left-attach">1</property>
+                                <property name="top-attach">1</property>
+                              </packing>
+                            </child>
                             <child>
                               <object class="GtkLabel">
                                 <property name="visible">True</property>
@@ -1858,10 +1826,8 @@ Many FireWire devices will work with the ALSA Modules but using the FFADO module
                                 <property name="label" translatable="yes">Select Device to Edit: </property>
                               </object>
                               <packing>
-                                <property name="expand">False</property>
-                                <property name="fill">True</property>
-                                <property name="padding">8</property>
-                                <property name="position">0</property>
+                                <property name="left-attach">0</property>
+                                <property name="top-attach">0</property>
                               </packing>
                             </child>
                             <child>
@@ -1876,55 +1842,110 @@ Many FireWire devices will work with the ALSA Modules but using the FFADO module
                                 <signal name="changed" handler="xdev_select_cb" swapped="no"/>
                               </object>
                               <packing>
-                                <property name="expand">True</property>
-                                <property name="fill">True</property>
-                                <property name="position">1</property>
+                                <property name="left-attach">1</property>
+                                <property name="top-attach">0</property>
+                              </packing>
+                            </child>
+                            <child>
+                              <object class="GtkLabel">
+                                <property name="visible">True</property>
+                                <property name="can-focus">False</property>
+                                <property name="halign">end</property>
+                                <property name="label" translatable="yes">Device description: </property>
+                              </object>
+                              <packing>
+                                <property name="left-attach">0</property>
+                                <property name="top-attach">2</property>
+                              </packing>
+                            </child>
+                            <child>
+                              <object class="GtkEntry" id="xdev_description">
+                                <property name="visible">True</property>
+                                <property name="can-focus">True</property>
+                                <signal name="activate" handler="xdev_changed" swapped="no"/>
+                              </object>
+                              <packing>
+                                <property name="left-attach">1</property>
+                                <property name="top-attach">2</property>
                               </packing>
                             </child>
                           </object>
                           <packing>
                             <property name="left-attach">0</property>
                             <property name="top-attach">0</property>
-                            <property name="width">3</property>
+                            <property name="width">2</property>
+                            <property name="height">3</property>
                           </packing>
                         </child>
                         <child>
-                          <object class="GtkBox">
+                          <object class="GtkCheckButton" id="hide_check">
+                            <property name="label" translatable="yes">Hide this device (blacklist)</property>
+                            <property name="visible">True</property>
+                            <property name="can-focus">True</property>
+                            <property name="receives-default">False</property>
+                            <property name="halign">center</property>
+                            <property name="draw-indicator">True</property>
+                            <signal name="toggled" handler="xdev_changed" swapped="no"/>
+                          </object>
+                          <packing>
+                            <property name="left-attach">2</property>
+                            <property name="top-attach">4</property>
+                          </packing>
+                        </child>
+                        <child>
+                          <object class="GtkLabel">
                             <property name="visible">True</property>
                             <property name="can-focus">False</property>
-                            <child>
-                              <object class="GtkLabel">
-                                <property name="visible">True</property>
-                                <property name="can-focus">False</property>
-                                <property name="halign">end</property>
-                                <property name="label" translatable="yes">Headphone Devce: </property>
-                              </object>
-                              <packing>
-                                <property name="expand">False</property>
-                                <property name="fill">True</property>
-                                <property name="position">0</property>
-                              </packing>
-                            </child>
-                            <child>
-                              <object class="GtkComboBoxText" id="hp_device">
-                                <property name="visible">True</property>
-                                <property name="can-focus">False</property>
-                                <property name="tooltip-text" translatable="yes">Choose the device/ports where the headphones get plugged into.</property>
-                                <property name="active">0</property>
-                              </object>
-                              <packing>
-                                <property name="expand">True</property>
-                                <property name="fill">True</property>
-                                <property name="position">1</property>
-                              </packing>
-                            </child>
+                            <property name="label" translatable="yes">PipeWire Profile: </property>
                           </object>
                           <packing>
                             <property name="left-attach">0</property>
-                            <property name="top-attach">7</property>
-                            <property name="width">3</property>
+                            <property name="top-attach">5</property>
                           </packing>
                         </child>
+                        <child>
+                          <object class="GtkComboBoxText" id="xdev_profile">
+                            <property name="visible">True</property>
+                            <property name="can-focus">False</property>
+                            <signal name="changed" handler="xdev_changed" swapped="no"/>
+                          </object>
+                          <packing>
+                            <property name="left-attach">1</property>
+                            <property name="top-attach">5</property>
+                            <property name="width">2</property>
+                          </packing>
+                        </child>
+                        <child>
+                          <placeholder/>
+                        </child>
+                        <child>
+                          <placeholder/>
+                        </child>
+                        <child>
+                          <placeholder/>
+                        </child>
+                      </object>
+                      <packing>
+                        <property name="position">3</property>
+                      </packing>
+                    </child>
+                    <child type="tab">
+                      <object class="GtkLabel" id="label_zita">
+                        <property name="visible">True</property>
+                        <property name="can-focus">False</property>
+                        <property name="label" translatable="yes">Device Info</property>
+                      </object>
+                      <packing>
+                        <property name="position">3</property>
+                        <property name="tab-fill">False</property>
+                      </packing>
+                    </child>
+                    <child>
+                      <!-- n-columns=2 n-rows=3 -->
+                      <object class="GtkGrid" id="Hp_grid">
+                        <property name="visible">True</property>
+                        <property name="can-focus">False</property>
+                        <property name="halign">center</property>
                         <child>
                           <object class="GtkBox">
                             <property name="visible">True</property>
@@ -1977,6 +1998,7 @@ Many FireWire devices will work with the ALSA Modules but using the FFADO module
                               <object class="GtkSpinButton" id="hp_left_pt">
                                 <property name="visible">True</property>
                                 <property name="can-focus">True</property>
+                                <property name="text" translatable="yes">1</property>
                                 <property name="adjustment">phone_pts</property>
                                 <property name="climb-rate">2</property>
                                 <property name="numeric">True</property>
@@ -1992,8 +2014,22 @@ Many FireWire devices will work with the ALSA Modules but using the FFADO module
                           </object>
                           <packing>
                             <property name="left-attach">0</property>
-                            <property name="top-attach">6</property>
-                            <property name="width">3</property>
+                            <property name="top-attach">1</property>
+                            <property name="width">2</property>
+                          </packing>
+                        </child>
+                        <child>
+                          <object class="GtkButton" id="hp_switch">
+                            <property name="label" translatable="yes">Switch to Headphones Output</property>
+                            <property name="visible">True</property>
+                            <property name="can-focus">True</property>
+                            <property name="receives-default">True</property>
+                            <property name="tooltip-text" translatable="yes">Switch between Speakers and headphones in case it can not be auto detected.</property>
+                            <signal name="clicked" handler="hp_switch_cb" swapped="no"/>
+                          </object>
+                          <packing>
+                            <property name="left-attach">0</property>
+                            <property name="top-attach">2</property>
                           </packing>
                         </child>
                         <child>
@@ -2006,31 +2042,59 @@ Many FireWire devices will work with the ALSA Modules but using the FFADO module
                           </object>
                           <packing>
                             <property name="left-attach">1</property>
-                            <property name="top-attach">8</property>
+                            <property name="top-attach">2</property>
                           </packing>
                         </child>
                         <child>
-                          <placeholder/>
-                        </child>
-                        <child>
-                          <placeholder/>
-                        </child>
-                        <child>
-                          <placeholder/>
+                          <object class="GtkBox">
+                            <property name="visible">True</property>
+                            <property name="can-focus">False</property>
+                            <child>
+                              <object class="GtkLabel">
+                                <property name="visible">True</property>
+                                <property name="can-focus">False</property>
+                                <property name="halign">end</property>
+                                <property name="label" translatable="yes">Headphone Devce: </property>
+                              </object>
+                              <packing>
+                                <property name="expand">False</property>
+                                <property name="fill">True</property>
+                                <property name="position">0</property>
+                              </packing>
+                            </child>
+                            <child>
+                              <object class="GtkComboBoxText" id="hp_device">
+                                <property name="visible">True</property>
+                                <property name="can-focus">False</property>
+                                <property name="tooltip-text" translatable="yes">Choose the device/ports where the headphones get plugged into.</property>
+                                <property name="active">0</property>
+                              </object>
+                              <packing>
+                                <property name="expand">True</property>
+                                <property name="fill">True</property>
+                                <property name="position">1</property>
+                              </packing>
+                            </child>
+                          </object>
+                          <packing>
+                            <property name="left-attach">0</property>
+                            <property name="top-attach">0</property>
+                            <property name="width">2</property>
+                          </packing>
                         </child>
                       </object>
                       <packing>
-                        <property name="position">3</property>
+                        <property name="position">4</property>
                       </packing>
                     </child>
                     <child type="tab">
-                      <object class="GtkLabel" id="label_zita">
+                      <object class="GtkLabel">
                         <property name="visible">True</property>
                         <property name="can-focus">False</property>
-                        <property name="label" translatable="yes">Device Info</property>
+                        <property name="label" translatable="yes">headphones</property>
                       </object>
                       <packing>
-                        <property name="position">3</property>
+                        <property name="position">4</property>
                         <property name="tab-fill">False</property>
                       </packing>
                     </child>
@@ -2237,7 +2301,7 @@ or the last device port, whichever is less.</property>
                         </child>
                       </object>
                       <packing>
-                        <property name="position">4</property>
+                        <property name="position">5</property>
                       </packing>
                     </child>
                     <child type="tab">
@@ -2247,7 +2311,7 @@ or the last device port, whichever is less.</property>
                         <property name="label" translatable="yes">Desktop Bridging</property>
                       </object>
                       <packing>
-                        <property name="position">4</property>
+                        <property name="position">5</property>
                         <property name="tab-fill">False</property>
                       </packing>
                     </child>
@@ -2387,17 +2451,17 @@ NSM aware applications.</property>
                         </child>
                       </object>
                       <packing>
-                        <property name="position">5</property>
+                        <property name="position">6</property>
                       </packing>
                     </child>
                     <child type="tab">
                       <object class="GtkLabel" id="session_label">
                         <property name="visible">True</property>
                         <property name="can-focus">False</property>
-                        <property name="label" translatable="yes">JACK Session Managment</property>
+                        <property name="label" translatable="yes">Session Managment</property>
                       </object>
                       <packing>
-                        <property name="position">5</property>
+                        <property name="position">6</property>
                         <property name="tab-fill">False</property>
                       </packing>
                     </child>
@@ -2799,7 +2863,7 @@ NSM aware applications.</property>
                         </child>
                       </object>
                       <packing>
-                        <property name="position">6</property>
+                        <property name="position">7</property>
                       </packing>
                     </child>
                     <child type="tab">
@@ -2809,7 +2873,7 @@ NSM aware applications.</property>
                         <property name="label" translatable="yes">Network</property>
                       </object>
                       <packing>
-                        <property name="position">6</property>
+                        <property name="position">7</property>
                         <property name="tab-fill">False</property>
                       </packing>
                     </child>
@@ -2819,6 +2883,9 @@ NSM aware applications.</property>
                     <property name="fill">True</property>
                     <property name="position">2</property>
                   </packing>
+                </child>
+                <child>
+                  <placeholder/>
                 </child>
                 <child>
                   <placeholder/>
@@ -2847,125 +2914,6 @@ NSM aware applications.</property>
           <placeholder/>
         </child>
       </object>
-    </child>
-  </object>
-  <object class="GtkMessageDialog" id="message_dialog_changes_info">
-    <property name="can-focus">False</property>
-    <property name="margin-left">2</property>
-    <property name="margin-right">2</property>
-    <property name="margin-top">2</property>
-    <property name="margin-bottom">2</property>
-    <property name="title" translatable="yes">Info</property>
-    <property name="resizable">False</property>
-    <property name="window-position">center-always</property>
-    <property name="default-width">400</property>
-    <property name="default-height">115</property>
-    <property name="destroy-with-parent">True</property>
-    <property name="type-hint">dialog</property>
-    <property name="gravity">center</property>
-    <property name="transient-for">window_main</property>
-    <property name="attached-to">window_main</property>
-    <property name="message-type">warning</property>
-    <property name="text" translatable="yes">For changes to take effect, you need to do a reboot.</property>
-    <child internal-child="vbox">
-      <object class="GtkBox" id="messagedialog-vbox">
-        <property name="can-focus">False</property>
-        <property name="orientation">vertical</property>
-        <property name="spacing">2</property>
-        <child internal-child="action_area">
-          <object class="GtkButtonBox" id="messagedialog-action_area">
-            <property name="can-focus">False</property>
-            <property name="margin-bottom">10</property>
-            <property name="homogeneous">True</property>
-            <property name="layout-style">end</property>
-            <child>
-              <placeholder/>
-            </child>
-            <child>
-              <object class="GtkButton" id="button_msg_ok">
-                <property name="label" translatable="yes">Ok</property>
-                <property name="visible">True</property>
-                <property name="can-focus">True</property>
-                <property name="receives-default">True</property>
-                <signal name="clicked" handler="on_button_msg_ok_clicked" swapped="no"/>
-              </object>
-              <packing>
-                <property name="expand">True</property>
-                <property name="fill">True</property>
-                <property name="position">1</property>
-              </packing>
-            </child>
-          </object>
-          <packing>
-            <property name="expand">False</property>
-            <property name="fill">False</property>
-            <property name="position">0</property>
-          </packing>
-        </child>
-      </object>
-    </child>
-    <child type="titlebar">
-      <placeholder/>
-    </child>
-  </object>
-  <object class="GtkMessageDialog" id="message_dialog_rt_info">
-    <property name="can-focus">False</property>
-    <property name="margin-left">2</property>
-    <property name="margin-right">2</property>
-    <property name="margin-top">2</property>
-    <property name="margin-bottom">2</property>
-    <property name="title" translatable="yes">RT info</property>
-    <property name="resizable">False</property>
-    <property name="window-position">center-always</property>
-    <property name="default-width">400</property>
-    <property name="default-height">115</property>
-    <property name="type-hint">dialog</property>
-    <property name="skip-taskbar-hint">True</property>
-    <property name="skip-pager-hint">True</property>
-    <property name="gravity">center</property>
-    <property name="transient-for">window_main</property>
-    <property name="attached-to">window_main</property>
-    <property name="message-type">warning</property>
-    <property name="text" translatable="yes">It seems you have made settings previously and not done a fresh login, or you already have realtime settings in effect, but you are not using the file supplied with the package jackd.
-If you want to use this application for administering realtime settings, please remove any custom settings and reboot your computer.</property>
-    <child internal-child="vbox">
-      <object class="GtkBox" id="messagedialog-vbox3">
-        <property name="can-focus">False</property>
-        <property name="orientation">vertical</property>
-        <property name="spacing">2</property>
-        <child internal-child="action_area">
-          <object class="GtkButtonBox" id="messagedialog-action_area3">
-            <property name="can-focus">False</property>
-            <property name="homogeneous">True</property>
-            <property name="layout-style">end</property>
-            <child>
-              <placeholder/>
-            </child>
-            <child>
-              <object class="GtkButton" id="button_rt_info_ok">
-                <property name="label" translatable="yes">Ok</property>
-                <property name="visible">True</property>
-                <property name="can-focus">True</property>
-                <property name="receives-default">True</property>
-                <signal name="clicked" handler="on_button_rt_info_ok_clicked" swapped="no"/>
-              </object>
-              <packing>
-                <property name="expand">True</property>
-                <property name="fill">True</property>
-                <property name="position">1</property>
-              </packing>
-            </child>
-          </object>
-          <packing>
-            <property name="expand">False</property>
-            <property name="fill">False</property>
-            <property name="position">0</property>
-          </packing>
-        </child>
-      </object>
-    </child>
-    <child type="titlebar">
-      <placeholder/>
     </child>
   </object>
 </interface>

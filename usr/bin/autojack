@@ -263,7 +263,7 @@ def import_config(caller):
         logging.debug(f"phone port set to: {phone_port}")
 
 
-def reconfig():
+def reconfig(restart = False):
     '''reads values from configuration file and changes run
     to match. This tries to do this without stopping jack
     if not needed'''
@@ -275,28 +275,26 @@ def reconfig():
 
     old_conf_db = copy.deepcopy(conf_db)
     import_config("reconfig")
-    ol_jkdb = old_conf_db['jack']
-    jackdb = conf_db['jack']
+    # we now have two configs:
+    #  old_conf_db - what it was before we were called
+    #  conf_db - what we were called with
 
-    old_jack = [ol_jkdb['on'], ol_jkdb['driver'],
-                ol_jkdb['dev'],
-                ol_jkdb['rate'], ol_jkdb['frame'],
-                ol_jkdb['period'],
-                ol_jkdb['connect-mode'], ol_jkdb['chan-in'],
-                ol_jkdb['chan-out'],
-                ol_jkdb['usbdev'], ol_jkdb['cap-latency'],
-                ol_jkdb['play-latency']]
-    new_jack = [jackdb['on'], jackdb['driver'], jackdb['dev'],
-                jackdb['rate'], jackdb['frame'],
-                jackdb['period'],
-                jackdb['connect-mode'], jackdb['chan-in'],
-                jackdb['chan-out'],
-                jackdb['usbdev'], jackdb['cap-latency'],
-                jackdb['play-latency']]
-    if old_jack != new_jack:
+    if old_conf_db['sub-system'] != conf_db['sub-system']:
+        # the gui has already called the system to turn
+        # pulse on or off, we just need to clean up
+        if conf_db['sub-system'] == 'pipewire':
+            logging.debug("changed to pipewire mode, reconfiguring")
+            jack_stat("PipeWire Mode")
+            jack_start(False)
+            jack_stat("PipeWire Mode")
+            # stop jack
+        elif conf_db['sub-system'] == 'pw-jack':
+            jack_stat("PipeWire with JACK Mode")
+        elif conf_db['sub-system'] == 'jack':
+            jack_stat("Pulse with JACK Mode")
+    if restart or old_conf_db['jack'] != conf_db['jack']:
         logging.debug("change requires restart")
-        config_start()
-        return
+        jack_start()
     if not conf_db['jack']['on']:
         return
         # no use checking anything else
@@ -408,7 +406,7 @@ def reconfig():
                 except Exception:
                     print("")
 
-        if conf_db['extra']['a2j']:
+        if conf_db['extra']['a2j'] and conf_db['sub-system'] == 'jack':
             # Can't add logging for background processes.
             # Will show up in syslog
             ajc = shutil.which("a2jmidid")
@@ -474,6 +472,335 @@ def reconfig():
     if pulse_dirty:
         # do this last after all bridges are created
         connect_pa()
+
+def jack_start(start = True):
+    ''' Pulls configuration and force restarts the world '''
+    global conf_db
+    global configure_interface_name
+    global control_interface_name
+    global fw_exists
+    global jack_alive
+    global jack_died
+    global last_master
+    global midiproc
+    global name_base
+    global phones
+    global service_name
+
+    if jack_alive:
+        kill_jack_client()
+
+    logging.info("Running: config_start()")
+
+    time.sleep(2)
+    logging.debug("Running: config_start jack start")
+    jack_stat("Stopping...")
+    logging.info("Running: config_start after jack_stat")
+    fpath = expanduser('~/.config/autojack/prestop')
+    if os.path.isfile(fpath) and os.access(fpath, os.X_OK):
+        logging.debug("Found prestop script")
+        cp = subprocess.run([fpath],
+                            universal_newlines=True,
+                            stdout=subprocess.PIPE,
+                            stderr=subprocess.STDOUT,
+                            shell=True)
+        logging.debug(f"Running script: {fpath}")
+    if 'midiproc' in globals():
+        midiproc.send_signal(signal.SIGINT)
+        try:
+            rt = midiproc.wait(timeout=15)
+        except subprocess.TimeoutExpired:
+            logging.debug(f"kill a2jmidid failed")
+            try:
+                os.kill(int(sub_db['cap-pid']), 9)
+            except Exception:
+                print("")
+    pc = shutil.which("pactl")
+    if pc is None:
+        logging.warning(
+            "pactl is missing... unable to control"
+            "pulseaudio\n configure failed")
+    else:
+        cp = subprocess.run([pc, "unload-module", "module-jack-source"],
+                            universal_newlines=True,
+                            stdout=subprocess.PIPE,
+                            stderr=subprocess.STDOUT, shell=False)
+        logging.debug(f"Pulseaudio: {cp.stdout.strip()}")
+        time.sleep(1)
+        cp = subprocess.run([pc, "unload-module", "module-jack-sink"],
+                            universal_newlines=True,
+                            stdout=subprocess.PIPE,
+                            stderr=subprocess.STDOUT, shell=False)
+        logging.debug(f"Pulseaudio: {cp.stdout.strip()}")
+        time.sleep(1)
+
+    bus = dbus.SessionBus()
+    controller = bus.get_object(service_name, "/org/jackaudio/Controller")
+    control_iface = dbus.Interface(controller, control_interface_name)
+    # configure_iface = dbus.Interface(controller, configure_interface_name)
+
+    try:
+        control_iface.StopServer()
+    except Exception:
+        print("stop failed")
+    time.sleep(2)
+    cp = subprocess.run(["alsactl", "init"], universal_newlines=True,
+                        stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
+                        shell=False)
+
+    # Stop jack if running
+    kla = shutil.which("killall")
+    if kla is None:
+        logging.warning("killall not found, audio controls may fail to work")
+    else:
+        cp = subprocess.run([kla, "-q", "-9", "jackdbus", "jackd",
+                            "a2jmidid", "pulseaudio"],
+                            universal_newlines=True,
+                            stdout=subprocess.PIPE,
+                            stderr=subprocess.STDOUT,
+                            shell=False)
+        logging.debug(f"Kill old Procs: {cp.stdout.strip()}")
+    cp = subprocess.run(["alsactl", "init"], universal_newlines=True,
+                        stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
+                        shell=False)
+
+    jack_stat("Stopped")
+    last_master = 'none'
+
+    fpath = expanduser('~/.config/autojack/poststop')
+    if os.path.isfile(fpath) and os.access(fpath, os.X_OK):
+        logging.debug("Found poststop script")
+        cp = subprocess.run([fpath],
+                            universal_newlines=True,
+                            stdout=subprocess.PIPE,
+                            stderr=subprocess.STDOUT,
+                            shell=True)
+        logging.debug(f"Running script: {fpath}")
+    if not start:
+        return
+
+    if (conf_db['jack']['driver'] == "firewire") or fw_exists:
+        time.sleep(3)
+        # this is a firewire device, A busreset makes for stability
+        ftst = shutil.which("ffado-test")
+        if ftst is None:
+            logging.warning(
+                "ffado-test not found, fire wire device may"
+                "lock up. ffado-tools not installed?")
+        else:
+            cp = subprocess.run([ftst, "BusReset"],
+                                universal_newlines=True,
+                                stdout=subprocess.PIPE,
+                                stderr=subprocess.STDOUT,
+                                shell=False)
+            logging.debug(f"reset firewire bus: {cp.stdout.strip()}")
+            time.sleep(3)
+
+        if kla is None:
+            logging.warning(
+                "killall not found, audio controls may fail to work")
+        else:
+            cp = subprocess.run([kla,
+                                 "-q", "ffado-dbus-server",
+                                 "ffado-mixer"],
+                                universal_newlines=True,
+                                stdout=subprocess.PIPE,
+                                stderr=subprocess.STDOUT,
+                                shell=False)
+            logging.debug(
+                "Kill ffado mixer because busreset needed:"
+                f"{cp.stdout.strip()}")
+
+    # restart Pulse to reload default modules which we may have removed
+    ### FIXME make sure not in pipewire mode
+    # bus = dbus.SessionBus() # bus already set above
+    systemd1 = bus.get_object('org.freedesktop.systemd1', '/org/freedesktop/systemd1')
+    manager = dbus.Interface(systemd1, 'org.freedesktop.systemd1.Manager')
+    job = manager.RestartUnit('pulseaudio.service', 'fail')
+    logging.debug(f"JACK is {str(conf_db['jack']['on'])} restart pulse: {job.strip()}")
+    if not conf_db['jack']['on']:
+        return
+    logging.debug(f"JACK is {str(conf_db['jack']['on'])} start up jack")
+    jack_stat("Config Pulse")
+
+    # Assume start of session where pulse may be fully loaded
+    # get rid of anything that can automatically interfere
+    cp = subprocess.run(["/usr/bin/pactl",
+                         "unload-module",
+                         "module-jackdbus-detect"],
+                        universal_newlines=True,
+                        stdout=subprocess.PIPE,
+                        stderr=subprocess.STDOUT, shell=False)
+    logging.debug(f"remove jackdbus_detect: {cp.stdout.strip()}")
+
+    fpath = expanduser('~/.config/autojack/prestart')
+    if os.path.isfile(fpath) and os.access(fpath, os.X_OK):
+        logging.debug("Found prestart script")
+        jack_stat("Prestart running")
+        cp = subprocess.run([fpath],
+                            universal_newlines=True,
+                            stdout=subprocess.PIPE,
+                            stderr=subprocess.STDOUT,
+                            shell=True)
+        logging.debug(f"Running script: {fpath}")
+
+    jack_stat("Configuring...")
+    rn = 'none'
+    if conf_db['jack']['usbdev'] != "none":
+        rn = get_db(conf_db['jack']['usbdev'])['raw']
+    if os.path.exists(f"/proc/asound/{rn}"):
+        mdev = get_raw(conf_db['jack']['usbdev'])
+    else:
+        mdev = conf_db['jack']['dev']
+        if mdev.split(',')[0] == "HDMI" or mdev.split(',')[0] == "NVidia":
+            logging.info("HDMI device, setting buffer to 4096")
+            conf_db['jack']['frame'] = "4096"
+    mdev_db = get_db(mdev)
+
+    if os.path.isfile(expanduser('~/.config/jack/conf.xml')):
+        logging.debug("Found previous jack config removing")
+        os.remove(expanduser('~/.config/jack/conf.xml'))
+
+    # Now start jackdbus with the configured device
+    if conf_db['jack']['connect-mode'] != 'n':
+        bus = dbus.SessionBus()
+        controller = bus.get_object(service_name, "/org/jackaudio/Controller")
+        # control_iface = dbus.Interface(controller, control_interface_name)
+        configure_iface = dbus.Interface(controller, configure_interface_name)
+        configure_iface.SetParameterValue(
+            ['engine',
+             'self-connect-mode'],
+            dbus.Byte(ord(conf_db['jack']['connect-mode'])))
+
+    if conf_db['jack']['driver'] == "firewire":
+        cp = subprocess.run(["/usr/bin/ffado-test", "BusReset"],
+                            universal_newlines=True,
+                            stdout=subprocess.PIPE,
+                            stderr=subprocess.STDOUT,
+                            shell=False)
+        logging.debug(f"reset firewire bus: {cp.stdout.strip()}")
+        cp = subprocess.run(["/usr/bin/killall",
+                             "-q", "ffado-dbus-server",
+                             "ffado-mixer"],
+                            universal_newlines=True,
+                            stdout=subprocess.PIPE,
+                            stderr=subprocess.STDOUT,
+                            shell=False)
+        logging.debug(
+            f"Kill ffado mixer because busreset needed: {cp.stdout.strip()}")
+        time.sleep(3)
+
+    bus = dbus.SessionBus()
+    controller = bus.get_object(service_name, "/org/jackaudio/Controller")
+    control_iface = dbus.Interface(controller, control_interface_name)
+    configure_iface = dbus.Interface(controller, configure_interface_name)
+
+    configure_iface.SetParameterValue(
+        ['engine', 'driver'], str(conf_db['jack']['driver']))
+    logging.debug(f"JACK driver set to: {conf_db['jack']['driver']}")
+    time.sleep(.4)
+    if conf_db['jack']['driver'] == "alsa":
+        # we use default device for FW right now
+        configure_iface.SetParameterValue(['driver', 'device'], f"hw:{mdev}")
+        logging.debug(f"JACK device set to: {mdev}")
+        if mdev_db['firewire'] and conf_db['jack']['frame'] < 256:
+            conf_db['jack']['frame'] = 256
+            logging.info(
+                f"Firewire device using ALSA drivers, JACK buffer set to: 256")
+
+    time.sleep(.2)
+    configure_iface.SetParameterValue(
+        ['driver', 'rate'], dbus.UInt32(conf_db['jack']['rate']))
+    time.sleep(.2)
+    configure_iface.SetParameterValue(
+        ['driver', 'period'], dbus.UInt32(conf_db['jack']['frame']))
+    time.sleep(.2)
+    if conf_db['jack']['driver'] != "dummy":
+        configure_iface.SetParameterValue(['driver',
+                                           'nperiods'],
+                                          dbus.UInt32(conf_db[
+                                              'jack']['period']))
+        time.sleep(.2)
+        configure_iface.SetParameterValue(
+            ['driver', 'input-latency'],
+            dbus.UInt32(conf_db['jack']['cap-latency']))
+        time.sleep(.2)
+        configure_iface.SetParameterValue(['driver',
+                                           'output-latency'],
+                                          dbus.UInt32(conf_db['jack'][
+                                              'play-latency']))
+
+    else:
+        configure_iface.SetParameterValue(['driver', 'capture'],
+                                          dbus.UInt32(conf_db[
+                                              'jack']['chan-in']))
+        time.sleep(.2)
+        configure_iface.SetParameterValue([
+            'driver', 'playback'],
+            dbus.UInt32(conf_db['jack']['chan-out']))
+        time.sleep(.2)
+        configure_iface.SetParameterValue(['driver', 'monitor'], True)
+    logging.debug(
+        "JACK rate/period/nperiods set to: "
+        f"{conf_db['jack']['rate']}/"
+        f"{conf_db['jack']['frame']}/{conf_db['jack']['period']}")
+    time.sleep(3)
+    jack_stat("Starting...")
+
+    try:
+        control_iface.StartServer()
+    except Exception:
+        logging.debug("JACK start failed")
+        jack_stat("Start Failed")
+        return
+    logging.debug("JACK started")
+
+    if conf_db['jack']['driver'] == "alsa":
+        last_master = mdev
+    # maybe check for jack up (need function?)
+    time.sleep(3)
+
+    jack_stat("Poststart")
+    fpath = expanduser('~/.config/autojack/poststart')
+    if os.path.isfile(fpath) and os.access(fpath, os.X_OK):
+        logging.debug("Found poststart script")
+        cp = subprocess.run([fpath],
+                            universal_newlines=True,
+                            stdout=subprocess.PIPE,
+                            stderr=subprocess.STDOUT,
+                            shell=True)
+        logging.debug(f"Running script: {fpath}")
+
+    start_jack_client()
+    time.sleep(1)
+
+    jack_stat("Adding Bridges")
+    pc = shutil.which("pactl")
+    if pc is None:
+        logging.warning(
+            "pactl is missing... unable to control"
+            "pulseaudio\n configure failed")
+    else:
+        for bridge in conf_db['pulse']['inputs']:
+            this_count = str(conf_db['pulse']['inputs'][bridge]['count'])
+            cp = subprocess.run([pc, "load-module", "module-jack-source",
+                                 f"client_name={bridge}",
+                                 f"channels={this_count}", "connect=no"],
+                                universal_newlines=True,
+                                stdout=subprocess.PIPE,
+                                stderr=subprocess.STDOUT, shell=False)
+            logging.debug(f"Pulseaudio: {cp.stdout.strip()}")
+            time.sleep(1)
+        for bridge in conf_db['pulse']['outputs']:
+            this_count = str(conf_db['pulse']['outputs'][bridge]['count'])
+            cp = subprocess.run([pc, "load-module", "module-jack-sink",
+                                 f"client_name={bridge}",
+                                 f"channels={this_count}", "connect=no"],
+                                universal_newlines=True,
+                                stdout=subprocess.PIPE,
+                                stderr=subprocess.STDOUT, shell=False)
+            logging.debug(f"Pulseaudio: {cp.stdout.strip()}")
+            time.sleep(1)
 
 
 def config_start():
@@ -1841,15 +2168,11 @@ def command_run():
     logging.debug(f"got signal - {rec_string}")
     if 'start' in args:
         logging.info("Got start signal.")
-        config_start()
+        reconfig(True)
         return
     if 'config' in args:
         logging.info("Got config signal.")
         reconfig()
-        return
-    if 'stop' in args:
-        logging.info("Got stop signal.")
-        config_start()
         return
     if 'ping' in args:
         logging.info("Got ping signal.")

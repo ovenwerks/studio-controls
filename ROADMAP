@@ -75,6 +75,8 @@ Useful info:
                 #jack.locked-process    = true
                 jack.default-as-system = true # true because old projects
                                             # that connect to system: work
+                                            # Hmm maybe false, change name
+                                            # with wireplumber
                 #jack.fix-midi-events   = true # change note on v0 to note off
 
         Setting rate may not work as above and note that most of the above
@@ -116,10 +118,11 @@ Useful info:
                 }
             }
         ]
+        - NOTE there may be different/better ways. See virtual devices
 
     -pw device name changes etc can replace extra devices. "Extra devices"
         should be changed "device setup"
-    -Session management can remain as is.
+    -Session management can remain as is. Code may be different.
     - network can remain as is using zita-njbridge
         this may be a problem... zita-njbridge was crashing.
 

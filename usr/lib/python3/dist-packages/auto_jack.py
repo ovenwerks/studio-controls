@@ -101,6 +101,33 @@ def get_gvnr_hw():
     return perf, no_boost
 
 
+def get_sys_mode():
+    ''' find out whats happening right now:
+        Pulse or PipeWire does Pulse
+        Pipewire is maquerading as jack or not
+    Return a pair:
+        pulse = true or false
+            Is pulse itself or pipewire
+        jack = true or false
+            Is libjack pointed to pipewire
+    '''
+    jack = True
+    if [] != glob.glob("/etc/ld.so.conf.d/pipewire*jack*"):
+        jack = False
+    # pulse = True
+    pulse = not (shutil.which("pulseaudio") in [None])
+    if pulse:
+        cp = subprocess.run(["/usr/bin/pactl", "info"],
+                            universal_newlines=True,
+                            stdout=subprocess.PIPE,
+                            stderr=subprocess.STDOUT, shell=False)
+        for line in cp.stdout.split('\n'):
+            print(f"{line}")
+            if 'PipeWire' in line:
+                pulse = False
+    return jack, pulse
+
+
 def get_default_dev():
     # Ideally, this is the HDA device
     # certainly it should be internal and not USB
@@ -1008,7 +1035,13 @@ def check_db():
     if 'boost' not in our_db:
         our_db['boost'] = temp_boost
     if 'sub-system' not in our_db:
-        our_db['sub-system'] = default_sub_sys
+        jck, pls = get_sys_mode()
+        if jck and pls:
+            our_db['sub-system'] = 'jack'
+        elif jck:
+            our_db['sub-system'] = 'pw-jack'
+        else:
+            our_db['sub-system'] = 'pipewire'
     if 'jack' not in our_db:
         our_db['jack'] = {}
     if 'pipewire' not in our_db:

@@ -71,6 +71,7 @@ def main(argv):
             sendbs.signal(command)
         elif command == "stop":
             jack = False
+            command = 'config'
             set_db(jack)
             sendbs.signal(command)
         elif command == "phones" or command == "monitor":

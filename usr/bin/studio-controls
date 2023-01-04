@@ -128,12 +128,13 @@ class StudioControls:
         # Get windows
         self.window_main = builder.get_object('window_main')
         self.window_help = builder.get_object('window_help')
-        self.message_dialog_changes_info = builder.get_object(
+        # Which of these can we get rid of
+        '''self.message_dialog_changes_info = builder.get_object(
             'message_dialog_changes_info')
         self.message_dialog_rt_info = builder.get_object(
             'message_dialog_rt_info')
         self.message_dialog_changes_info.set_transient_for(self.window_main)
-        self.message_dialog_rt_info.set_transient_for(self.window_main)
+        self.message_dialog_rt_info.set_transient_for(self.window_main)'''
         self.title_label = builder.get_object('label_main_top')
         self.button_msg_ok = builder.get_object('button_msg_ok')
         self.title_label.set_text(
@@ -180,6 +181,8 @@ class StudioControls:
         self.play_chan_spin = builder.get_object('play_chan_spin')
         self.hide_check = builder.get_object('hide_check')
         self.xdev_name = builder.get_object('xdev_name')
+        self.xdev_description = builder.get_object('xdev_description')
+        self.xdev_profile = builder.get_object('xdev_profile')
         self.xdev_rate_drop = builder.get_object('xdev_rate_drop')
         self.xdev_buff_drop = builder.get_object('xdev_buff_drop')
         self.xdev_nperiods_drop = builder.get_object('xdev_nperiods_drop')
@@ -243,7 +246,14 @@ class StudioControls:
             if rtprio == 0:
                 self.rt_button.set_label("Reboot required")
                 self.rt_button.set_sensitive(False)
-                self.message_dialog_rt_info.show()
+                self.warnshow("It seems you have made settings previously"
+                    " and not done a fresh login, or you already have"
+                    " realtime settings in effect, but you are not using"
+                    " the file supplied with the package jackd. If you"
+                    " want to use this application for administering"
+                    " realtime settings, please remove any custom"
+                    " settings and reboot your computer.")
+                
                 self.rt_warning.set_text(
                     "Session restart required for Real Time Permissions")
             else:
@@ -738,6 +748,8 @@ class StudioControls:
         return True
 
     def on_main_button_help_clicked(self, button):
+        # TODO move this to: self.infoshow(title, text)
+        # TODO make this notebook tab specific
         self.window_help.show()
 
     def rt_button_hit(self, button):
@@ -749,7 +761,7 @@ class StudioControls:
             [pke, f"{install_path}/sbin/studio-system", "fix"], shell=False)
         self.rt_button.set_label("Logout required")
         self.rt_button.set_sensitive(False)
-        self.message_dialog_rt_info.show()
+        self.warnshow("For changes to take effect, you need to do a reboot.")
         self.rt_warning.set_text(
             "Session restart required for Real Time Permissions")
 
@@ -789,6 +801,8 @@ class StudioControls:
                 [pke,
                  f"{install_path}/sbin/studio-system",
                  newval], shell=False)
+            self.warnshow(f"Reboot to complete change to {newval}.")
+
 
     def sub_system_cb(self, widget):
         '''
@@ -798,39 +812,75 @@ class StudioControls:
             - pipewire - pipewire does desktop and acts like jack
                 Hopefully, this mode will allow using jack as a device
             - pw-jack - pw does desktop, jackd(bus) runs as well
-                Brisging is still a question.
+                Bridging is still a question.
         '''
         newval = widget.get_active_id()
         oldval = self.conf_db['sub-system']
         if newval != oldval:
-            needboot = False
-            self.conf_db['sub-system'] = newval
+            pls = shutil.which("pulseaudio") in [None]
+            jck = shutil.which("jackdbus") in [None]
+            pw = shutil.which("pipewire") in [None]
+            if newval == 'jack':
+                if pls or jck:
+                    self.warnshow(f"pulseaudio or jackd2 not installed"
+                        f"staying in {oldval} mode.")
+                    return
+            if newval == 'pipewire':
+                if pw:
+                    self.warnshow(f"pipewire not installed"
+                        f"staying in {oldval} mode.")
+                    return
+            if newval == 'pw-jack':
+                if pw or jck:
+                    self.warnshow(f"pipewire or jackd2 not installed"
+                        f"staying in {oldval} mode.")
+                    return
             pke = shutil.which("pkexec")
             if pke is None:
-                print("no pkexec, Fail")
+                print("no pkexec, Fail cannot change sub-system")
                 return
+            self.conf_db['sub-system'] = newval
+            # send signal to autojack so it can shutdown things if needed
+            # self.cb_audio_apply(widget)
+            cmd1 = ""
+            cmd2 = ""
+            cmd3 = ""
             if newval == "jack":
-                needboot = True
-                subprocess.run(
-                    [pke,
-                     f"{install_path}/sbin/studio-system",
-                     "pulse"], shell=False)
-                subprocess.run(
-                    [pke,
-                     f"{install_path}/sbin/studio-system",
-                     newval], shell=False)
+                # needboot = True
+                # Jack mode needs pulse
+                cmd1 = "systemctl --user stop wireplumber.service"
+                cmd1 = f"{cmd1} pipewire-pulse.service pipewire.service"
+                cmd1 = f"{cmd1} pipewire.socket"
+                cmd2 = "systemctl --user unmask pulseaudio"
+                cmd3 = "systemctl --user --now enable pulseaudio.socket"
+                cmd3 = f"{cmd3} pulseaudio.service"
+            elif oldval == "jack":
+                # no longer jack mode so no pulse
+                cmd1 = "systemctl --user --now disable pulseaudio.service"
+                cmd1 = f"{cmd1} pulseaudio.socket"
+                cmd2 = "systemctl --user mask pulseaudio"
+                cmd3 = "systemctl --user restart pipewire.socket"
+                cmd3 = f"{cmd3} wireplumber.service pipewire-pulse.service"
+                cmd3 = f"{cmd3} pipewire.service"
+            if cmd1 != "":
+                subprocess.run(shlex.split(cmd1), shell=False)
+                time.sleep(1)
+                subprocess.run(shlex.split(cmd2), shell=False)
+                time.sleep(1)
+                subprocess.run(shlex.split(cmd3), shell=False)
+
             if newval == "pipewire":
-                # turn jack off
-                self.conf_db['jack']['on'] = False
+                # point to PW's libjack
                 subprocess.run(
                     [pke,
                      f"{install_path}/sbin/studio-system",
                      "pwlib"], shell=False)
-            if newval == "pw_jack":
+            if oldval == "pipewire":
+                # point to real libjack
                 subprocess.run(
                     [pke,
                      f"{install_path}/sbin/studio-system",
-                     "pipewire"], shell=False)
+                     "jacklib"], shell=False)
             self.cb_audio_apply(widget)
 
 
@@ -900,14 +950,14 @@ class StudioControls:
                             if pds == tmppd:
                                 self.conf_db['pipewire']['latency'] = tmppd
                                 self.pw_latency_dr.set_active_id(str(pds))
-                        if int(self.pw_latency_dr.get_active) < 0:
+                        if self.pw_latency_dr.get_active == -1:
                             self.pw_latency_dr.set_active_id('2')
                     if self.conf_db['pipewire']['secondary'] == sub_dev['name']:
                         self.pw_secondary_dr.set_active_id(sub_dev['name'])
 
         self.pw_master_dr.set_sensitive(True)
         self.pw_secondary_dr.set_sensitive(True)
-        # self.pw_jkdev_dr.set_sensitive(True) not implemented yet
+        # self.pw_jkdev_dr.set_sensitive(True)  TODO not implemented yet
         self.pw_rate_dr.set_sensitive(True)
         self.pw_buffer_dr.set_sensitive(True)
         self.pw_latency_dr.set_sensitive(True)
@@ -984,6 +1034,9 @@ class StudioControls:
         self.xdev_cap_lat.set_sensitive(False)
         self.xdev_play_lat.set_sensitive(False)
         self.xdev_name.set_sensitive(False)
+        # TODO add name and desc to rest of xdev_changed
+        self.xdev_description.set_sensitive(False)
+        self.xdev_profile.set_sensitive(False)
         this_dev = str(self.xdev_select.get_active_id())
         dev_db = self.conf_db['devices'][this_dev.split(',')[0]]
         sub_db = dev_db['sub'][str(this_dev.split(',')[1])]
@@ -1054,6 +1107,9 @@ class StudioControls:
         self.xdev_cap_lat.set_sensitive(False)
         self.xdev_play_lat.set_sensitive(False)
         self.xdev_name.set_sensitive(False)
+        # TODO add name and desc to rest of redraw_extra
+        self.xdev_description.set_sensitive(False)
+        self.xdev_profile.set_sensitive(False)
         self.xdev_rate_drop.popdown()
         self.xdev_buff_drop.popdown()
         self.xdev_rate_drop.get_model().clear()
@@ -1689,7 +1745,7 @@ class StudioControls:
         self.jackdb['on'] = False
         self.config_save()
         self.not_applied = False
-        self.signal_autojack("stop")
+        self.signal_autojack("config")
 
     def cb_audio_apply(self, button):
         '''callback for audio tab apply button'''
@@ -1748,6 +1804,22 @@ class StudioControls:
 
     def on_button_rt_info_ok_clicked(self, button):
         self.message_dialog_rt_info.hide()
+
+
+    def warnshow(self, msgtxt):
+        dialog = Gtk.MessageDialog(
+            transient_for=self.window_main,
+            flags=0,
+            message_type=Gtk.MessageType.WARNING,
+            buttons=Gtk.ButtonsType.OK,
+            text="WARNING",
+        )
+        dialog.format_secondary_text(
+            msgtxt
+        )
+        response = dialog.run()
+        dialog.destroy()
+
 
     # All the ways we can die
     def on_button_msg_ok_clicked(self, button):
